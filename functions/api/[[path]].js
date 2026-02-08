@@ -6,83 +6,160 @@ let adminConfigCache = null;
 let configCacheTime = 0;
 const CONFIG_CACHE_TTL = 300000; // 5分钟缓存时间
 
-// Base64 编码（兼容 Worker 环境）
-function base64Encode(str) {
-  try {
-    // 尝试使用 btoa（浏览器/Worker 环境）
-    if (typeof btoa === 'function') {
-      return btoa(str);
-    }
-  } catch (e) {
-    // 降级使用自定义实现
-  }
+// JWT 签名与验证 (使用 Web Crypto API)
+async function signJwt(payload, secret) {
+  const enc = new TextEncoder();
+  const algorithm = { name: 'HMAC', hash: 'SHA-256' };
+  const key = await crypto.subtle.importKey(
+    'raw', 
+    enc.encode(secret), 
+    algorithm, 
+    false, 
+    ['sign']
+  );
   
-  // 自定义 base64 编码
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-  let result = '';
-  let i = 0;
-  const bytes = new TextEncoder().encode(str);
+  const header = JSON.stringify({ alg: 'HS256', typ: 'JWT' });
+  const body = JSON.stringify(payload);
   
-  while (i < bytes.length) {
-    const byte1 = bytes[i++];
-    const byte2 = i < bytes.length ? bytes[i++] : null;
-    const byte3 = i < bytes.length ? bytes[i++] : null;
+  const encodedHeader = btoa(header).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  const encodedBody = btoa(body).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  
+  const signature = await crypto.subtle.sign(
+    algorithm, 
+    key, 
+    enc.encode(`${encodedHeader}.${encodedBody}`)
+  );
+  
+  const encodedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)))
+    .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
     
-    const index1 = byte1 >> 2;
-    const index2 = ((byte1 & 0x03) << 4) | (byte2 !== null ? byte2 >> 4 : 0);
-    const index3 = byte2 !== null ? ((byte2 & 0x0F) << 2) | (byte3 !== null ? byte3 >> 6 : 0) : 64;
-    const index4 = byte3 !== null ? byte3 & 0x3F : 64;
-    
-    result += chars[index1] + chars[index2] + (index3 !== 64 ? chars[index3] : '=') + (index4 !== 64 ? chars[index4] : '=');
-  }
-  
-  return result;
+  return `${encodedHeader}.${encodedBody}.${encodedSignature}`;
 }
 
-// Base64 解码（兼容 Worker 环境）
-function base64Decode(str) {
+async function verifyJwt(token, secret) {
   try {
-    // 尝试使用 atob（浏览器/Worker 环境）
-    if (typeof atob === 'function') {
-      return atob(str);
-    }
-  } catch (e) {
-    // 降级使用自定义实现
-  }
-  
-  // 自定义 base64 解码
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-  const bytes = [];
-  
-  str = str.replace(/=+$/, '');
-  
-  for (let i = 0; i < str.length; i += 4) {
-    const c1 = chars.indexOf(str[i]);
-    const c2 = chars.indexOf(str[i + 1]);
-    const c3 = str[i + 2] === '=' ? -1 : chars.indexOf(str[i + 2]);
-    const c4 = str[i + 3] === '=' ? -1 : chars.indexOf(str[i + 3]);
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
     
-    bytes.push((c1 << 2) | (c2 >> 4));
-    if (c3 !== -1) bytes.push(((c2 & 0x0F) << 4) | (c3 >> 2));
-    if (c4 !== -1) bytes.push(((c3 & 0x03) << 6) | c4);
+    const [encodedHeader, encodedBody, encodedSignature] = parts;
+    
+    const enc = new TextEncoder();
+    const algorithm = { name: 'HMAC', hash: 'SHA-256' };
+    const key = await crypto.subtle.importKey(
+      'raw', 
+      enc.encode(secret), 
+      algorithm, 
+      false, 
+      ['verify']
+    );
+    
+    const signature = new Uint8Array(
+      atob(encodedSignature.replace(/-/g, '+').replace(/_/g, '/'))
+        .split('').map(c => c.charCodeAt(0))
+    );
+    
+    const isValid = await crypto.subtle.verify(
+      algorithm, 
+      key, 
+      signature, 
+      enc.encode(`${encodedHeader}.${encodedBody}`)
+    );
+    
+    if (!isValid) return null;
+    
+    const body = atob(encodedBody.replace(/-/g, '+').replace(/_/g, '/'));
+    return JSON.parse(body);
+  } catch (e) {
+    return null;
   }
-  
-  return new TextDecoder().decode(new Uint8Array(bytes));
 }
 
-// 密码哈希函数（使用 SHA-256）
-async function hashPassword(password) {
+// 密码哈希函数 V2 (PBKDF2 with Salt)
+async function hashPasswordV2(password, salt = null) {
+  const enc = new TextEncoder();
+  
+  if (!salt) {
+    salt = crypto.getRandomValues(new Uint8Array(16));
+  } else if (typeof salt === 'string') {
+    // Hex string to Uint8Array
+    salt = new Uint8Array(salt.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+  }
+  
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', 
+    enc.encode(password), 
+    { name: 'PBKDF2' }, 
+    false, 
+    ['deriveBits', 'deriveKey']
+  );
+  
+  const key = await crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: salt,
+      iterations: 100000,
+      hash: 'SHA-256'
+    },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    true,
+    ['encrypt', 'decrypt']
+  );
+  
+  // Export key as hex
+  const exportedKey = await crypto.subtle.exportKey('raw', key);
+  const keyHex = Array.from(new Uint8Array(exportedKey)).map(b => b.toString(16).padStart(2, '0')).join('');
+  const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
+  
+  // Format: $v2$salt$hash
+  return `$v2$${saltHex}$${keyHex}`;
+}
+
+// 验证密码 (支持 V1 和 V2)
+async function verifyPassword(password, storedHash) {
+  // V2 Format
+  if (storedHash.startsWith('$v2$')) {
+    const parts = storedHash.split('$');
+    const salt = parts[2];
+    const originalHash = parts[3];
+    
+    const newHashFull = await hashPasswordV2(password, salt);
+    const newHash = newHashFull.split('$')[3];
+    
+    return originalHash === newHash;
+  }
+  
+  // V1 (Legacy SHA-256)
+  const v1Hash = await hashPasswordV1(password);
+  return v1Hash === storedHash;
+}
+
+// 旧版哈希 (仅用于迁移)
+async function hashPasswordV1(password) {
   const encoder = new TextEncoder();
   const data = encoder.encode(password);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// 结构化日志记录
+function logEvent(event, data) {
+  const logEntry = {
+    timestamp: new Date().toISOString(),
+    event,
+    ...data
+  };
+  console.log(JSON.stringify(logEntry));
 }
 
 // Turnstile验证函数
 async function verifyTurnstileToken(token, env) {
-  const secretKey = env.TURNSTILE_SECRET_KEY || '0x4AAAAAACZSYoh9xpG5XVkiTES5pYNugd4'; // Cloudflare Turnstile Secret Key
+  const secretKey = env.TURNSTILE_SECRET_KEY;
+  if (!secretKey) {
+    console.error('Turnstile Secret Key 未配置');
+    return false;
+  }
   
   try {
     const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
@@ -95,7 +172,7 @@ async function verifyTurnstileToken(token, env) {
     });
     
     const data = await response.json();
-    console.log('[Turnstile验证] 响应:', data);
+    logEvent('turnstile_verify', { success: data.success });
     
     return data.success === true;
   } catch (error) {
@@ -108,10 +185,12 @@ export async function onRequest(context) {
   const { request, env, params } = context;
   const url = new URL(request.url);
   const path = url.pathname;
+  const startTime = Date.now();
   
   // CORS 头
+  const allowedOrigin = env.ALLOWED_ORIGIN || '*';
   const headers = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
@@ -119,9 +198,17 @@ export async function onRequest(context) {
   if (request.method === 'OPTIONS') {
     return new Response(null, { headers });
   }
-  
-  // 优化的速率限制（使用Worker内存缓存）
+
+  // 日志记录
+  logEvent('request_start', {
+    method: request.method,
+    path: path,
+    ip: request.headers.get('CF-Connecting-IP')
+  });
+
   try {
+    // ... rate limit logic ...
+
     const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
     const rateLimitKey = `ratelimit:${clientIP}`;
     const CACHE_TTL = 300000; // 5分钟缓存时间
@@ -448,27 +535,29 @@ async function handleAdminLogin(request, env, headers) {
     // 验证Turnstile token
     const isValid = await verifyTurnstileToken(turnstileToken, env);
     if (!isValid) {
-      console.log('[管理员登录失败] Turnstile验证失败');
+      logEvent('admin_login_fail', { reason: 'turnstile_fail', username });
       return jsonResponse({ code: 400, message: '人机验证失败' }, 400, headers);
     }
     
-    console.log('[Turnstile验证] 验证成功');
-    
-    // 使用哈希密码验证
-    const hashedPassword = await hashPassword(password);
-    console.log(`[管理员登录] 查询用户: ${username}, 密码哈希: ${hashedPassword.substring(0, 16)}...`);
-    
+    // 查询管理员
     const admin = await env.DB.prepare(
-      'SELECT * FROM admins WHERE username = ? AND password = ?'
-    ).bind(username, hashedPassword).first();
+      'SELECT * FROM admins WHERE username = ?'
+    ).bind(username).first();
     
     if (!admin) {
-      console.log('[管理员登录失败] 用户名或密码错误');
+      logEvent('admin_login_fail', { reason: 'user_not_found', username });
+      return jsonResponse({ code: 401, message: '用户名或密码错误' }, 401, headers);
+    }
+    
+    // 验证密码
+    const isPasswordValid = await verifyPassword(password, admin.password);
+    if (!isPasswordValid) {
+      logEvent('admin_login_fail', { reason: 'password_invalid', username });
       return jsonResponse({ code: 401, message: '用户名或密码错误' }, 401, headers);
     }
     
     if (admin.status !== 'active') {
-      console.log('[管理员登录失败] 账号已被禁用');
+      logEvent('admin_login_fail', { reason: 'account_disabled', username });
       return jsonResponse({ code: 403, message: '账号已被禁用' }, 403, headers);
     }
     
@@ -477,14 +566,14 @@ async function handleAdminLogin(request, env, headers) {
       'UPDATE admins SET last_login_at = datetime("now") WHERE username = ?'
     ).bind(username).run();
     
-    const token = base64Encode(JSON.stringify({
+    const token = await signJwt({
       id: admin.id,
       username: admin.username,
       role: admin.role,
       exp: Date.now() + 24 * 60 * 60 * 1000
-    }));
+    }, env.JWT_SECRET || 'default-secret');
     
-    console.log(`[管理员登录成功] 用户: ${username}`);
+    logEvent('admin_login_success', { username });
     
     return jsonResponse({
       code: 200,
@@ -509,8 +598,12 @@ async function handleAdminVerify(request, env, headers) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return jsonResponse({ code: 401, message: '未登录' }, 401, headers);
   }
+
+  const token = authHeader.replace('Bearer ', '');
+  const user = await verifyJwt(token, env.JWT_SECRET || 'default-secret');
+  if (!user) return jsonResponse({ code: 401, message: '无效的 Token' }, 401, headers);
   
-  return jsonResponse({ code: 200, message: '验证成功' }, 200, headers);
+  return jsonResponse({ code: 200, message: '验证成功', data: user }, 200, headers);
 }
 
 // 排行榜相关
@@ -526,6 +619,10 @@ async function handleRankings(request, env, headers, path) {
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
           return jsonResponse({ code: 401, message: '未登录' }, 401, headers);
         }
+        
+        const token = authHeader.replace('Bearer ', '');
+        const user = await verifyJwt(token, env.JWT_SECRET || 'default-secret');
+        if (!user) return jsonResponse({ code: 401, message: '无效的 Token' }, 401, headers);
         
         // 检查 DB 是否配置
         if (!env.DB) {
@@ -563,6 +660,10 @@ async function handleRankings(request, env, headers, path) {
           return jsonResponse({ code: 401, message: '未登录' }, 401, headers);
         }
         
+        const token = authHeader.replace('Bearer ', '');
+        const user = await verifyJwt(token, env.JWT_SECRET || 'default-secret');
+        if (!user) return jsonResponse({ code: 401, message: '无效的 Token' }, 401, headers);
+
         // 获取查询参数
         const status = url.searchParams.get('status') || 'approved';
         const page = parseInt(url.searchParams.get('page')) || 1;
@@ -622,6 +723,10 @@ async function handleRankings(request, env, headers, path) {
           return jsonResponse({ code: 401, message: '未登录' }, 401, headers);
         }
         
+        const token = authHeader.replace('Bearer ', '');
+        const user = await verifyJwt(token, env.JWT_SECRET || 'default-secret');
+        if (!user) return jsonResponse({ code: 401, message: '无效的 Token' }, 401, headers);
+
         const status = url.searchParams.get('status') || 'pending';
         
         // 验证状态参数
@@ -658,6 +763,10 @@ async function handleRankings(request, env, headers, path) {
           return jsonResponse({ code: 401, message: '未登录' }, 401, headers);
         }
         
+        const token = authHeader.replace('Bearer ', '');
+        const user = await verifyJwt(token, env.JWT_SECRET || 'default-secret');
+        if (!user) return jsonResponse({ code: 401, message: '无效的 Token' }, 401, headers);
+
         const id = path.split('/').pop();
         const body = await request.json();
         
@@ -696,6 +805,10 @@ async function handleRankings(request, env, headers, path) {
           return jsonResponse({ code: 401, message: '未登录' }, 401, headers);
         }
         
+        const token = authHeader.replace('Bearer ', '');
+        const user = await verifyJwt(token, env.JWT_SECRET || 'default-secret');
+        if (!user) return jsonResponse({ code: 401, message: '无效的 Token' }, 401, headers);
+
         const id = path.split('/').pop();
         
         await env.DB.prepare(
@@ -972,7 +1085,9 @@ async function handleGuides(request, env, headers, path) {
         
         // 从token中解析用户信息
         const token = authHeader.replace('Bearer ', '');
-        const user = JSON.parse(base64Decode(token));
+        const user = await verifyJwt(token, env.JWT_SECRET || 'default-secret');
+        if (!user) return jsonResponse({ code: 401, message: '无效的 Token' }, 401, headers);
+        
         const userId = user.id; // 从token中获取userId
         
         const { 
@@ -1088,7 +1203,8 @@ async function handleGuides(request, env, headers, path) {
       
       try {
         const token = authHeader.replace('Bearer ', '');
-        const user = JSON.parse(base64Decode(token));
+        const user = await verifyJwt(token, env.JWT_SECRET || 'default-secret');
+        if (!user) return jsonResponse({ code: 401, message: '无效的 Token' }, 401, headers);
 
         const { results } = await env.DB.prepare(
           'SELECT * FROM guides WHERE author = ? ORDER BY created_at DESC'
@@ -1166,6 +1282,10 @@ async function handleGuides(request, env, headers, path) {
       }
       
       try {
+        const token = authHeader.replace('Bearer ', '');
+        const user = await verifyJwt(token, env.JWT_SECRET || 'default-secret');
+        if (!user) return jsonResponse({ code: 401, message: '无效的 Token' }, 401, headers);
+
         const id = path.split('/')[3];
         // 简单实现：增加点赞数（实际应该用单独的 likes 表）
         await env.DB.prepare(
@@ -1190,6 +1310,11 @@ async function handleGuides(request, env, headers, path) {
         return jsonResponse({ code: 401, message: '未登录' }, 401, headers);
       }
       
+      // 验证 token
+      const token = authHeader.replace('Bearer ', '');
+      const user = await verifyJwt(token, env.JWT_SECRET || 'default-secret');
+      if (!user) return jsonResponse({ code: 401, message: '无效的 Token' }, 401, headers);
+
       // 简单实现：返回空数组
       return jsonResponse({
         code: 200,
@@ -1292,7 +1417,7 @@ async function handleUsers(request, env, headers, path) {
       
       // 创建用户 (使用随机ID和哈希密码)
       const userId = crypto.randomUUID();
-      const hashedPassword = await hashPassword(password);
+      const hashedPassword = await hashPasswordV2(password);
       await env.DB.prepare(
         'INSERT INTO users (id, username, password, created_at) VALUES (?, ?, ?, datetime("now"))'
       ).bind(userId, username, hashedPassword).run();
@@ -1342,39 +1467,34 @@ async function handleAuth(request, env, headers, path) {
         return jsonResponse({ code: 400, message: '人机验证失败' }, 400, headers);
       }
       
-      // 使用哈希密码验证
-      const hashedPassword = await hashPassword(password);
-      
       // 先检查用户是否存在
-      const userExists = await env.DB.prepare(
+      const user = await env.DB.prepare(
         'SELECT * FROM users WHERE username = ?'
       ).bind(username).first();
       
-      if (!userExists) {
-        console.log(`[登录失败] 用户不存在: ${username}, IP: ${request.headers.get('CF-Connecting-IP')}`);
+      if (!user) {
+        logEvent('login_fail', { reason: 'user_not_found', username, ip: request.headers.get('CF-Connecting-IP') });
         return jsonResponse({ code: 401, message: '用户名或密码错误' }, 401, headers);
       }
       
       // 验证密码
-      const user = await env.DB.prepare(
-        'SELECT * FROM users WHERE username = ? AND password = ?'
-      ).bind(username, hashedPassword).first();
+      const isPasswordValid = await verifyPassword(password, user.password);
       
-      if (!user) {
-        console.log(`[登录失败] 密码错误: ${username}, IP: ${request.headers.get('CF-Connecting-IP')}`);
+      if (!isPasswordValid) {
+        logEvent('login_fail', { reason: 'password_invalid', username, ip: request.headers.get('CF-Connecting-IP') });
         return jsonResponse({ code: 401, message: '用户名或密码错误' }, 401, headers);
       }
       
-      const token = base64Encode(JSON.stringify({
+      const token = await signJwt({
         id: user.id,
         username: user.username,
         exp: Date.now() + 24 * 60 * 60 * 1000
-      }));
+      }, env.JWT_SECRET || 'default-secret');
       
       // 记录登录活跃
       await recordUserActivity(env, user.id, user.username, 'login');
       
-      console.log(`[登录成功] 用户: ${username}, ID: ${user.id}, IP: ${request.headers.get('CF-Connecting-IP')}`);
+      logEvent('login_success', { username, id: user.id, ip: request.headers.get('CF-Connecting-IP') });
       
       return jsonResponse({
         code: 200,
@@ -1423,7 +1543,7 @@ async function handleAuth(request, env, headers, path) {
       }
       
       // 对密码进行哈希处理
-      const hashedPassword = await hashPassword(password);
+      const hashedPassword = await hashPasswordV2(password);
       
       // 创建用户 (使用随机ID)
       const userId = crypto.randomUUID();
@@ -1431,7 +1551,7 @@ async function handleAuth(request, env, headers, path) {
         'INSERT INTO users (id, username, password, created_at) VALUES (?, ?, ?, datetime("now"))'
       ).bind(userId, username, hashedPassword).run();
       
-      console.log(`[注册成功] 用户: ${username}, ID: ${userId}, IP: ${request.headers.get('CF-Connecting-IP')}`);
+      logEvent('register_success', { username, id: userId, ip: request.headers.get('CF-Connecting-IP') });
       
       return jsonResponse({
         code: 200,
@@ -1508,7 +1628,8 @@ async function handleStats(request, env, headers, path) {
   
   try {
     const token = authHeader.replace('Bearer ', '');
-    const user = JSON.parse(base64Decode(token));
+    const user = await verifyJwt(token, env.JWT_SECRET || 'default-secret');
+    if (!user) return jsonResponse({ code: 401, message: '无效的 Token' }, 401, headers);
 
     // 检查是否为管理员
     const adminUser = await env.DB.prepare(
@@ -1680,7 +1801,8 @@ async function handleAdminChangePassword(request, env, headers) {
   
   try {
     const token = authHeader.replace('Bearer ', '');
-    const user = JSON.parse(base64Decode(token));
+    const user = await verifyJwt(token, env.JWT_SECRET || 'default-secret');
+    if (!user) return jsonResponse({ code: 401, message: '无效的 Token' }, 401, headers);
 
     const { oldPassword, newPassword } = await request.json();
     
@@ -1760,7 +1882,9 @@ async function handleAdminGuides(request, env, headers, path) {
   
   try {
     const token = authHeader.replace('Bearer ', '');
-    const user = JSON.parse(base64Decode(token));
+    const user = await verifyJwt(token, env.JWT_SECRET || 'default-secret');
+    if (!user) return jsonResponse({ code: 401, message: '无效的 Token' }, 401, headers);
+    
     console.log(`[handleAdminGuides] 管理员: ${user.username}`);
 
     const adminUser = await env.DB.prepare(
@@ -1850,7 +1974,8 @@ async function handleAdminGuide(request, env, headers, path) {
     }
     
     const token = authHeader.replace('Bearer ', '');
-    const user = JSON.parse(base64Decode(token));
+    const user = await verifyJwt(token, env.JWT_SECRET || 'default-secret');
+    if (!user) return jsonResponse({ code: 401, message: '无效的 Token' }, 401, headers);
 
     console.log('[Admin Guide] 验证管理员:', user.username);
 
@@ -2182,7 +2307,8 @@ async function handleAdminUsers(request, env, headers, path) {
     
     // 验证管理员权限
     const token = authHeader.replace('Bearer ', '');
-    const user = JSON.parse(base64Decode(token));
+    const user = await verifyJwt(token, env.JWT_SECRET || 'default-secret');
+    if (!user) return jsonResponse({ code: 401, message: '无效的 Token' }, 401, headers);
 
     console.log('[Admin Users] 验证管理员:', user.username);
 
@@ -2413,7 +2539,8 @@ async function handleAdminConfig(request, env, headers, path) {
   try {
     // 验证管理员权限
     const token = authHeader.replace('Bearer ', '');
-    const user = JSON.parse(base64Decode(token));
+    const user = await verifyJwt(token, env.JWT_SECRET || 'default-secret');
+    if (!user) return jsonResponse({ code: 401, message: '无效的 Token' }, 401, headers);
 
     const adminUser = await env.DB.prepare(
       'SELECT role FROM admins WHERE username = ?'

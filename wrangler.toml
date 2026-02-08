@@ -18,3 +18,4 @@ id = "e66c7d393f9b47ca8ce50997c5d940cd"
 
 [vars]
 R2_PUBLIC_URL = "https://pub-85e5adbda62644849fa4e161195ea01a.r2.dev"
+ALLOWED_ORIGIN = "*"  # 生产环境请修改为具体域名

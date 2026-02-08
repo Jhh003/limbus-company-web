@@ -1,0 +1,14 @@
+# Cloudflare Workers 本地开发环境变量配置
+# 使用方法：复制此文件为 .dev.vars 并填入真实值
+# 注意：.dev.vars 包含敏感信息，请勿提交到 Git 仓库
+
+# JWT 签名密钥 (生产环境请使用强随机字符串)
+JWT_SECRET="your-local-jwt-secret-key-min-32-chars"
+
+# Cloudflare Turnstile 密钥 (本地开发可使用测试密钥)
+# 站点密钥: 1x00000000000000000000AA
+# 密钥: 1x0000000000000000000000000000000AA
+TURNSTILE_SECRET_KEY="1x0000000000000000000000000000000AA"
+
+# 允许跨域的域名 (本地开发通常为 *)
+ALLOWED_ORIGIN="*"

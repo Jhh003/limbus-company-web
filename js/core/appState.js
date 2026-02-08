@@ -91,7 +91,12 @@ class AppState {
      * @returns {Object} 完整的应用状态
      */
     getState() {
-        return JSON.parse(JSON.stringify(this._state));
+        const state = JSON.parse(JSON.stringify(this._state));
+        // 修复 Map 序列化丢失问题
+        if (this._state.settings.personality instanceof Map) {
+            state.settings.personality = new Map(this._state.settings.personality);
+        }
+        return state;
     }
     
     /**

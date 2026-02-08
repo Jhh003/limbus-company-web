@@ -37,6 +37,7 @@ class Logger {
         
         // 日志缓存
         this.logs = [];
+        this._saveTimeout = null;
         
         // 加载之前的日志
         if (this.useStorage) {
@@ -305,14 +306,22 @@ class Logger {
      * @private
      */
     _saveLogs() {
-        try {
-            // 只保存最近的100条日志
-            const logsToSave = this.logs.slice(-100);
-            localStorage.setItem(this.storageKey, JSON.stringify(logsToSave));
-        } catch (error) {
-            // 忽略存储错误（可能超出限制）
-            console.warn('Failed to save logs:', error);
-        }
+        if (this._saveTimeout) clearTimeout(this._saveTimeout);
+        
+        // 使用 requestIdleCallback 或 setTimeout 进行防抖
+        const schedule = window.requestIdleCallback || setTimeout;
+        
+        this._saveTimeout = schedule(() => {
+            try {
+                // 只保存最近的100条日志
+                const logsToSave = this.logs.slice(-100);
+                localStorage.setItem(this.storageKey, JSON.stringify(logsToSave));
+                this._saveTimeout = null;
+            } catch (error) {
+                // 忽略存储错误（可能超出限制）
+                console.warn('Failed to save logs:', error);
+            }
+        }, 1000);
     }
     
     /**
