@@ -3,78 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>攻略审核 - 管理员后台</title>
+  <title>攻略审核 - 管理后台</title>
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/limbus-theme-v2.css">
+  <link rel="stylesheet" href="/css/module/admin-common.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: #f5f7fa;
-      min-height: 100vh;
-    }
-
-    .navbar {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 15px 30px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .navbar h1 {
-      color: white;
-      font-size: 24px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .nav-links {
-      display: flex;
-      gap: 20px;
-    }
-
-    .nav-links a {
-      color: white;
-      text-decoration: none;
-      font-size: 14px;
-      padding: 8px 16px;
-      border-radius: 6px;
-      transition: background 0.3s;
-    }
-
-    .nav-links a:hover {
-      background: rgba(255, 255, 255, 0.2);
-    }
-
-    .nav-links a.active {
-      background: rgba(255, 255, 255, 0.3);
-    }
-
-    .container {
-      max-width: 1400px;
-      margin: 30px auto;
-      padding: 0 20px;
-    }
-
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    .header h2 {
-      color: #333;
-      font-size: 28px;
-    }
-
     .status-tabs {
       display: flex;
       gap: 10px;
@@ -83,28 +17,29 @@
 
     .status-tab {
       padding: 10px 24px;
-      border: none;
-      background: white;
-      color: #666;
+      border: 1px solid var(--lc-border);
+      background: var(--lc-bg-card);
+      color: var(--lc-text-secondary);
       font-size: 14px;
       font-weight: 500;
-      border-radius: 8px;
+      border-radius: 6px;
       cursor: pointer;
       transition: all 0.3s;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
 
     .status-tab:hover {
-      background: #f0f0f0;
+      border-color: var(--lc-gold);
+      color: var(--lc-gold);
     }
 
     .status-tab.active {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
+      background: var(--lc-gold);
+      color: #000;
+      border-color: var(--lc-gold);
     }
 
     .status-tab .count {
-      background: rgba(255, 255, 255, 0.3);
+      background: rgba(0, 0, 0, 0.2);
       padding: 2px 8px;
       border-radius: 12px;
       font-size: 12px;
@@ -113,33 +48,34 @@
 
     .guides-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 20px;
     }
 
     .guide-card {
-      background: white;
-      border-radius: 12px;
+      background: var(--lc-bg-card);
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
       overflow: hidden;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      transition: transform 0.3s, box-shadow 0.3s;
+      transition: all 0.3s;
       cursor: pointer;
     }
 
     .guide-card:hover {
       transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      border-color: var(--lc-border-light);
+      box-shadow: var(--lc-shadow);
     }
 
     .guide-cover {
       width: 100%;
-      height: 200px;
+      height: 180px;
       object-fit: cover;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--lc-bg-secondary);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
+      color: var(--lc-gold);
       font-size: 48px;
     }
 
@@ -154,9 +90,9 @@
     }
 
     .guide-title {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 600;
-      color: #333;
+      color: var(--lc-text);
       margin-bottom: 8px;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -167,7 +103,7 @@
       display: flex;
       gap: 12px;
       font-size: 13px;
-      color: #666;
+      color: var(--lc-text-muted);
       margin-bottom: 12px;
     }
 
@@ -177,160 +113,86 @@
       gap: 4px;
     }
 
-    .guide-status {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 500;
-      margin-bottom: 8px;
-    }
-
-    .guide-status.pending {
-      background: #fef3c7;
-      color: #d97706;
-    }
-
-    .guide-status.approved {
-      background: #d1fae5;
-      color: #059669;
-    }
-
-    .guide-status.rejected {
-      background: #fee2e2;
-      color: #dc2626;
-    }
-
     .guide-footer {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding-top: 12px;
-      border-top: 1px solid #e5e7eb;
+      border-top: 1px solid var(--lc-border);
     }
 
     .guide-author {
       font-size: 13px;
-      color: #666;
+      color: var(--lc-text-secondary);
     }
 
     .guide-date {
       font-size: 12px;
-      color: #999;
+      color: var(--lc-text-muted);
     }
 
     .empty-state {
       text-align: center;
       padding: 60px 20px;
-      color: #999;
+      color: var(--lc-text-muted);
     }
 
     .empty-state i {
       font-size: 64px;
       margin-bottom: 20px;
-      color: #ddd;
+      color: var(--lc-border);
     }
 
-    .empty-state h3 {
-      font-size: 20px;
-      margin-bottom: 8px;
-      color: #666;
-    }
-
-    .pagination {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      margin-top: 30px;
-    }
-
-    .pagination button {
-      padding: 8px 16px;
-      border: 1px solid #e5e7eb;
-      background: white;
-      color: #666;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-
-    .pagination button:hover:not(:disabled) {
-      background: #f0f0f0;
-    }
-
-    .pagination button.active {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border-color: transparent;
-    }
-
-    .pagination button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .modal {
+    .modal-overlay {
       display: none;
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.8);
       z-index: 1000;
       align-items: center;
       justify-content: center;
     }
 
-    .modal.show {
+    .modal-overlay.show {
       display: flex;
     }
 
     .modal-content {
-      background: white;
-      border-radius: 16px;
-      max-width: 900px;
+      background: var(--lc-bg-card);
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      max-width: 800px;
       width: 90%;
       max-height: 90vh;
       overflow-y: auto;
-      animation: slideIn 0.3s ease;
-    }
-
-    @keyframes slideIn {
-      from {
-        transform: translateY(-50px);
-        opacity: 0;
-      }
-      to {
-        transform: translateY(0);
-        opacity: 1;
-      }
     }
 
     .modal-header {
       padding: 20px 24px;
-      border-bottom: 1px solid #e5e7eb;
+      border-bottom: 1px solid var(--lc-border);
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
     .modal-header h3 {
-      font-size: 20px;
-      color: #333;
+      color: var(--lc-gold);
+      font-size: 18px;
     }
 
     .modal-close {
       background: none;
       border: none;
       font-size: 24px;
-      color: #999;
+      color: var(--lc-text-muted);
       cursor: pointer;
-      transition: color 0.3s;
     }
 
     .modal-close:hover {
-      color: #333;
+      color: var(--lc-gold);
     }
 
     .modal-body {
@@ -339,33 +201,32 @@
 
     .guide-detail-cover {
       width: 100%;
-      height: 300px;
+      height: 250px;
       object-fit: cover;
-      border-radius: 12px;
+      border-radius: 8px;
       margin-bottom: 20px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-
-    .guide-detail-cover img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 12px;
+      background: var(--lc-bg-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--lc-gold);
+      font-size: 64px;
     }
 
     .guide-detail-title {
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 600;
-      color: #333;
+      color: var(--lc-text);
       margin-bottom: 16px;
     }
 
     .guide-detail-meta {
       display: flex;
-      gap: 20px;
+      flex-wrap: wrap;
+      gap: 16px;
       margin-bottom: 20px;
       padding: 16px;
-      background: #f9fafb;
+      background: var(--lc-bg-secondary);
       border-radius: 8px;
     }
 
@@ -373,7 +234,7 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      color: #666;
+      color: var(--lc-text-secondary);
       font-size: 14px;
     }
 
@@ -383,90 +244,34 @@
 
     .guide-detail-content h4 {
       font-size: 16px;
-      color: #333;
+      color: var(--lc-gold);
       margin-bottom: 12px;
     }
 
     .guide-detail-content .content {
-      background: #f9fafb;
+      background: var(--lc-bg-secondary);
       padding: 16px;
       border-radius: 8px;
-      color: #666;
+      color: var(--lc-text);
       line-height: 1.6;
       white-space: pre-wrap;
     }
 
-    .guide-detail-images {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 12px;
-      margin-top: 12px;
-    }
-
-    .guide-detail-images img {
-      width: 100%;
-      height: 150px;
-      object-fit: cover;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: transform 0.3s;
-    }
-
-    .guide-detail-images img:hover {
-      transform: scale(1.05);
-    }
-
     .modal-footer {
       padding: 20px 24px;
-      border-top: 1px solid #e5e7eb;
+      border-top: 1px solid var(--lc-border);
       display: flex;
       gap: 12px;
       justify-content: flex-end;
     }
 
-    .btn {
-      padding: 10px 24px;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-
-    .btn-secondary {
-      background: #f5f5f5;
-      color: #666;
-    }
-
-    .btn-secondary:hover {
-      background: #e0e0e0;
-    }
-
-    .btn-danger {
-      background: #fee2e2;
-      color: #dc2626;
-    }
-
-    .btn-danger:hover {
-      background: #fecaca;
-    }
-
-    .btn-success {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-    }
-
-    .btn-success:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-    }
-
     .reject-reason {
       width: 100%;
       padding: 12px;
-      border: 2px solid #e5e7eb;
-      border-radius: 8px;
+      background: var(--lc-bg-secondary);
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      color: var(--lc-text);
       font-size: 14px;
       resize: vertical;
       min-height: 100px;
@@ -475,64 +280,76 @@
 
     .reject-reason:focus {
       outline: none;
-      border-color: #667eea;
-    }
-
-    .loading {
-      text-align: center;
-      padding: 40px;
-      color: #999;
-    }
-
-    .loading i {
-      font-size: 32px;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+      border-color: var(--lc-gold);
     }
   </style>
 </head>
 <body>
-  <div class="navbar">
-    <h1><i class="fas fa-shield-alt"></i> 管理员后台</h1>
-    <div class="nav-links">
-      <a href="admin-dashboard.html"><i class="fas fa-chart-line"></i> 数据统计</a>
-      <a href="admin-guides.html" class="active"><i class="fas fa-book"></i> 攻略审核</a>
-      <a href="admin-change-password.html"><i class="fas fa-key"></i> 修改密码</a>
-      <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> 退出登录</a>
-    </div>
-  </div>
-
-  <div class="container">
-    <div class="header">
-      <h2><i class="fas fa-book"></i> 攻略审核</h2>
-    </div>
-
-    <div class="status-tabs">
-      <button class="status-tab active" data-status="pending">
-        待审核 <span class="count" id="pendingCount">0</span>
-      </button>
-      <button class="status-tab" data-status="approved">
-        已通过 <span class="count" id="approvedCount">0</span>
-      </button>
-      <button class="status-tab" data-status="rejected">
-        已驳回 <span class="count" id="rejectedCount">0</span>
-      </button>
-    </div>
-
-    <div id="guidesContainer">
-      <div class="loading">
-        <i class="fas fa-spinner"></i>
-        <p>加载中...</p>
+  <div class="admin-container">
+    <aside class="admin-sidebar">
+      <div class="sidebar-header">
+        <h2>管理后台</h2>
+        <p class="sidebar-subtitle">攻略审核中心</p>
       </div>
-    </div>
+      <nav class="sidebar-nav">
+        <a href="admin-dashboard.html" class="nav-item" data-tab="dashboard">
+          <i class="fas fa-chart-line"></i>
+          <span>数据统计</span>
+        </a>
+        <a href="admin-guides.html" class="nav-item active" data-tab="guides">
+          <i class="fas fa-book"></i>
+          <span>攻略审核</span>
+        </a>
+        <a href="admin-users.html" class="nav-item" data-tab="users">
+          <i class="fas fa-users"></i>
+          <span>用户管理</span>
+        </a>
+        <a href="admin-settings.html" class="nav-item" data-tab="settings">
+          <i class="fas fa-cog"></i>
+          <span>系统配置</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="admin-user">
+          <i class="fas fa-user-shield"></i>
+          <span class="username" id="currentUser">管理员</span>
+          <i class="fas fa-sign-out-alt logout-btn" onclick="logout()"></i>
+        </div>
+      </div>
+    </aside>
 
-    <div class="pagination" id="pagination"></div>
+    <main class="admin-main">
+      <header class="admin-header">
+        <div class="header-left">
+          <h1>攻略审核</h1>
+          <p class="header-subtitle">审核和管理用户提交的攻略内容</p>
+        </div>
+      </header>
+
+      <div class="status-tabs">
+        <button class="status-tab active" data-status="pending">
+          待审核 <span class="count" id="pendingCount">0</span>
+        </button>
+        <button class="status-tab" data-status="approved">
+          已通过 <span class="count" id="approvedCount">0</span>
+        </button>
+        <button class="status-tab" data-status="rejected">
+          已驳回 <span class="count" id="rejectedCount">0</span>
+        </button>
+      </div>
+
+      <div id="guidesContainer">
+        <div class="empty-state">
+          <i class="fas fa-spinner fa-spin"></i>
+          <p>加载中...</p>
+        </div>
+      </div>
+
+      <div class="pagination" id="pagination"></div>
+    </main>
   </div>
 
-  <div class="modal" id="guideModal">
+  <div class="modal-overlay" id="guideModal">
     <div class="modal-content">
       <div class="modal-header">
         <h3>攻略详情</h3>
@@ -544,11 +361,13 @@
   </div>
 
   <script>
-    const adminToken = localStorage.getItem('admin_token');
-
-    if (!adminToken) {
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
       window.location.href = 'admin-login.html';
     }
+
+    const username = localStorage.getItem('adminUsername') || '管理员';
+    document.getElementById('currentUser').textContent = username;
 
     let currentStatus = 'pending';
     let currentPage = 1;
@@ -556,13 +375,13 @@
     let currentGuideId = null;
 
     function logout() {
-      localStorage.removeItem('admin_token');
-      localStorage.removeItem('admin_username');
-      localStorage.removeItem('admin_role');
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUsername');
       window.location.href = 'admin-login.html';
     }
 
     function formatDate(dateString) {
+      if (!dateString) return '-';
       const date = new Date(dateString);
       return date.toLocaleString('zh-CN', {
         year: 'numeric',
@@ -588,17 +407,15 @@
 
       const container = document.getElementById('guidesContainer');
       container.innerHTML = `
-        <div class="loading">
-          <i class="fas fa-spinner"></i>
+        <div class="empty-state">
+          <i class="fas fa-spinner fa-spin"></i>
           <p>加载中...</p>
         </div>
       `;
 
       try {
         const response = await fetch(`/api/admin/guides?status=${status}&page=${page}&pageSize=12`, {
-          headers: {
-            'Authorization': `Bearer ${adminToken}`
-          }
+          headers: { 'Authorization': `Bearer ${token}` }
         });
 
         const data = await response.json();
@@ -607,6 +424,7 @@
           totalPages = data.data.pagination.totalPages;
           renderGuides(data.data.guides);
           renderPagination(data.data.pagination);
+          updateStatusCounts(data.data.counts);
         } else {
           container.innerHTML = `
             <div class="empty-state">
@@ -625,6 +443,12 @@
           </div>
         `;
       }
+    }
+
+    function updateStatusCounts(counts) {
+      document.getElementById('pendingCount').textContent = counts?.pending || 0;
+      document.getElementById('approvedCount').textContent = counts?.approved || 0;
+      document.getElementById('rejectedCount').textContent = counts?.rejected || 0;
     }
 
     function renderGuides(guides) {
@@ -649,7 +473,9 @@
                 ${guide.cover_url ? `<img src="${guide.cover_url}" alt="${guide.title}">` : '<i class="fas fa-book"></i>'}
               </div>
               <div class="guide-info">
-                <span class="guide-status ${guide.status}">${getStatusText(guide.status)}</span>
+                <span class="badge ${guide.status === 'pending' ? 'badge-warning' : guide.status === 'approved' ? 'badge-success' : 'badge-danger'}">
+                  ${getStatusText(guide.status)}
+                </span>
                 <h3 class="guide-title">${guide.title}</h3>
                 <div class="guide-meta">
                   <span><i class="fas fa-user"></i> ${guide.author}</span>
@@ -676,18 +502,9 @@
       }
 
       let html = '';
-
-      html += `<button ${page === 1 ? 'disabled' : ''} onclick="loadGuides('${currentStatus}', ${page - 1})">上一页</button>`;
-
-      for (let i = 1; i <= totalPages; i++) {
-        if (i === 1 || i === totalPages || (i >= page - 2 && i <= page + 2)) {
-          html += `<button class="${i === page ? 'active' : ''}" onclick="loadGuides('${currentStatus}', ${i})">${i}</button>`;
-        } else if (i === page - 3 || i === page + 3) {
-          html += '<button disabled>...</button>';
-        }
-      }
-
-      html += `<button ${page === totalPages ? 'disabled' : ''} onclick="loadGuides('${currentStatus}', ${page + 1})">下一页</button>`;
+      html += `<button class="btn btn-secondary" ${page === 1 ? 'disabled' : ''} onclick="loadGuides('${currentStatus}', ${page - 1})">上一页</button>`;
+      html += `<span style="display: flex; align-items: center; color: var(--lc-text-muted);">第 ${page} / ${totalPages} 页</span>`;
+      html += `<button class="btn btn-secondary" ${page === totalPages ? 'disabled' : ''} onclick="loadGuides('${currentStatus}', ${page + 1})">下一页</button>`;
 
       container.innerHTML = html;
     }
@@ -699,20 +516,17 @@
       const modalFooter = document.getElementById('modalFooter');
 
       modalBody.innerHTML = `
-        <div class="loading">
-          <i class="fas fa-spinner"></i>
+        <div class="empty-state">
+          <i class="fas fa-spinner fa-spin"></i>
           <p>加载中...</p>
         </div>
       `;
       modalFooter.innerHTML = '';
-
       modal.classList.add('show');
 
       try {
         const response = await fetch(`/api/admin/guide/${guideId}`, {
-          headers: {
-            'Authorization': `Bearer ${adminToken}`
-          }
+          headers: { 'Authorization': `Bearer ${token}` }
         });
 
         const data = await response.json();
@@ -762,14 +576,6 @@
             </div>
           </div>
         `;
-      } else if (guide.content_type === 'video' && guide.media_urls) {
-        const videos = JSON.parse(guide.media_urls);
-        contentHtml = `
-          <div class="guide-detail-content">
-            <h4><i class="fas fa-video"></i> 攻略视频</h4>
-            ${videos.map(video => `<video src="${video}" controls style="width: 100%; border-radius: 8px; margin-top: 12px;"></video>`).join('')}
-          </div>
-        `;
       }
 
       modalBody.innerHTML = `
@@ -793,7 +599,7 @@
           <button class="btn btn-danger" onclick="rejectGuide()">
             <i class="fas fa-times"></i> 驳回
           </button>
-          <button class="btn btn-success" onclick="approveGuide()">
+          <button class="btn btn-primary" onclick="approveGuide()">
             <i class="fas fa-check"></i> 通过
           </button>
         `;
@@ -817,11 +623,9 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${adminToken}`
+            'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({
-            action: 'approve'
-          })
+          body: JSON.stringify({ action: 'approve' })
         });
 
         const data = await response.json();
@@ -840,18 +644,16 @@
 
     async function rejectGuide() {
       const reason = prompt('请输入驳回原因（可选）：');
+      if (reason === null) return;
 
       try {
         const response = await fetch(`/api/admin/guide/${currentGuideId}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${adminToken}`
+            'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({
-            action: 'reject',
-            rejectReason: reason
-          })
+          body: JSON.stringify({ action: 'reject', rejectReason: reason })
         });
 
         const data = await response.json();
