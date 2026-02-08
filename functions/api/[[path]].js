@@ -377,7 +377,13 @@ async function handleRankings(request, env, headers, path) {
           }
         }, 200, headers);
       } catch (error) {
-        return jsonResponse({ code: 500, message: '获取失败', error: error.message }, 500, headers);
+        console.error('[Rankings Reviewed Error]', error);
+        return jsonResponse({ 
+          code: 500, 
+          message: '获取失败', 
+          error: error.message,
+          stack: error.stack 
+        }, 500, headers);
       }
     }
   }
