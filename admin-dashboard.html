@@ -354,20 +354,21 @@
   </div>
 
   <script>
-    const token = localStorage.getItem('adminToken');
+    const token = localStorage.getItem('admin_token');
     if (!token) {
       window.location.href = 'admin-login.html';
     }
 
-    const username = localStorage.getItem('adminUsername') || '管理员';
+    const username = localStorage.getItem('admin_username') || '管理员';
     document.getElementById('currentUser').textContent = username;
 
     let growthChart = null;
     let currentRange = 'day';
 
     function logout() {
-      localStorage.removeItem('adminToken');
-      localStorage.removeItem('adminUsername');
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_username');
+      localStorage.removeItem('admin_role');
       window.location.href = 'admin-login.html';
     }
 

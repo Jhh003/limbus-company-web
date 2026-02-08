@@ -123,7 +123,7 @@
             localStorage.setItem('admin_role', result.data.role);
             
             alert('登录成功！');
-            window.location.href = 'admin-dashboard.html';
+            window.location.href = 'admin.html';
           } else {
             alert(result.message || '登录失败');
             refreshCaptcha();

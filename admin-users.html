@@ -168,13 +168,13 @@
 
   <script>
     // 检查登录状态
-    const token = localStorage.getItem('adminToken');
+    const token = localStorage.getItem('admin_token');
     if (!token) {
       window.location.href = 'admin-login.html';
     }
 
     // 显示当前用户名
-    const username = localStorage.getItem('adminUsername') || '管理员';
+    const username = localStorage.getItem('admin_username') || '管理员';
     document.getElementById('currentUser').textContent = username;
 
     // 分页状态
@@ -473,8 +473,9 @@
 
     // 退出登录
     function logout() {
-      localStorage.removeItem('adminToken');
-      localStorage.removeItem('adminUsername');
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_username');
+      localStorage.removeItem('admin_role');
       window.location.href = 'admin-login.html';
     }
 
