@@ -3,28 +3,25 @@
  * 完全免费的人机验证服务
  */
 
-// 加载Turnstile脚本
-(function() {
-  const script = document.createElement('script');
-  script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-  script.async = true;
-  script.defer = true;
-  script.onload = function() {
-    console.log('[Turnstile] 脚本加载成功');
-  };
-  script.onerror = function() {
-    console.error('[Turnstile] 脚本加载失败');
-  };
-  document.head.appendChild(script);
-})();
-
 // 渲染Turnstile widget
 function renderTurnstile(containerId, siteKey, callback) {
   if (typeof turnstile === 'undefined') {
-    console.error('[Turnstile] Turnstile未加载');
+    console.error('[Turnstile] Turnstile未加载，等待脚本加载...');
+    // 等待Turnstile加载
+    const checkTurnstile = setInterval(() => {
+      if (typeof turnstile !== 'undefined') {
+        clearInterval(checkTurnstile);
+        console.log('[Turnstile] Turnstile已加载，开始渲染');
+        doRenderTurnstile(containerId, siteKey, callback);
+      }
+    }, 100);
     return;
   }
   
+  doRenderTurnstile(containerId, siteKey, callback);
+}
+
+function doRenderTurnstile(containerId, siteKey, callback) {
   try {
     turnstile.render('#' + containerId, {
       sitekey: siteKey,

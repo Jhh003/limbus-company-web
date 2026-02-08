@@ -245,10 +245,10 @@ export async function onRequest(context) {
       return handleGuideSubmit(request, env, headers);
     }
     
-    // 旧的验证码API已废弃，使用Turnstile替代
-    // if (path === '/api/captcha' || path === '/api/captcha/') {
-    //   return handleCaptcha(request, env, headers);
-    // }
+    // 验证码API（用于用户端，管理员端使用Turnstile）
+    if (path === '/api/captcha' || path === '/api/captcha/') {
+      return handleCaptcha(request, env, headers);
+    }
     
     if (path.startsWith('/api/auth')) {
       return handleAuth(request, env, headers, path);
