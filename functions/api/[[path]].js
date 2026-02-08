@@ -1,6 +1,70 @@
 // Pages Functions - API 路由主入口
 // 捕获所有 /api/* 请求
 
+// Base64 编码（兼容 Worker 环境）
+function base64Encode(str) {
+  try {
+    // 尝试使用 btoa（浏览器/Worker 环境）
+    if (typeof btoa === 'function') {
+      return btoa(str);
+    }
+  } catch (e) {
+    // 降级使用自定义实现
+  }
+  
+  // 自定义 base64 编码
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  let result = '';
+  let i = 0;
+  const bytes = new TextEncoder().encode(str);
+  
+  while (i < bytes.length) {
+    const byte1 = bytes[i++];
+    const byte2 = i < bytes.length ? bytes[i++] : null;
+    const byte3 = i < bytes.length ? bytes[i++] : null;
+    
+    const index1 = byte1 >> 2;
+    const index2 = ((byte1 & 0x03) << 4) | (byte2 !== null ? byte2 >> 4 : 0);
+    const index3 = byte2 !== null ? ((byte2 & 0x0F) << 2) | (byte3 !== null ? byte3 >> 6 : 0) : 64;
+    const index4 = byte3 !== null ? byte3 & 0x3F : 64;
+    
+    result += chars[index1] + chars[index2] + (index3 !== 64 ? chars[index3] : '=') + (index4 !== 64 ? chars[index4] : '=');
+  }
+  
+  return result;
+}
+
+// Base64 解码（兼容 Worker 环境）
+function base64Decode(str) {
+  try {
+    // 尝试使用 atob（浏览器/Worker 环境）
+    if (typeof atob === 'function') {
+      return atob(str);
+    }
+  } catch (e) {
+    // 降级使用自定义实现
+  }
+  
+  // 自定义 base64 解码
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  const bytes = [];
+  
+  str = str.replace(/=+$/, '');
+  
+  for (let i = 0; i < str.length; i += 4) {
+    const c1 = chars.indexOf(str[i]);
+    const c2 = chars.indexOf(str[i + 1]);
+    const c3 = str[i + 2] === '=' ? -1 : chars.indexOf(str[i + 2]);
+    const c4 = str[i + 3] === '=' ? -1 : chars.indexOf(str[i + 3]);
+    
+    bytes.push((c1 << 2) | (c2 >> 4));
+    if (c3 !== -1) bytes.push(((c2 & 0x0F) << 4) | (c3 >> 2));
+    if (c4 !== -1) bytes.push(((c3 & 0x03) << 6) | c4);
+  }
+  
+  return new TextDecoder().decode(new Uint8Array(bytes));
+}
+
 // 密码哈希函数（使用 SHA-256）
 async function hashPassword(password) {
   const encoder = new TextEncoder();
@@ -356,7 +420,7 @@ async function handleAdminLogin(request, env, headers) {
       'UPDATE admins SET last_login_at = datetime("now") WHERE username = ?'
     ).bind(username).run();
     
-    const token = btoa(JSON.stringify({
+    const token = base64Encode(JSON.stringify({
       id: admin.id,
       username: admin.username,
       role: admin.role,
@@ -823,7 +887,7 @@ async function handleGuides(request, env, headers, path) {
         
         // 从token中解析用户信息
         const token = authHeader.replace('Bearer ', '');
-        const user = JSON.parse(atob(token));
+        const user = JSON.parse(base64Decode(token));
         const userId = user.id; // 从token中获取userId
         
         const { 
@@ -939,8 +1003,8 @@ async function handleGuides(request, env, headers, path) {
       
       try {
         const token = authHeader.replace('Bearer ', '');
-        const user = JSON.parse(atob(token));
-        
+        const user = JSON.parse(base64Decode(token));
+
         const { results } = await env.DB.prepare(
           'SELECT * FROM guides WHERE author = ? ORDER BY created_at DESC'
         ).bind(user.username).all();
@@ -1210,7 +1274,7 @@ async function handleAuth(request, env, headers, path) {
         return jsonResponse({ code: 401, message: '用户名或密码错误' }, 401, headers);
       }
       
-      const token = btoa(JSON.stringify({
+      const token = base64Encode(JSON.stringify({
         id: user.id,
         username: user.username,
         exp: Date.now() + 24 * 60 * 60 * 1000
@@ -1353,8 +1417,8 @@ async function handleStats(request, env, headers, path) {
   
   try {
     const token = authHeader.replace('Bearer ', '');
-    const user = JSON.parse(atob(token));
-    
+    const user = JSON.parse(base64Decode(token));
+
     // 检查是否为管理员
     const adminUser = await env.DB.prepare(
       'SELECT role FROM admins WHERE username = ?'
@@ -1525,8 +1589,8 @@ async function handleAdminChangePassword(request, env, headers) {
   
   try {
     const token = authHeader.replace('Bearer ', '');
-    const user = JSON.parse(atob(token));
-    
+    const user = JSON.parse(base64Decode(token));
+
     const { oldPassword, newPassword } = await request.json();
     
     if (!oldPassword || !newPassword) {
@@ -1602,12 +1666,12 @@ async function handleAdminGuides(request, env, headers, path) {
   
   try {
     const token = authHeader.replace('Bearer ', '');
-    const user = JSON.parse(atob(token));
-    
+    const user = JSON.parse(base64Decode(token));
+
     const adminUser = await env.DB.prepare(
       'SELECT role FROM admins WHERE username = ?'
     ).bind(user.username).first();
-    
+
     if (!adminUser) {
       return jsonResponse({ code: 403, message: '权限不足' }, 403, headers);
     }
@@ -1667,10 +1731,10 @@ async function handleAdminGuide(request, env, headers, path) {
     }
     
     const token = authHeader.replace('Bearer ', '');
-    const user = JSON.parse(atob(token));
-    
+    const user = JSON.parse(base64Decode(token));
+
     console.log('[Admin Guide] 验证管理员:', user.username);
-    
+
     const adminUser = await env.DB.prepare(
       'SELECT role FROM admins WHERE username = ?'
     ).bind(user.username).first();
@@ -1919,7 +1983,7 @@ async function handleCaptcha(request, env, headers) {
     console.log(`[验证码生成] SVG长度: ${svgImage.length}`);
     
     // 将 SVG 转换为 Base64 数据 URL
-    const base64Image = `data:image/svg+xml;base64,${btoa(svgImage)}`;
+    const base64Image = `data:image/svg+xml;base64,${base64Encode(svgImage)}`;
     
     console.log(`[验证码生成] Base64长度: ${base64Image.length}`);
     console.log(`[验证码生成] 成功返回验证码，ID: ${captchaId}`);
@@ -1999,10 +2063,10 @@ async function handleAdminUsers(request, env, headers, path) {
     
     // 验证管理员权限
     const token = authHeader.replace('Bearer ', '');
-    const user = JSON.parse(atob(token));
-    
+    const user = JSON.parse(base64Decode(token));
+
     console.log('[Admin Users] 验证管理员:', user.username);
-    
+
     const adminUser = await env.DB.prepare(
       'SELECT role FROM admins WHERE username = ?'
     ).bind(user.username).first();
@@ -2230,12 +2294,12 @@ async function handleAdminConfig(request, env, headers, path) {
   try {
     // 验证管理员权限
     const token = authHeader.replace('Bearer ', '');
-    const user = JSON.parse(atob(token));
-    
+    const user = JSON.parse(base64Decode(token));
+
     const adminUser = await env.DB.prepare(
       'SELECT role FROM admins WHERE username = ?'
     ).bind(user.username).first();
-    
+
     if (!adminUser) {
       return jsonResponse({ code: 403, message: '权限不足' }, 403, headers);
     }
