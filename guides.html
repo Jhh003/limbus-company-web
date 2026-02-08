@@ -40,6 +40,10 @@
     <!-- DOMPurify安全防护 - 延迟加载 -->
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js" defer></script>
     
+    <!-- Cloudflare Turnstile -->
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <script src="/js/turnstile.js"></script>
+    
     <!-- 正文图片上传样式 -->
     <style>
         .content-image-item {
@@ -2985,8 +2989,9 @@
         
         // ==================== 用户认证系统 ====================
         
-        // 当前验证码ID
-        let currentCaptchaId = null;
+        // Turnstile token
+        let turnstileToken = null;
+        const TURNSTILE_SITE_KEY = '0x4AAAAAACZSYpsYj5RndDNV'; // Cloudflare Turnstile Site Key
         
         // 打开登录/注册模态框
         window.openAuthModal = function() {
@@ -3037,16 +3042,8 @@
                         </div>
                         
                         <div style="margin-bottom:20px;">
-                            <label style="display:block;margin-bottom:6px;color:var(--lc-gold);font-size:0.9rem;">验证码</label>
-                            <div style="display:flex;gap:10px;">
-                                <input type="text" id="auth-captcha" required
-                                       style="flex:1;padding:12px 14px;background:var(--lc-bg-secondary);border:1px solid var(--lc-border);border-radius:8px;color:var(--lc-text);box-sizing:border-box;font-size:1rem;"
-                                       placeholder="输入验证码">
-                                <div id="captcha-svg" style="width:120px;height:40px;background:var(--lc-bg-secondary);border:1px solid var(--lc-border);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;"
-                                     onclick="refreshCaptcha()" title="点击刷新">
-                                    点击获取
-                                </div>
-                            </div>
+                            <label style="display:block;margin-bottom:6px;color:var(--lc-gold);font-size:0.9rem;">人机验证</label>
+                            <div id="auth-turnstile" class="turnstile-container"></div>
                         </div>
                         
                         <div style="display:flex;gap:12px;">
@@ -3068,8 +3065,13 @@
             
             document.body.appendChild(modal);
             
-            // 获取验证码
-            refreshCaptcha();
+            // 初始化Turnstile
+            if (typeof TurnstileWidget !== 'undefined') {
+                TurnstileWidget.render('auth-turnstile', TURNSTILE_SITE_KEY, function(token) {
+                    turnstileToken = token;
+                    console.log('[Turnstile] 验证成功');
+                });
+            }
             
             // 表单提交事件
             document.getElementById('auth-form').addEventListener('submit', (e) => {
@@ -3093,59 +3095,21 @@
         window.closeAuthModal = function() {
             const modal = document.getElementById('auth-modal');
             if (modal) modal.remove();
-            currentCaptchaId = null;
+            turnstileToken = null;
         };
-        
-        // 刷新验证码
-        window.refreshCaptcha = async function() {
-            try {
-                const response = await fetch(`${API_BASE}/captcha`);
-                const result = await response.json();
-                if (result.code === 200) {
-                    currentCaptchaId = result.data.captchaId;
-                    const captchaImage = result.data.captchaImage || result.data.svg;
-                    const captchaSvgEl = document.getElementById('captcha-svg');
-                    const captchaImgEl = document.getElementById('captcha-image');
-                    
-                    if (captchaSvgEl && captchaImage) {
-                        captchaSvgEl.innerHTML = captchaImage;
-                    }
-                    
-                    if (captchaImgEl && captchaImage) {
-                        captchaImgEl.src = captchaImage;
-                    }
-                }
-            } catch (error) {
-                console.error('获取验证码失败:', error);
-            }
-        };
-        
-        // 检查用户名是否可用
-        async function checkUsername(username) {
-            const statusEl = document.getElementById('username-status');
-            try {
-                const response = await fetch(`${API_BASE}/auth/check-username/${username}`);
-                const result = await response.json();
-                if (result.available) {
-                    statusEl.innerHTML = '<i class="fas fa-check-circle" style="color:#22c55e;"></i> 用户名可用';
-                    statusEl.style.color = '#22c55e';
-                } else {
-                    statusEl.textContent = result.message || '用户名已被注册';
-                    statusEl.style.color = 'var(--lc-red)';
-                }
-            } catch (error) {
-                console.error('检查用户名失败:', error);
-            }
-        }
         
         // 登录处理
         async function handleLogin() {
             const username = document.getElementById('auth-username').value.trim();
             const password = document.getElementById('auth-password').value;
-            const captchaText = document.getElementById('auth-captcha').value.trim();
             
-            if (!username || !password || !captchaText) {
+            if (!username || !password) {
                 showMessage('请填写所有字段', 'warning');
+                return;
+            }
+            
+            if (!turnstileToken) {
+                showMessage('请完成人机验证', 'warning');
                 return;
             }
             
@@ -3153,7 +3117,7 @@
                 const response = await fetch(`${API_BASE}/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password, captchaId: currentCaptchaId, captchaText })
+                    body: JSON.stringify({ username, password, turnstileToken })
                 });
                 
                 const result = await response.json();
@@ -3169,7 +3133,11 @@
                     showMessage('登录成功！', 'success');
                 } else {
                     showMessage(result.message || '登录失败', 'error');
-                    refreshCaptcha();
+                    // 重置Turnstile
+                    if (typeof TurnstileWidget !== 'undefined') {
+                        TurnstileWidget.reset('auth-turnstile');
+                        turnstileToken = null;
+                    }
                 }
             } catch (error) {
                 console.error('登录错误:', error);
@@ -3181,10 +3149,14 @@
         window.handleRegister = async function() {
             const username = document.getElementById('auth-username').value.trim();
             const password = document.getElementById('auth-password').value;
-            const captchaText = document.getElementById('auth-captcha').value.trim();
             
-            if (!username || !password || !captchaText) {
+            if (!username || !password) {
                 showMessage('请填写所有字段', 'warning');
+                return;
+            }
+            
+            if (!turnstileToken) {
+                showMessage('请完成人机验证', 'warning');
                 return;
             }
             
@@ -3212,19 +3184,20 @@
                 const response = await fetch(`${API_BASE}/auth/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password, captchaId: currentCaptchaId, captchaText })
+                    body: JSON.stringify({ username, password, turnstileToken })
                 });
                 
                 const result = await response.json();
                 
                 if (result.code === 200 && result.success) {
                     showMessage('注册成功！请使用该账号登录', 'success');
-                    // 清空验证码输入
-                    document.getElementById('auth-captcha').value = '';
-                    refreshCaptcha();
                 } else {
                     showMessage(result.message || '注册失败', 'error');
-                    refreshCaptcha();
+                    // 重置Turnstile
+                    if (typeof TurnstileWidget !== 'undefined') {
+                        TurnstileWidget.reset('auth-turnstile');
+                        turnstileToken = null;
+                    }
                 }
             } catch (error) {
                 console.error('注册错误:', error);

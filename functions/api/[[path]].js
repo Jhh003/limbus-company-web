@@ -1303,20 +1303,20 @@ async function handleAuth(request, env, headers, path) {
     }
     
     try {
-      const { username, password, captchaId, captchaText } = await request.json();
+      const { username, password, turnstileToken } = await request.json();
       
       if (!username || !password) {
         return jsonResponse({ code: 400, message: '用户名和密码不能为空' }, 400, headers);
       }
       
-      // 验证验证码
-      if (env.CAPTCHA_KV && captchaId && captchaText) {
-        const storedCode = await env.CAPTCHA_KV.get(captchaId);
-        if (!storedCode || storedCode !== captchaText) {
-          return jsonResponse({ code: 400, message: '验证码错误或已过期' }, 400, headers);
-        }
-        // 验证成功后删除验证码
-        await env.CAPTCHA_KV.delete(captchaId);
+      // 验证Turnstile token
+      if (!turnstileToken) {
+        return jsonResponse({ code: 400, message: '请完成人机验证' }, 400, headers);
+      }
+      
+      const isValid = await verifyTurnstileToken(turnstileToken, env);
+      if (!isValid) {
+        return jsonResponse({ code: 400, message: '人机验证失败' }, 400, headers);
       }
       
       // 使用哈希密码验证
@@ -1374,20 +1374,20 @@ async function handleAuth(request, env, headers, path) {
     }
     
     try {
-      const { username, password, captchaId, captchaText } = await request.json();
+      const { username, password, turnstileToken } = await request.json();
       
       if (!username || !password) {
         return jsonResponse({ code: 400, message: '用户名和密码不能为空' }, 400, headers);
       }
       
-      // 验证验证码
-      if (env.CAPTCHA_KV && captchaId && captchaText) {
-        const storedCode = await env.CAPTCHA_KV.get(captchaId);
-        if (!storedCode || storedCode !== captchaText) {
-          return jsonResponse({ code: 400, message: '验证码错误或已过期' }, 400, headers);
-        }
-        // 验证成功后删除验证码
-        await env.CAPTCHA_KV.delete(captchaId);
+      // 验证Turnstile token
+      if (!turnstileToken) {
+        return jsonResponse({ code: 400, message: '请完成人机验证' }, 400, headers);
+      }
+      
+      const isValid = await verifyTurnstileToken(turnstileToken, env);
+      if (!isValid) {
+        return jsonResponse({ code: 400, message: '人机验证失败' }, 400, headers);
       }
       
       // 检查用户是否已存在
