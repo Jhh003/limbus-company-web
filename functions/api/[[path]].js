@@ -62,6 +62,11 @@ export async function onRequest(context) {
       return handleDbInit(request, env, headers);
     }
     
+    // 数据库修复端点（添加缺少的字段）
+    if (path === '/api/db-fix' || path === '/api/db-fix/') {
+      return handleDbFix(request, env, headers);
+    }
+    
     if (path.startsWith('/api/admin/login')) {
       return handleAdminLogin(request, env, headers);
     }
@@ -179,6 +184,75 @@ async function handleDbInit(request, env, headers) {
     return jsonResponse({
       code: 500,
       message: '数据库初始化失败',
+      error: error.message
+    }, 500, headers);
+  }
+}
+
+// 数据库修复（添加缺少的字段）
+async function handleDbFix(request, env, headers) {
+  if (request.method !== 'POST') {
+    return jsonResponse({ code: 405, message: '方法不允许' }, 405, headers);
+  }
+  
+  try {
+    if (!env.DB) {
+      return jsonResponse({ code: 500, message: '数据库未配置' }, 500, headers);
+    }
+    
+    const results = {
+      guides: { reject_reason: false, guide_type: false },
+      users: { last_login_at: false }
+    };
+    
+    // 修复 guides 表
+    try {
+      // 检查并添加 reject_reason 字段
+      try {
+        await env.DB.prepare('SELECT reject_reason FROM guides LIMIT 1').all();
+        results.guides.reject_reason = '已存在';
+      } catch (e) {
+        await env.DB.prepare('ALTER TABLE guides ADD COLUMN reject_reason TEXT').run();
+        results.guides.reject_reason = '已添加';
+      }
+      
+      // 检查并添加 guide_type 字段
+      try {
+        await env.DB.prepare('SELECT guide_type FROM guides LIMIT 1').all();
+        results.guides.guide_type = '已存在';
+      } catch (e) {
+        await env.DB.prepare("ALTER TABLE guides ADD COLUMN guide_type TEXT DEFAULT 'strategy'").run();
+        results.guides.guide_type = '已添加';
+      }
+    } catch (e) {
+      results.guides.error = e.message;
+    }
+    
+    // 修复 users 表
+    try {
+      // 检查并添加 last_login_at 字段
+      try {
+        await env.DB.prepare('SELECT last_login_at FROM users LIMIT 1').all();
+        results.users.last_login_at = '已存在';
+      } catch (e) {
+        await env.DB.prepare('ALTER TABLE users ADD COLUMN last_login_at DATETIME').run();
+        results.users.last_login_at = '已添加';
+      }
+    } catch (e) {
+      results.users.error = e.message;
+    }
+    
+    return jsonResponse({
+      code: 200,
+      message: '数据库修复完成',
+      data: results
+    }, 200, headers);
+    
+  } catch (error) {
+    console.error('[DB Fix] 错误:', error);
+    return jsonResponse({
+      code: 500,
+      message: '数据库修复失败',
       error: error.message
     }, 500, headers);
   }

@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="边狱巴士攻略审核管理后台 - 管理待审核、已通过的攻略内容，支持多种攻略类型">
   <title>攻略审核 - 管理后台</title>
   <link rel="stylesheet" href="/css/reset.css">
   <link rel="stylesheet" href="/css/limbus-theme-v2.css">
@@ -288,7 +289,7 @@
   <div class="admin-container">
     <aside class="admin-sidebar">
       <div class="sidebar-header">
-        <h2>管理后台</h2>
+        <h1 class="sidebar-title">管理后台</h1>
         <p class="sidebar-subtitle">攻略审核中心</p>
       </div>
       <nav class="sidebar-nav">
@@ -484,7 +485,7 @@
                 <h3 class="guide-title">${guide.title}</h3>
                 <div class="guide-meta">
                   <span><i class="fas fa-user"></i> ${guide.author}</span>
-                  <span><i class="fas fa-layer-group"></i> ${guide.floor_level}</span>
+                  <span><i class="fas fa-layer-group"></i> ${guide.floorLevel || guide.floor_level || '未知'}</span>
                 </div>
                 <div class="guide-footer">
                   <span class="guide-author">${guide.sinner} - ${guide.persona}</span>
@@ -591,7 +592,7 @@
         <div class="guide-detail-meta">
           <span><i class="fas fa-user"></i> 作者：${guide.author}</span>
           <span><i class="fas fa-layer-group"></i> 角色：${guide.sinner} - ${guide.persona}</span>
-          <span><i class="fas fa-trophy"></i> 关卡：${guide.floor_level}</span>
+          <span><i class="fas fa-trophy"></i> 关卡：${guide.floorLevel || guide.floor_level || '未知'}</span>
           <span><i class="fas fa-clock"></i> 提交时间：${formatDate(guide.created_at)}</span>
         </div>
         ${guide.tags ? `<div class="guide-detail-meta"><span><i class="fas fa-tags"></i> 标签：${guide.tags}</span></div>` : ''}
