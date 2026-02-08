@@ -1,4 +1,4 @@
-// Pages Functions - API 路由主入口
+﻿// Pages Functions - API 路由主入口
 // 捕获所有 /api/* 请求
 
 // Worker内存缓存配置
@@ -2711,24 +2711,27 @@ async function handleAdminConfig(request, env, headers, path) {
   }
 }
 
-// 数据库迁�?V2 处理函数
+
+// 数据库迁移 V2 处理函数
 async function handleMigrateV2(request, env, headers) {
-  // 只允�?POST 请求
+  // 只允许 POST 请求
   if (request.method !== 'POST') {
-    return jsonResponse({ code: 405, message: '方法不允�? }, 405, headers);
+    return jsonResponse({ code: 405, message: '方法不允许' }, 405, headers);
   }
   
-  // 验证管理员权�?  const authHeader = request.headers.get('Authorization');
+  // 验证管理员权限
+  const authHeader = request.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return jsonResponse({ code: 401, message: '未登�? }, 401, headers);
+    return jsonResponse({ code: 401, message: '未登录' }, 401, headers);
   }
   
   try {
     const token = authHeader.replace('Bearer ', '');
     const user = await verifyJwt(token, env.JWT_SECRET || 'default-secret');
-    if (!user) return jsonResponse({ code: 401, message: '无效�?Token' }, 401, headers);
+    if (!user) return jsonResponse({ code: 401, message: '无效的 Token' }, 401, headers);
     
-    // 检查是否为管理�?    const adminUser = await env.DB.prepare(
+    // 检查是否为管理员
+    const adminUser = await env.DB.prepare(
       'SELECT role FROM admins WHERE username = ?'
     ).bind(user.username).first();
     
@@ -2736,19 +2739,20 @@ async function handleMigrateV2(request, env, headers) {
       return jsonResponse({ code: 403, message: '权限不足' }, 403, headers);
     }
     
-    // 动态导入迁移脚�?    const { migrateDatabaseV2 } = await import('./db-migration-v2.js');
+    // 动态导入迁移脚本
+    const { migrateDatabaseV2 } = await import('./db-migration-v2.js');
     const result = await migrateDatabaseV2(env);
     
     if (result.success) {
       return jsonResponse({
         code: 200,
-        message: '数据库迁移成�?,
+        message: '数据库迁移成功',
         data: result.results
       }, 200, headers);
     } else {
       return jsonResponse({
         code: 500,
-        message: '数据库迁移失�?,
+        message: '数据库迁移失败',
         error: result.error
       }, 500, headers);
     }
@@ -2756,7 +2760,7 @@ async function handleMigrateV2(request, env, headers) {
     console.error('[Migrate V2] 错误:', error);
     return jsonResponse({
       code: 500,
-      message: '数据库迁移失�?,
+      message: '数据库迁移失败',
       error: error.message
     }, 500, headers);
   }
@@ -2770,18 +2774,18 @@ async function handleMySubmissions(request, env, headers) {
 // 获取用户投稿内容 (Guides + Rankings)
 async function handleUserContributions(request, env, headers) {
   if (request.method !== 'GET') {
-    return jsonResponse({ code: 405, message: '方法不允�? }, 405, headers);
+    return jsonResponse({ code: 405, message: '方法不允许' }, 405, headers);
   }
 
   const authHeader = request.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return jsonResponse({ code: 401, message: '未登�? }, 401, headers);
+    return jsonResponse({ code: 401, message: '未登录' }, 401, headers);
   }
 
   try {
     const token = authHeader.replace('Bearer ', '');
     const user = await verifyJwt(token, env.JWT_SECRET || 'default-secret');
-    if (!user) return jsonResponse({ code: 401, message: '无效�?Token' }, 401, headers);
+    if (!user) return jsonResponse({ code: 401, message: '无效的 Token' }, 401, headers);
     
     // 检查数据库
     if (!env.DB) {
@@ -2795,7 +2799,8 @@ async function handleUserContributions(request, env, headers) {
     const offset = (page - 1) * pageSize;
 
     // 并行查询攻略和排行榜
-    // 注意：这里简单起见分别查询再合并，如果数据量大应该优�?    // 且这里我们只查询未删除的 (deleted_at IS NULL)
+    // 注意：这里简单起见分别查询再合并，如果数据量大应该优化
+    // 且这里我们只查询未删除的 (deleted_at IS NULL)
     
     // 1. 查询攻略
     const { results: guides } = await env.DB.prepare(
@@ -2805,14 +2810,16 @@ async function handleUserContributions(request, env, headers) {
        ORDER BY created_at DESC LIMIT 50` 
     ).bind(user.username).all();
     
-    // 2. 查询排行�?    const { results: rankings } = await env.DB.prepare(
+    // 2. 查询排行榜
+    const { results: rankings } = await env.DB.prepare(
       `SELECT id, sinner, persona, time, status, created_at, 'ranking' as type
        FROM rankings 
        WHERE username = ? AND (deleted_at IS NULL OR deleted_at = '')
        ORDER BY created_at DESC LIMIT 50`
     ).bind(user.username).all();
     
-    // 合并并排�?    const allContent = [...(guides || []), ...(rankings || [])];
+    // 合并并排序
+    const allContent = [...(guides || []), ...(rankings || [])];
     allContent.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     
     // 分页
@@ -2838,18 +2845,18 @@ async function handleUserContributions(request, env, headers) {
 // 删除用户内容
 async function handleUserContentDelete(request, env, headers, path) {
   if (request.method !== 'DELETE') {
-    return jsonResponse({ code: 405, message: '方法不允�? }, 405, headers);
+    return jsonResponse({ code: 405, message: '方法不允许' }, 405, headers);
   }
   
   const authHeader = request.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return jsonResponse({ code: 401, message: '未登�? }, 401, headers);
+    return jsonResponse({ code: 401, message: '未登录' }, 401, headers);
   }
   
   try {
     const token = authHeader.replace('Bearer ', '');
     const user = await verifyJwt(token, env.JWT_SECRET || 'default-secret');
-    if (!user) return jsonResponse({ code: 401, message: '无效�?Token' }, 401, headers);
+    if (!user) return jsonResponse({ code: 401, message: '无效的 Token' }, 401, headers);
     
     // 解析路径参数 /api/user/content/:type/:id
     const parts = path.split('/');
@@ -2857,10 +2864,11 @@ async function handleUserContentDelete(request, env, headers, path) {
     const id = parts[5];
     
     if (!['guide', 'ranking'].includes(type)) {
-      return jsonResponse({ code: 400, message: '无效的内容类�? }, 400, headers);
+      return jsonResponse({ code: 400, message: '无效的内容类型' }, 400, headers);
     }
     
-    // 频率限制�?0分钟内最�?�?    const rateKey = `delete_limit:${user.id}`;
+    // 频率限制：10分钟内最多5次
+    const rateKey = `delete_limit:${user.id}`;
     let deleteCount = 0;
     
     if (env.CAPTCHA_KV) {
@@ -2889,11 +2897,11 @@ async function handleUserContentDelete(request, env, headers, path) {
     }
     
     if (!content) {
-      return jsonResponse({ code: 404, message: '内容不存�? }, 404, headers);
+      return jsonResponse({ code: 404, message: '内容不存在' }, 404, headers);
     }
     
     if (content[userField] !== user.username) {
-      return jsonResponse({ code: 403, message: '无权删除此内�? }, 403, headers);
+      return jsonResponse({ code: 403, message: '无权删除此内容' }, 403, headers);
     }
     
     // 执行逻辑删除
