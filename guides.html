@@ -1438,14 +1438,16 @@
             if (url.includes('bilibili.com')) {
                 const bvid = url.match(/BV[\w]+/) || url.match(/av\d+/);
                 if (bvid) {
-                    return `https://player.bilibili.com/player.html?bvid=${bvid[0]}&page=1&autoplay=false&high_quality=1&danmaku=0`;
+                    // 添加 autoplay=1 参数实现自动播放
+                    return `https://player.bilibili.com/player.html?bvid=${bvid[0]}&page=1&autoplay=1&high_quality=1&danmaku=0`;
                 }
             }
             // YouTube
             if (url.includes('youtube.com') || url.includes('youtu.be')) {
                 const videoId = url.match(/(?:v=|\/)([\w-]{11})/);
                 if (videoId) {
-                    return `https://www.youtube.com/embed/${videoId[1]}`;
+                    // 添加 autoplay=1 参数实现自动播放
+                    return `https://www.youtube.com/embed/${videoId[1]}?autoplay=1`;
                 }
             }
             return url;
