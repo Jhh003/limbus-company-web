@@ -1,0 +1,60 @@
+# ============================================
+# Git 忽略文件 - Cloudflare Pages 部署
+# ============================================
+
+# Beads 数据库文件（本地任务追踪）
+.beads/
+
+# Beads CLI 工具（本地使用，33.5 MiB 超出限制）
+tools/
+
+# Beads 规划仓库（本地使用）
+y/
+
+# Trae IDE 配置（本地开发）
+.trae/
+
+# Wrangler 本地缓存
+.wrangler/
+node_modules/.cache/
+node_modules/.mf/
+
+# 开发文档（不需要部署）
+docs/
+
+# SQL 迁移脚本（一次性使用）
+*.sql
+
+# Node.js 工具脚本（本地使用）
+hash_password.js
+generate_hash.js
+migrate-data.js
+
+# 测试文件
+test-captcha.html
+
+# 临时文件
+*.tmp
+*.log
+*.bak
+
+# Node.js 依赖（Cloudflare 自动安装）
+node_modules/
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE 配置
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 其他不需要的文件
+.gitattributes
+AGENTS.md
+package.json
+package-lock.json

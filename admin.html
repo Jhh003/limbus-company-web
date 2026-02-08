@@ -1,0 +1,2164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>排行榜管理后台 - Limbus Company</title>
+    <link rel="stylesheet" href="/css/reset.css">
+    <link rel="stylesheet" href="/css/limbus-theme-v2.css">    <link rel="stylesheet" href="/css/custom-dialog.css">    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        .admin-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--lc-border);
+        }
+        
+        .admin-header h1 {
+            color: var(--lc-gold);
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .control-btn {
+            padding: 10px 20px;
+            background: var(--lc-gold);
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(201, 169, 97, 0.3);
+        }
+        
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: var(--lc-bg-card);
+            border: 1px solid var(--lc-border);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .stat-card h3 {
+            font-size: 0.8rem;
+            color: var(--lc-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--lc-gold);
+        }
+        
+        .tab-container {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid var(--lc-border);
+        }
+        
+        .tab-btn {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--lc-text-muted);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+        
+        .tab-btn:hover {
+            color: var(--lc-gold);
+        }
+        
+        .tab-btn.active {
+            color: var(--lc-gold);
+            border-bottom-color: var(--lc-gold);
+        }
+        
+        .pending-list {
+            background: var(--lc-bg-card);
+            border: 1px solid var(--lc-border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .pending-list-header {
+            background: rgba(201, 169, 97, 0.1);
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--lc-border);
+        }
+        
+        .pending-list-header h2 {
+            color: var(--lc-gold);
+            font-size: 1rem;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .record-item {
+            padding: 20px;
+            border-bottom: 1px solid var(--lc-border);
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .record-item:last-child {
+            border-bottom: none;
+        }
+        
+        .record-id {
+            font-size: 0.75rem;
+            color: var(--lc-text-muted);
+            font-family: 'Cinzel', monospace;
+        }
+        
+        .record-info {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .record-info .username {
+            font-weight: 600;
+            color: var(--lc-text);
+        }
+        
+        .record-info .details {
+            font-size: 0.85rem;
+            color: var(--lc-text-secondary);
+        }
+        
+        .record-info .time {
+            font-size: 0.8rem;
+            color: var(--lc-gold);
+            font-family: 'Cinzel', monospace;
+        }
+        
+        .record-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-approve, .btn-reject {
+            padding: 8px 16px;
+            border-radius: 4px;
+            border: 1px solid;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-approve {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: rgba(34, 197, 94, 0.5);
+            color: #22c55e;
+        }
+        
+        .btn-approve:hover {
+            background: rgba(34, 197, 94, 0.2);
+        }
+        
+        .btn-reject {
+            background: rgba(201, 79, 79, 0.1);
+            border-color: rgba(201, 79, 79, 0.5);
+            color: var(--lc-red);
+        }
+        
+        .btn-reject:hover {
+            background: rgba(201, 79, 79, 0.2);
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        
+        .status-approved {
+            background: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+        }
+        
+        .status-rejected {
+            background: rgba(201, 79, 79, 0.1);
+            color: var(--lc-red);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 100px 20px;
+            color: var(--lc-text-muted);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+        }
+        
+        .empty-state i {
+            font-size: 5rem;
+            margin-bottom: 24px;
+            opacity: 0.15;
+            color: var(--lc-gold);
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .empty-state h3 {
+            font-size: 1.3rem;
+            color: var(--lc-text);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .empty-state p {
+            font-size: 0.95rem;
+            opacity: 0.7;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--lc-gold);
+        }
+        
+        /* ===== 模块切换样式 ===== */
+        .ranking-panel { display: block; }
+        .ranking-panel.hidden { display: none; }
+        #guides-panel { display: none; }
+        #guides-panel.active { display: block; }
+        
+        .module-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--lc-border);
+        }
+        .module-tab {
+            padding: 14px 28px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: var(--lc-text-muted);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-family: 'Noto Serif SC', serif;
+        }
+        .module-tab:hover { color: var(--lc-gold); }
+        .module-tab.active {
+            color: var(--lc-gold);
+            border-bottom-color: var(--lc-gold);
+            background: rgba(201, 169, 97, 0.05);
+        }
+        
+        /* ===== 统一审核按钮样式 ===== */
+        .review-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid;
+            min-width: 80px;
+        }
+        
+        .review-btn i {
+            font-size: 0.9rem;
+        }
+        
+        .review-btn.approve {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05));
+            border-color: rgba(34, 197, 94, 0.4);
+            color: #22c55e;
+        }
+        
+        .review-btn.approve:hover {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.3), rgba(34, 197, 94, 0.15));
+            border-color: #22c55e;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+        }
+        
+        .review-btn.reject {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05));
+            border-color: rgba(239, 68, 68, 0.4);
+            color: #ef4444;
+        }
+        
+        .review-btn.reject:hover {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(239, 68, 68, 0.15));
+            border-color: #ef4444;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+        }
+        
+        .review-btn.preview {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.05));
+            border-color: rgba(59, 130, 246, 0.4);
+            color: #3b82f6;
+        }
+        
+        .review-btn.preview:hover {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(59, 130, 246, 0.15));
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+        }
+        
+        .review-btn.delete {
+            background: linear-gradient(135deg, rgba(107, 114, 128, 0.15), rgba(107, 114, 128, 0.05));
+            border-color: rgba(107, 114, 128, 0.4);
+            color: #6b7280;
+        }
+        
+        .review-btn.delete:hover {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.1));
+            border-color: rgba(239, 68, 68, 0.5);
+            color: #ef4444;
+        }
+        
+        /* ===== 联动内容标记 ===== */
+        .linked-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(168, 85, 247, 0.1));
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            color: #a855f7;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        
+        /* ===== 多媒体预览样式 ===== */
+        .media-preview-area {
+            margin-top: 12px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            border: 1px solid var(--lc-border);
+        }
+        
+        .media-preview-area .preview-label {
+            font-size: 0.75rem;
+            color: var(--lc-text-muted);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .media-preview-area img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .media-preview-area img:hover {
+            transform: scale(1.02);
+        }
+        
+        .media-preview-area .video-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: rgba(201, 169, 97, 0.1);
+            border: 1px solid rgba(201, 169, 97, 0.3);
+            border-radius: 6px;
+            color: var(--lc-gold);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+        
+        .media-preview-area .video-link:hover {
+            background: rgba(201, 169, 97, 0.2);
+            border-color: var(--lc-gold);
+        }
+        
+        /* ===== 图片预览弹窗 ===== */
+        .image-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 10001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: zoom-out;
+        }
+        
+        .image-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+        }
+        
+        /* ===== 记录项样式优化 ===== */
+        .record-item {
+            padding: 20px;
+            border-bottom: 1px solid var(--lc-border);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .record-item:last-child {
+            border-bottom: none;
+        }
+        
+        .record-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+        }
+        
+        .record-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-brand">
+            <div class="logo-icon logo-icon-admin">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <div class="logo-text">
+                <h1>管理后台</h1>
+                <span class="logo-subtitle">Limbus Company · 审核系统</span>
+            </div>
+        </div>
+        <div class="nav-meta">
+            <a href="/" class="nav-btn nav-btn-primary" style="text-decoration:none;">
+                <i class="fas fa-dice"></i>
+                <span>返回主页</span>
+            </a>
+            <button onclick="logout()" class="nav-btn" style="border-color: rgba(201, 79, 79, 0.4); color: var(--lc-red);">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>退出登录</span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="admin-container">
+        <!-- 模块切换 -->
+        <div class="module-tabs">
+            <button class="module-tab active" onclick="switchModule('ranking')" id="mod-ranking">
+                <i class="fas fa-list-ol"></i> 排行榜审核
+            </button>
+            <button class="module-tab" onclick="switchModule('guides')" id="mod-guides">
+                <i class="fas fa-book"></i> 攻略审核
+            </button>
+        </div>
+
+        <!-- ========== 排行榜审核模块 ========== -->
+        <div class="ranking-panel" id="ranking-panel">
+        <div class="admin-header">
+            <h1><i class="fas fa-list-ol"></i> 排行榜审核管理</h1>
+            <button onclick="loadAllRecords()" class="control-btn">
+                <i class="fas fa-sync-alt"></i> 刷新列表
+            </button>
+        </div>
+
+        <div class="stats-cards">
+            <div class="stat-card">
+                <h3>待审核</h3>
+                <div class="number" id="pending-count">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>已通过</h3>
+                <div class="number" id="approved-count">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>已拒绝</h3>
+                <div class="number" id="rejected-count">-</div>
+            </div>
+        </div>
+
+        <!-- 标签页切换 -->
+        <div class="tab-container">
+            <button class="tab-btn active" onclick="switchTab('pending')" id="tab-pending">
+                <i class="fas fa-clock"></i> 待审核 (<span id="tab-pending-count">0</span>)
+            </button>
+            <button class="tab-btn" onclick="switchTab('approved')" id="tab-approved">
+                <i class="fas fa-check-circle"></i> 已通过 (<span id="tab-approved-count">0</span>)
+            </button>
+            <button class="tab-btn" onclick="switchTab('rejected')" id="tab-rejected">
+                <i class="fas fa-times-circle"></i> 已拒绝 (<span id="tab-rejected-count">0</span>)
+            </button>
+        </div>
+
+        <div class="pending-list">
+            <div class="pending-list-header">
+                <h2 id="list-title"><i class="fas fa-clock"></i> 待审核记录</h2>
+            </div>
+            <div id="pending-list-content">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i> 加载中...
+                </div>
+            </div>
+        </div>
+        </div><!-- /ranking-panel -->
+
+        <!-- ========== 攻略审核模块 ========== -->
+        <div class="ranking-panel" id="guides-panel" style="display: none;">
+            <div class="admin-header">
+                <h1><i class="fas fa-book"></i> 攻略审核管理</h1>
+                <div style="display: flex; gap: 12px;">
+                    <button onclick="openGuideUploadModal()" class="control-btn" style="background: linear-gradient(135deg, #4caf50, #2e7d32);">
+                        <i class="fas fa-plus"></i> 发布攻略
+                    </button>
+                    <button onclick="loadGuides()" class="control-btn">
+                        <i class="fas fa-sync-alt"></i> 刷新列表
+                    </button>
+                </div>
+            </div>
+
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <h3>待审核</h3>
+                    <div class="number" id="guides-pending-count">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>已通过</h3>
+                    <div class="number" id="guides-approved-count">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>总攻略数</h3>
+                    <div class="number" id="guides-total-count">-</div>
+                </div>
+            </div>
+
+            <!-- 标签页切换 -->
+            <div class="tab-container">
+                <button class="tab-btn active" onclick="switchGuideTab('pending')" id="guide-tab-pending">
+                    <i class="fas fa-clock"></i> 待审核 (<span id="guide-tab-pending-count">0</span>)
+                </button>
+                <button class="tab-btn" onclick="switchGuideTab('approved')" id="guide-tab-approved">
+                    <i class="fas fa-check-circle"></i> 已通过 (<span id="guide-tab-approved-count">0</span>)
+                </button>
+            </div>
+
+            <div class="pending-list">
+                <div class="pending-list-header">
+                    <h2 id="guides-list-title"><i class="fas fa-clock"></i> 待审核攻略</h2>
+                </div>
+                <div id="guides-list-content">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i> 加载中...
+                    </div>
+                </div>
+            </div>
+        </div><!-- /guides-panel -->
+    </div>
+
+    <!-- API 配置 -->
+    <script src="/js/config.js"></script>
+    
+    <script type="module">
+        import { sinnerData } from '/data/characters.js';
+        
+        // 使用全局 API_BASE 或回退到相对路径
+        const API_BASE = window.API_BASE || '/api';
+        
+        // 图片上传配置
+        const UPLOAD_CONFIG = {
+            maxFileSize: 10 * 1024 * 1024 // 10MB 限制
+        };
+        
+        let currentTab = 'pending';
+        let allRecords = {
+            pending: [],
+            approved: [],
+            rejected: []
+        };
+
+        // 获取 Token
+        function getAuthToken() {
+            return localStorage.getItem('admin_token');
+        }
+
+        // 检查 Token 有效性
+        async function checkAuth() {
+            const token = getAuthToken();
+            if (!token) {
+                window.location.href = '/admin-login';
+                return false;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/admin/verify`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.status === 401 || response.status === 403) {
+                    showError('登录已过期，请重新登录');
+                    setTimeout(() => {
+                        localStorage.removeItem('admin_token');
+                        window.location.href = '/admin-login';
+                    }, 1500);
+                    return false;
+                }
+
+                return true;
+            } catch (error) {
+                console.error('Token 验证失败:', error);
+                return true; // 网络错误时不强制退出
+            }
+        }
+
+        // 发送带 Token 的请求
+        async function fetchWithAuth(url, options = {}) {
+            const token = getAuthToken();
+            
+            const authOptions = {
+                ...options,
+                headers: {
+                    ...options.headers,
+                    'Authorization': `Bearer ${token}`
+                }
+            };
+
+            const response = await fetch(url, authOptions);
+
+            // 如果 Token 无效，跳转到登录页
+            if (response.status === 401 || response.status === 403) {
+                showError('登录已过期，请重新登录');
+                setTimeout(() => {
+                    localStorage.removeItem('admin_token');
+                    window.location.href = '/admin-login';
+                }, 1500);
+                throw new Error('未授权');
+            }
+
+            return response;
+        }
+
+        async function loadAllRecords() {
+            const contentEl = document.getElementById('pending-list-content');
+            contentEl.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>';
+
+            try {
+                // 获取待审核记录
+                const pendingRes = await fetchWithAuth(`${API_BASE}/rankings/pending`);
+                const pendingData = await pendingRes.json();
+                
+                // 获取已审核记录
+                const reviewedRes = await fetchWithAuth(`${API_BASE}/rankings/reviewed`);
+                const reviewedData = await reviewedRes.json();
+                
+                console.log('[Admin] 排行榜待审核数据:', pendingData);
+                console.log('[Admin] 排行榜已审核数据:', reviewedData);
+                
+                // 验证数据格式
+                const pending = Array.isArray(pendingData.data) ? pendingData.data : [];
+                const approved = Array.isArray(reviewedData.data?.approved) ? reviewedData.data.approved : [];
+                const rejected = Array.isArray(reviewedData.data?.rejected) ? reviewedData.data.rejected : [];
+                
+                allRecords = {
+                    pending: pending,
+                    approved: approved,
+                    rejected: rejected
+                };
+
+                updateStats();
+                renderRecordsByTab();
+            } catch (error) {
+                console.error('[Admin] 加载排行榜审核数据失败:', error);
+                contentEl.innerHTML = `<div class="empty-state">⚠️<p>加载失败: ${error.message}</p></div>`;
+            }
+        }
+
+        function updateStats() {
+            const pendingCount = allRecords.pending.length;
+            const approvedCount = allRecords.approved.length;
+            const rejectedCount = allRecords.rejected.length;
+            
+            document.getElementById('pending-count').textContent = pendingCount;
+            document.getElementById('approved-count').textContent = approvedCount;
+            document.getElementById('rejected-count').textContent = rejectedCount;
+            
+            document.getElementById('tab-pending-count').textContent = pendingCount;
+            document.getElementById('tab-approved-count').textContent = approvedCount;
+            document.getElementById('tab-rejected-count').textContent = rejectedCount;
+        }
+        
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // 更新标签样式
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            
+            // 更新标题
+            const titles = {
+                pending: '<i class="fas fa-clock"></i> 待审核记录',
+                approved: '<i class="fas fa-check-circle"></i> 已通过记录',
+                rejected: '<i class="fas fa-times-circle"></i> 已拒绝记录'
+            };
+            document.getElementById('list-title').innerHTML = titles[tab];
+            
+            renderRecordsByTab();
+        }
+        
+        function renderRecordsByTab() {
+            const records = allRecords[currentTab] || [];
+            
+            if (currentTab === 'pending') {
+                renderPendingList(records);
+            } else {
+                renderReviewedList(records, currentTab);
+            }
+        }
+
+        function renderPendingList(records) {
+            const contentEl = document.getElementById('pending-list-content');
+
+            if (records.length === 0) {
+                contentEl.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-clipboard-check"></i>
+                        <h3>暂无待审核记录</h3>
+                        <p>所有记录已审核完毕</p>
+                    </div>
+                `;
+                return;
+            }
+
+            contentEl.innerHTML = records.map(record => {
+                // 检查是否有截图或视频
+                const hasScreenshot = record.screenshot_url && record.screenshot_url.trim();
+                const hasVideo = record.video_url && record.video_url.trim();
+                
+                return `
+                <div class="record-item" data-id="${record.id}">
+                    <div class="record-main">
+                        <div style="display: flex; gap: 16px; align-items: flex-start; flex: 1;">
+                            <div class="record-id">#${record.id}</div>
+                            <div class="record-info" style="flex: 1;">
+                                <div class="username">
+                                    ${escapeHtml(record.username)}
+                                    <span style="margin-left: 8px; color: var(--lc-accent-purple); font-size: 0.75rem;" title="记录ID: ${record.id}">
+                                        <i class="fas fa-fingerprint"></i> #${record.id}
+                                    </span>
+                                </div>
+                                <div class="details">
+                                    <span title="巫徒"><i class="fas fa-user"></i> ${escapeHtml(record.sinner)}</span>
+                                    <span style="margin-left: 12px;" title="人格"><i class="fas fa-mask"></i> ${escapeHtml(record.persona)}</span>
+                                    <span style="margin-left: 12px;" title="层数"><i class="fas fa-layer-group"></i> ${record.floor_level}层</span>
+                                    <span style="margin-left: 12px;" title="战斗时间"><i class="fas fa-stopwatch"></i> ${formatTime(record.time)}</span>
+                                    <span style="margin-left: 12px;" title="提交时间: ${record.created_at}"><i class="fas fa-calendar-alt"></i> ${new Date(record.created_at).toLocaleString('zh-CN')}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="record-actions">
+                            ${hasScreenshot || hasVideo ? `
+                            <button class="review-btn preview" onclick="toggleMediaPreview(${record.id})" title="查看媒体">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            ` : ''}
+                            <button class="review-btn approve" onclick="approveRecord(${record.id})" title="通过">
+                                <i class="fas fa-check"></i> 通过
+                            </button>
+                            <button class="review-btn reject" onclick="rejectRecord(${record.id})" title="拒绝">
+                                <i class="fas fa-times"></i> 拒绝
+                            </button>
+                        </div>
+                    </div>
+                    ${(hasScreenshot || hasVideo) ? `
+                    <div class="media-preview-area" id="media-preview-${record.id}" style="display: none;">
+                        ${hasScreenshot ? `
+                        <div class="preview-label"><i class="fas fa-image"></i> 截图证明</div>
+                        <img src="${escapeHtml(record.screenshot_url)}" alt="截图" onclick="openImagePreview('${escapeHtml(record.screenshot_url)}')" loading="lazy">
+                        ` : ''}
+                        ${hasVideo ? `
+                        <div class="preview-label" style="margin-top: ${hasScreenshot ? '12px' : '0'};"><i class="fas fa-video"></i> 视频链接</div>
+                        <a href="${escapeHtml(record.video_url)}" target="_blank" class="video-link">
+                            <i class="fas fa-external-link-alt"></i> ${escapeHtml(record.video_url.length > 50 ? record.video_url.substring(0, 50) + '...' : record.video_url)}
+                        </a>
+                        ` : ''}
+                    </div>
+                    ` : ''}
+                </div>
+            `}).join('');
+        }
+        
+        // 切换媒体预览
+        function toggleMediaPreview(id) {
+            const previewEl = document.getElementById(`media-preview-${id}`);
+            if (previewEl) {
+                previewEl.style.display = previewEl.style.display === 'none' ? 'block' : 'none';
+            }
+        }
+        
+        // 打开图片预览弹窗（支持缩放和拖拽）
+        function openImagePreview(url) {
+            // 创建模态框
+            const modal = document.createElement('div');
+            modal.className = 'image-modal';
+            modal.style.cssText = `
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.95);
+                z-index: 10001;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            `;
+            
+            // 创建工具栏
+            const toolbar = document.createElement('div');
+            toolbar.style.cssText = `
+                position: absolute;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                gap: 12px;
+                padding: 10px 20px;
+                background: rgba(30, 30, 40, 0.9);
+                border: 1px solid rgba(201, 169, 97, 0.3);
+                border-radius: 30px;
+                z-index: 10002;
+                backdrop-filter: blur(10px);
+            `;
+            
+            // 缩放比例
+            let scale = 1;
+            let translateX = 0;
+            let translateY = 0;
+            let isDragging = false;
+            let startX = 0;
+            let startY = 0;
+            
+            // 创建图片容器
+            const container = document.createElement('div');
+            container.style.cssText = `
+                flex: 1;
+                display: flex;
+                align-items: flex-start;
+                justify-content: center;
+                overflow: auto;
+                padding: 80px 20px 20px;
+                cursor: grab;
+            `;
+            
+            // 创建图片
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = '预览';
+            img.style.cssText = `
+                max-width: none;
+                max-height: none;
+                border-radius: 4px;
+                box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+                transition: transform 0.2s ease;
+                transform-origin: center top;
+                user-select: none;
+            `;
+            
+            // 更新变换
+            function updateTransform() {
+                img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            }
+            
+            // 创建按钮函数
+            function createButton(icon, title, onClick) {
+                const btn = document.createElement('button');
+                btn.innerHTML = `<i class="fas ${icon}"></i>`;
+                btn.title = title;
+                btn.style.cssText = `
+                    width: 36px;
+                    height: 36px;
+                    border: none;
+                    background: transparent;
+                    color: var(--lc-gold);
+                    font-size: 1rem;
+                    cursor: pointer;
+                    border-radius: 50%;
+                    transition: all 0.2s;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                `;
+                btn.onmouseover = () => {
+                    btn.style.background = 'rgba(201, 169, 97, 0.2)';
+                };
+                btn.onmouseout = () => {
+                    btn.style.background = 'transparent';
+                };
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    onClick();
+                };
+                return btn;
+            }
+            
+            // 添加按钮
+            toolbar.appendChild(createButton('fa-minus', '缩小', () => {
+                scale = Math.max(0.2, scale - 0.2);
+                updateTransform();
+            }));
+            
+            toolbar.appendChild(createButton('fa-expand', '适应屏幕', () => {
+                scale = 1;
+                translateX = 0;
+                translateY = 0;
+                img.style.maxWidth = '90vw';
+                img.style.maxHeight = '80vh';
+                updateTransform();
+            }));
+            
+            toolbar.appendChild(createButton('fa-plus', '放大', () => {
+                scale = Math.min(5, scale + 0.2);
+                img.style.maxWidth = 'none';
+                img.style.maxHeight = 'none';
+                updateTransform();
+            }));
+            
+            toolbar.appendChild(createButton('fa-search-plus', '原图尺寸', () => {
+                scale = 1;
+                translateX = 0;
+                translateY = 0;
+                img.style.maxWidth = 'none';
+                img.style.maxHeight = 'none';
+                updateTransform();
+            }));
+            
+            toolbar.appendChild(createButton('fa-download', '下载', () => {
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = url.split('/').pop() || 'image.jpg';
+                link.target = '_blank';
+                link.click();
+            }));
+            
+            toolbar.appendChild(createButton('fa-times', '关闭', () => {
+                modal.remove();
+            }));
+            
+            // 添加鼠标滚轮缩放
+            container.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? -0.1 : 0.1;
+                scale = Math.max(0.2, Math.min(5, scale + delta));
+                img.style.maxWidth = 'none';
+                img.style.maxHeight = 'none';
+                updateTransform();
+            });
+            
+            // 添加拖拽功能
+            container.addEventListener('mousedown', (e) => {
+                if (e.target === img || e.target === container) {
+                    isDragging = true;
+                    startX = e.clientX - translateX;
+                    startY = e.clientY - translateY;
+                    container.style.cursor = 'grabbing';
+                }
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    translateX = e.clientX - startX;
+                    translateY = e.clientY - startY;
+                    updateTransform();
+                }
+            });
+            
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+                container.style.cursor = 'grab';
+            });
+            
+            // 点击背景关闭
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal || e.target === container) {
+                    modal.remove();
+                }
+            });
+            
+            // ESC 键关闭
+            const keyHandler = (e) => {
+                if (e.key === 'Escape') {
+                    modal.remove();
+                    document.removeEventListener('keydown', keyHandler);
+                }
+            };
+            document.addEventListener('keydown', keyHandler);
+            
+            // 组装
+            container.appendChild(img);
+            modal.appendChild(toolbar);
+            modal.appendChild(container);
+            document.body.appendChild(modal);
+            
+            // 默认适应屏幕
+            img.onload = () => {
+                const aspectRatio = img.naturalWidth / img.naturalHeight;
+                // 如果是长图（高度大于宽度的2倍），默认显示原图尺寸
+                if (img.naturalHeight > img.naturalWidth * 2) {
+                    scale = 1;
+                    img.style.maxWidth = 'none';
+                    img.style.maxHeight = 'none';
+                } else {
+                    img.style.maxWidth = '90vw';
+                    img.style.maxHeight = '80vh';
+                }
+                updateTransform();
+            };
+        }
+        
+        function renderReviewedList(records, status) {
+            const contentEl = document.getElementById('pending-list-content');
+            
+            if (records.length === 0) {
+                const emptyText = status === 'approved' ? '暂无已通过记录' : '暂无已拒绝记录';
+                contentEl.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-box-open"></i>
+                        <h3>${emptyText}</h3>
+                        <p>暂无数据需要显示</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            contentEl.innerHTML = records.map(record => {
+                const hasScreenshot = record.screenshot_url && record.screenshot_url.trim();
+                const hasVideo = record.video_url && record.video_url.trim();
+                
+                return `
+                <div class="record-item" data-id="${record.id}">
+                    <div class="record-main">
+                        <div style="display: flex; gap: 16px; align-items: flex-start; flex: 1;">
+                            <div class="record-id">#${record.id}</div>
+                            <div class="record-info" style="flex: 1;">
+                                <div class="username">
+                                    ${escapeHtml(record.username)}
+                                    <span class="status-badge status-${status}">
+                                        ${status === 'approved' ? '<i class="fas fa-check"></i> 已通过' : '<i class="fas fa-times"></i> 已拒绝'}
+                                    </span>
+                                    <span style="margin-left: 8px; color: var(--lc-accent-purple); font-size: 0.75rem;" title="记录ID: ${record.id}">
+                                        <i class="fas fa-fingerprint"></i> #${record.id}
+                                    </span>
+                                </div>
+                                <div class="details">
+                                    <span title="巫徒"><i class="fas fa-user"></i> ${escapeHtml(record.sinner)}</span>
+                                    <span style="margin-left: 12px;" title="人格"><i class="fas fa-mask"></i> ${escapeHtml(record.persona)}</span>
+                                    <span style="margin-left: 12px;" title="层数"><i class="fas fa-layer-group"></i> ${record.floor_level}层</span>
+                                    <span style="margin-left: 12px;" title="战斗时间"><i class="fas fa-stopwatch"></i> ${formatTime(record.time)}</span>
+                                    <span style="margin-left: 12px;" title="提交时间: ${record.created_at}"><i class="fas fa-calendar-alt"></i> ${new Date(record.created_at).toLocaleString('zh-CN')}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="record-actions">
+                            ${hasScreenshot || hasVideo ? `
+                            <button class="review-btn preview" onclick="toggleMediaPreview(${record.id})" title="查看媒体">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            ` : ''}
+                            <button class="review-btn delete" onclick="deleteRecord(${record.id})" title="永久删除">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    ${(hasScreenshot || hasVideo) ? `
+                    <div class="media-preview-area" id="media-preview-${record.id}" style="display: none;">
+                        ${hasScreenshot ? `
+                        <div class="preview-label"><i class="fas fa-image"></i> 截图证明</div>
+                        <img src="${escapeHtml(record.screenshot_url)}" alt="截图" onclick="openImagePreview('${escapeHtml(record.screenshot_url)}')" loading="lazy">
+                        ` : ''}
+                        ${hasVideo ? `
+                        <div class="preview-label" style="margin-top: ${hasScreenshot ? '12px' : '0'};"><i class="fas fa-video"></i> 视频链接</div>
+                        <a href="${escapeHtml(record.video_url)}" target="_blank" class="video-link">
+                            <i class="fas fa-external-link-alt"></i> ${escapeHtml(record.video_url.length > 50 ? record.video_url.substring(0, 50) + '...' : record.video_url)}
+                        </a>
+                        ` : ''}
+                    </div>
+                    ` : ''}
+                </div>
+            `}).join('');
+        }
+
+        async function approveRecord(id) {
+            await reviewRecord(id, 'approve');
+        }
+
+        async function rejectRecord(id) {
+            await reviewRecord(id, 'reject');
+        }
+
+        async function reviewRecord(id, action) {
+            const isApprove = action === 'approve';
+            const confirmed = await showConfirm({
+                title: isApprove ? '通过记录' : '拒绝记录',
+                message: isApprove ? '确定要通过这条记录吗？' : '确定要拒绝这条记录吗？',
+                confirmText: isApprove ? '通过' : '拒绝',
+                cancelText: '取消',
+                icon: isApprove ? 'fa-check-circle' : 'fa-times-circle',
+                isDanger: !isApprove
+            });
+            
+            if (!confirmed) return;
+            
+            const loading = showLoading('正在处理...');
+            
+            try {
+                const response = await fetchWithAuth(`${API_BASE}/rankings/approve/${id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ approved: isApprove })
+                });
+
+                const result = await response.json();
+
+                hideLoading();
+
+                if (result.code === 200) {
+                    showSuccess(isApprove ? '审核通过！' : '已拒绝');
+                    loadAllRecords();
+                } else {
+                    showError('操作失败: ' + result.message);
+                }
+            } catch (error) {
+                hideLoading();
+                showError('操作失败: ' + error.message);
+            }
+        }
+        
+        async function deleteRecord(id) {
+            const confirmed = await showConfirm({
+                title: '永久删除排行榜记录',
+                message: '⚠️ 警告：此操作将从数据库中永久删除这条排行榜记录！\n\n删除后该记录将从排行榜上彻底消失，且无法恢复。\n\n确定要继续吗？',
+                confirmText: '确认删除',
+                cancelText: '取消',
+                icon: 'fa-trash',
+                isDanger: true
+            });
+            
+            if (!confirmed) return;
+            
+            const loading = showLoading('正在删除...');
+            
+            try {
+                const response = await fetchWithAuth(`${API_BASE}/rankings/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                hideLoading();
+                
+                if (result.code === 200) {
+                    showSuccess('删除成功');
+                    loadAllRecords();
+                } else {
+                    showError('删除失败: ' + result.message);
+                }
+            } catch (error) {
+                hideLoading();
+                showError('删除失败: ' + error.message);
+            }
+        }
+
+        function formatTime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // 退出登录
+        async function logout() {
+            const confirmed = await showConfirm({
+                title: '退出登录',
+                message: '确定要退出登录吗？',
+                confirmText: '退出',
+                cancelText: '取消',
+                icon: 'fa-sign-out-alt'
+            });
+            
+            if (confirmed) {
+                localStorage.removeItem('admin_token');
+                localStorage.removeItem('admin_username');
+                localStorage.removeItem('admin_login_time');
+                window.location.href = '/admin-login';
+            }
+        }
+
+        // ==================== 修改密码功能 ====================
+        function openChangePasswordModal() {
+            const modal = document.createElement('div');
+            modal.className = 'custom-modal-overlay';
+            modal.id = 'change-password-modal';
+            modal.style.cssText = `
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.85);
+                backdrop-filter: blur(12px);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+                animation: fadeIn 0.2s ease;
+            `;
+            modal.innerHTML = `
+                <div style="
+                    width: 100%;
+                    max-width: 440px;
+                    background: linear-gradient(145deg, #1a1a1a 0%, #0d0d0d 100%);
+                    border: 1px solid rgba(201, 169, 97, 0.3);
+                    border-radius: 20px;
+                    overflow: hidden;
+                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 40px rgba(201, 169, 97, 0.1);
+                    animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+                ">
+                    <!-- 头部 -->
+                    <div style="
+                        background: linear-gradient(135deg, rgba(201, 169, 97, 0.15), rgba(201, 169, 97, 0.05));
+                        padding: 24px;
+                        border-bottom: 1px solid rgba(201, 169, 97, 0.2);
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                    ">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="
+                                width: 44px;
+                                height: 44px;
+                                background: linear-gradient(135deg, rgba(201, 169, 97, 0.2), rgba(201, 169, 97, 0.1));
+                                border: 2px solid rgba(201, 169, 97, 0.3);
+                                border-radius: 12px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                            ">
+                                🔑
+                            </div>
+                            <div>
+                                <h2 style="color: var(--lc-gold); font-size: 1.3rem; margin: 0; font-weight: 700;">修改密码</h2>
+                                <p style="color: var(--lc-text-muted); font-size: 0.85rem; margin: 4px 0 0;">更新您的登录凭证</p>
+                            </div>
+                        </div>
+                        <button onclick="closeChangePasswordModal()" style="
+                            width: 36px;
+                            height: 36px;
+                            background: rgba(255, 255, 255, 0.05);
+                            border: 1px solid rgba(255, 255, 255, 0.1);
+                            border-radius: 50%;
+                            color: var(--lc-text-muted);
+                            cursor: pointer;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            transition: all 0.2s;
+                            font-size: 1.1rem;
+                        " onmouseover="this.style.background='rgba(201, 79, 79, 0.2)';this.style.borderColor='rgba(201, 79, 79, 0.4)';this.style.color='var(--lc-red)';this.style.transform='rotate(90deg)'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='var(--lc-text-muted)';this.style.transform='rotate(0)'">
+                            ✕
+                        </button>
+                    </div>
+                    
+                    <!-- 表单内容 -->
+                    <div style="padding: 28px;">
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; margin-bottom: 8px; color: var(--lc-gold); font-weight: 600; font-size: 0.9rem;">
+                                🔒当前密码
+                            </label>
+                            <input type="password" id="old-password" placeholder="请输入当前密码" style="
+                                width: 100%;
+                                padding: 14px 16px;
+                                background: rgba(0, 0, 0, 0.4);
+                                border: 1px solid rgba(201, 169, 97, 0.2);
+                                border-radius: 12px;
+                                color: var(--lc-text);
+                                font-size: 1rem;
+                                box-sizing: border-box;
+                                transition: all 0.2s;
+                                font-family: inherit;
+                            " onfocus="this.style.borderColor='var(--lc-gold)';this.style.boxShadow='0 0 0 3px rgba(201,169,97,0.1)'" onblur="this.style.borderColor='rgba(201,169,97,0.2)';this.style.boxShadow='none'">
+                        </div>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; margin-bottom: 8px; color: var(--lc-gold); font-weight: 600; font-size: 0.9rem;">
+                                🔑新密码
+                            </label>
+                            <input type="password" id="new-password" placeholder="请输入新密码（至少8位）" style="
+                                width: 100%;
+                                padding: 14px 16px;
+                                background: rgba(0, 0, 0, 0.4);
+                                border: 1px solid rgba(201, 169, 97, 0.2);
+                                border-radius: 12px;
+                                color: var(--lc-text);
+                                font-size: 1rem;
+                                box-sizing: border-box;
+                                transition: all 0.2s;
+                                font-family: inherit;
+                            " onfocus="this.style.borderColor='var(--lc-gold)';this.style.boxShadow='0 0 0 3px rgba(201,169,97,0.1)'" onblur="this.style.borderColor='rgba(201,169,97,0.2)';this.style.boxShadow='none'">
+                        </div>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; margin-bottom: 8px; color: var(--lc-gold); font-weight: 600; font-size: 0.9rem;">
+                                ✅确认新密码
+                            </label>
+                            <input type="password" id="confirm-password" placeholder="请再次输入新密码" style="
+                                width: 100%;
+                                padding: 14px 16px;
+                                background: rgba(0, 0, 0, 0.4);
+                                border: 1px solid rgba(201, 169, 97, 0.2);
+                                border-radius: 12px;
+                                color: var(--lc-text);
+                                font-size: 1rem;
+                                box-sizing: border-box;
+                                transition: all 0.2s;
+                                font-family: inherit;
+                            " onfocus="this.style.borderColor='var(--lc-gold)';this.style.boxShadow='0 0 0 3px rgba(201,169,97,0.1)'" onblur="this.style.borderColor='rgba(201,169,97,0.2)';this.style.boxShadow='none'">
+                        </div>
+                        
+                        <div style="
+                            background: linear-gradient(135deg, rgba(201, 169, 97, 0.1), rgba(201, 169, 97, 0.05));
+                            border: 1px solid rgba(201, 169, 97, 0.2);
+                            border-radius: 12px;
+                            padding: 14px 16px;
+                            font-size: 0.85rem;
+                            color: var(--lc-gold);
+                            display: flex;
+                            align-items: center;
+                            gap: 10px;
+                        ">
+                            ℹ️
+                            <span>修改密码后需要重新登录系统</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 底部按钮 -->
+                    <div style="
+                        padding: 20px 28px;
+                        border-top: 1px solid rgba(201, 169, 97, 0.15);
+                        display: flex;
+                        gap: 12px;
+                        justify-content: flex-end;
+                        background: rgba(0, 0, 0, 0.2);
+                    ">
+                        <button onclick="closeChangePasswordModal()" style="
+                            padding: 12px 28px;
+                            background: transparent;
+                            border: 1px solid rgba(201, 169, 97, 0.3);
+                            color: var(--lc-text);
+                            border-radius: 10px;
+                            cursor: pointer;
+                            font-weight: 600;
+                            font-size: 0.95rem;
+                            transition: all 0.2s;
+                            font-family: inherit;
+                        " onmouseover="this.style.background='rgba(201,169,97,0.1)';this.style.borderColor='var(--lc-gold)';this.style.color='var(--lc-gold)'" onmouseout="this.style.background='transparent';this.style.borderColor='rgba(201,169,97,0.3)';this.style.color='var(--lc-text)'">取消</button>
+                        <button onclick="submitChangePassword()" style="
+                            padding: 12px 28px;
+                            background: linear-gradient(135deg, var(--lc-gold), #b8942d);
+                            border: none;
+                            color: #000;
+                            border-radius: 10px;
+                            cursor: pointer;
+                            font-weight: 700;
+                            font-size: 0.95rem;
+                            transition: all 0.2s;
+                            box-shadow: 0 4px 15px rgba(201, 169, 97, 0.3);
+                            font-family: inherit;
+                        " onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(201,169,97,0.4)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 15px rgba(201,169,97,0.3)'">
+                            ✓确认修改
+                        </button>
+                    </div>
+                </div>
+                <style>
+                    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                    @keyframes scaleIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+                </style>
+            `;
+            document.body.appendChild(modal);
+            
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeChangePasswordModal();
+            });
+        }
+
+        function closeChangePasswordModal() {
+            const modal = document.getElementById('change-password-modal');
+            if (modal) modal.remove();
+        }
+
+        async function submitChangePassword() {
+            const oldPassword = document.getElementById('old-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+
+            if (!oldPassword || !newPassword || !confirmPassword) {
+                showError('请填写所有字段');
+                return;
+            }
+
+            if (newPassword.length < 8) {
+                showError('新密码长度至少8位');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showError('两次输入的新密码不一致');
+                return;
+            }
+
+            const loading = showLoading('正在修改密码...');
+
+            try {
+                const response = await fetchWithAuth(`${API_BASE}/admin/change-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ oldPassword, newPassword })
+                });
+
+                const result = await response.json();
+
+                hideLoading();
+
+                if (result.code === 200) {
+                    showSuccess('密码修改成功，请重新登录');
+                    closeChangePasswordModal();
+                    setTimeout(() => {
+                        localStorage.removeItem('admin_token');
+                        window.location.href = '/admin-login';
+                    }, 1500);
+                } else {
+                    showError(result.message || '修改失败');
+                }
+            } catch (error) {
+                hideLoading();
+                showError('修改失败: ' + error.message);
+            }
+        }
+
+        // 页面加载时检查认证并获取列表
+        checkAuth().then(isAuth => {
+            if (isAuth) {
+                loadAllRecords();
+            }
+        });
+
+        // ==================== 模块切换 ====================
+        function switchModule(mod) {
+            document.querySelectorAll('.module-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(`mod-${mod}`).classList.add('active');
+            
+            // 隐藏所有面板
+            document.getElementById('ranking-panel').classList.add('hidden');
+            document.getElementById('guides-panel').style.display = 'none';
+            
+            if (mod === 'ranking') {
+                document.getElementById('ranking-panel').classList.remove('hidden');
+            } else if (mod === 'guides') {
+                document.getElementById('guides-panel').style.display = 'block';
+                loadGuides();
+            }
+        }
+
+        // ==================== 攻略管理功能 ====================
+        let currentGuideTab = 'pending';
+        let allGuides = {
+            pending: [],
+            approved: []
+        };
+
+        async function loadGuides() {
+            const contentEl = document.getElementById('guides-list-content');
+            contentEl.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>';
+
+            try {
+                const pendingRes = await fetchWithAuth(`${API_BASE}/guides/pending`);
+                const pendingData = await pendingRes.json();
+                
+                // 获取已通过列表
+                const listRes = await fetch(`${API_BASE}/guides/list?page=1&pageSize=1000`);
+                const listData = await listRes.json();
+
+                console.log('[Admin] 攻略待审核数据:', pendingData);
+                console.log('[Admin] 攻略已通过数据:', listData);
+
+                // 验证数据格式
+                const pending = Array.isArray(pendingData.data) ? pendingData.data : [];
+                const approved = Array.isArray(listData.data?.guides) ? listData.data.guides : [];
+
+                allGuides = {
+                    pending: pending,
+                    approved: approved
+                };
+
+                const pendingCount = allGuides.pending.length;
+                const approvedCount = allGuides.approved.length;
+                
+                document.getElementById('guides-pending-count').textContent = pendingCount;
+                document.getElementById('guides-approved-count').textContent = approvedCount;
+                document.getElementById('guides-total-count').textContent = pendingCount + approvedCount;
+                document.getElementById('guide-tab-pending-count').textContent = pendingCount;
+                document.getElementById('guide-tab-approved-count').textContent = approvedCount;
+
+                renderGuidesList();
+            } catch (error) {
+                console.error('[Admin] 加载攻略审核数据失败:', error);
+                contentEl.innerHTML = `<div class="error">⚠️ 加载失败: ${error.message}</div>`;
+            }
+        }
+
+        function switchGuideTab(tab) {
+            currentGuideTab = tab;
+            
+            document.querySelectorAll('#guides-panel .tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`guide-tab-${tab}`).classList.add('active');
+            
+            const titles = {
+                pending: '<i class="fas fa-clock"></i> 待审核攻略',
+                approved: '<i class="fas fa-check-circle"></i> 已通过攻略'
+            };
+            document.getElementById('guides-list-title').innerHTML = titles[tab];
+            
+            renderGuidesList();
+        }
+
+        function renderGuidesList() {
+            const contentEl = document.getElementById('guides-list-content');
+            const guides = allGuides[currentGuideTab] || [];
+
+            if (guides.length === 0) {
+                const emptyText = currentGuideTab === 'pending' ? '暂无待审核攻略' : '暂无已通过攻略';
+                const icon = currentGuideTab === 'pending' ? 'fa-clock' : 'fa-check-circle';
+                contentEl.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas ${icon}"></i>
+                        <h3>${emptyText}</h3>
+                        <p>${currentGuideTab === 'pending' ? '暂无需要审核的攻略提交' : '暂无已审核通过的攻略'}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            contentEl.innerHTML = guides.map(guide => {
+                // 检查是否有封面图、视频、图片或正文图片
+                const hasCover = guide.coverUrl && guide.coverUrl.trim();
+                const hasVideo = guide.mediaType === 'video' && guide.mediaUrls && guide.mediaUrls.length > 0;
+                const hasImage = (guide.mediaType === 'image' || guide.mediaType === 'mixed') && guide.mediaUrls && guide.mediaUrls.length > 0;
+                const hasContentImages = guide.contentImages && guide.contentImages.length > 0;
+                const hasMedia = hasCover || hasVideo || hasImage || hasContentImages;
+                
+                // 检查是否为联动内容（与排行榜关联）
+                const isLinked = guide.linkedRankingId || (guide.tags && guide.tags.includes('速通'));
+                
+                // 媒体类型图标
+                const mediaIcon = guide.mediaType === 'video' ? 'fa-video' : guide.mediaType === 'text' ? 'fa-file-alt' : guide.mediaType === 'mixed' ? 'fa-photo-video' : 'fa-image';
+                const mediaLabel = guide.mediaType === 'video' ? '视频' : guide.mediaType === 'text' ? '纯文本' : guide.mediaType === 'mixed' ? '混合' : '图文';
+                
+                return `
+                <div class="record-item" data-id="${guide.id}">
+                    <div class="record-main">
+                        <div style="display: flex; gap: 16px; align-items: flex-start; flex: 1;">
+                            <div class="record-id">#${guide.id}</div>
+                            <div class="record-info" style="flex: 1;">
+                                <div class="username">
+                                    ${escapeHtml(guide.title)}
+                                    <span class="status-badge status-${guide.status}">
+                                        ${guide.status === 'pending' ? '<i class="fas fa-clock"></i> 待审核' : '<i class="fas fa-check"></i> 已通过'}
+                                    </span>
+                                    ${isLinked ? '<span class="linked-badge"><i class="fas fa-link"></i> 联动内容</span>' : ''}
+                                </div>
+                                <div class="details" style="margin-top: 6px;">
+                                    <span title="作者: ${escapeHtml(guide.author || '匿名')}"><i class="fas fa-user-edit"></i> ${escapeHtml(guide.author || '匿名')}</span>
+                                    <span style="margin-left: 12px;" title="巫徒·人格"><i class="fas fa-user"></i> ${escapeHtml(guide.sinner)} · ${escapeHtml(guide.persona)}</span>
+                                    <span style="margin-left: 12px;"><i class="fas fa-layer-group"></i> ${guide.floorLevel}层</span>
+                                    <span style="margin-left: 12px;" title="创建时间: ${guide.created_at}"><i class="fas fa-calendar-alt"></i> ${new Date(guide.created_at).toLocaleString()}</span>
+                                    <span style="margin-left: 12px;"><i class="fas ${mediaIcon}"></i> ${mediaLabel}</span>
+                                    <span style="margin-left: 12px; color: var(--lc-accent-purple);" title="记录ID: ${guide.id}"><i class="fas fa-fingerprint"></i> #${guide.id}</span>
+                                </div>
+                                <div style="margin-top: 8px; color: var(--lc-text-muted); font-size: 0.85rem; line-height: 1.5;">
+                                    ${escapeHtml(guide.content.substring(0, 120))}${guide.content.length > 120 ? '...' : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="record-actions">
+                            ${hasMedia ? `
+                            <button class="review-btn preview" onclick="toggleGuideMediaPreview(${guide.id})" title="查看媒体">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            ` : ''}
+                            ${guide.status === 'pending' ? `
+                            <button class="review-btn approve" onclick="reviewGuide(${guide.id}, true)" title="通过">
+                                <i class="fas fa-check"></i> 通过
+                            </button>
+                            <button class="review-btn reject" onclick="reviewGuide(${guide.id}, false)" title="拒绝">
+                                <i class="fas fa-times"></i> 拒绝
+                            </button>
+                            ` : `
+                            <button class="review-btn preview" onclick="viewGuide(${guide.id})" title="查看详情">
+                                <i class="fas fa-external-link-alt"></i>
+                            </button>
+                            `}
+                            <button class="review-btn delete" onclick="deleteGuide(${guide.id})" title="删除">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    ${hasMedia ? `
+                    <div class="media-preview-area" id="guide-media-preview-${guide.id}" style="display: none;">
+                        ${hasCover ? `
+                        <div class="preview-label"><i class="fas fa-image"></i> 封面图片</div>
+                        <img src="${escapeHtml(guide.coverUrl)}" alt="封面" onclick="openImagePreview('${escapeHtml(guide.coverUrl)}')" loading="lazy" style="margin-bottom: 12px;">
+                        ` : ''}
+                        ${hasVideo ? `
+                        <div class="preview-label"><i class="fas fa-video"></i> 视频链接</div>
+                        ${guide.mediaUrls.map(url => `
+                        <a href="${escapeHtml(url)}" target="_blank" class="video-link" style="margin-right: 8px; margin-bottom: 8px;">
+                            <i class="fas fa-external-link-alt"></i> ${escapeHtml(url.length > 40 ? url.substring(0, 40) + '...' : url)}
+                        </a>
+                        `).join('')}
+                        ` : ''}
+                        ${hasImage && !hasVideo ? `
+                        <div class="preview-label"><i class="fas fa-images"></i> 攻略图片</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            ${guide.mediaUrls.slice(0, 4).map(url => `
+                            <img src="${escapeHtml(url)}" alt="攻略图" onclick="openImagePreview('${escapeHtml(url)}')" loading="lazy" style="max-height: 120px; cursor: pointer;">
+                            `).join('')}
+                            ${guide.mediaUrls.length > 4 ? `<span style="color: var(--lc-text-muted); align-self: center;">+${guide.mediaUrls.length - 4} 张</span>` : ''}
+                        </div>
+                        ` : ''}
+                        ${hasContentImages ? `
+                        <div class="preview-label"><i class="fas fa-images"></i> 正文图片 (${guide.contentImages.length}张)</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            ${guide.contentImages.slice(0, 4).map(img => {
+                                const imageUrl = typeof img === 'string' ? img : img.url;
+                                return `<img src="${escapeHtml(imageUrl)}" alt="正文图片" onclick="openImagePreview('${escapeHtml(imageUrl)}')" loading="lazy" style="max-height: 120px; cursor: pointer;">`;
+                            }).join('')}
+                            ${guide.contentImages.length > 4 ? `<span style="color: var(--lc-text-muted); align-self: center;">+${guide.contentImages.length - 4} 张</span>` : ''}
+                        </div>
+                        ` : ''}
+                    </div>
+                    ` : ''}
+                </div>
+            `}).join('');
+        }
+        
+        // 切换攻略媒体预览
+        function toggleGuideMediaPreview(id) {
+            const previewEl = document.getElementById(`guide-media-preview-${id}`);
+            if (previewEl) {
+                previewEl.style.display = previewEl.style.display === 'none' ? 'block' : 'none';
+            }
+        }
+
+        async function reviewGuide(id, isApprove) {
+            const action = isApprove ? '通过' : '拒绝';
+            
+            const confirmed = await showConfirm({
+                title: `确认${action}`,
+                message: `确定要${action}该攻略吗？`,
+                confirmText: action,
+                cancelText: '取消',
+                isDanger: !isApprove
+            });
+            
+            if (!confirmed) return;
+            
+            const loading = showLoading('处理中...');
+            
+            try {
+                const response = await fetchWithAuth(`${API_BASE}/guides/approve/${id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ approved: isApprove })
+                });
+                
+                const result = await response.json();
+                
+                hideLoading();
+                
+                if (result.code === 200) {
+                    showSuccess(`${action}成功`);
+                    loadGuides();
+                } else {
+                    showError(`${action}失败: ` + result.message);
+                }
+            } catch (error) {
+                hideLoading();
+                showError(`${action}失败: ` + error.message);
+            }
+        }
+
+        async function deleteGuide(id) {
+            const confirmed = await showConfirm({
+                title: '删除攻略',
+                message: '确定要删除该攻略吗？此操作不可撤销！',
+                confirmText: '删除',
+                cancelText: '取消',
+                isDanger: true
+            });
+            
+            if (!confirmed) return;
+            
+            const loading = showLoading('删除中...');
+            
+            try {
+                const response = await fetchWithAuth(`${API_BASE}/guides/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                hideLoading();
+                
+                if (result.code === 200) {
+                    showSuccess('删除成功');
+                    loadGuides();
+                } else {
+                    showError('删除失败: ' + result.message);
+                }
+            } catch (error) {
+                hideLoading();
+                showError('删除失败: ' + error.message);
+            }
+        }
+
+        function viewGuide(id) {
+            window.open(`guides?id=${id}`, '_blank');
+        }
+
+        // ==================== 图片上传功能（通过后端代理上传到腾讯云COS，安全无需暴露SecretKey）====================
+        // 处理管理员封面图片上传
+        window.handleAdminCoverUpload = async function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // 验证文件类型
+            if (!file.type.startsWith('image/')) {
+                showError('请上传图片文件');
+                return;
+            }
+            
+            // 验证文件大小 (10MB)
+            if (file.size > UPLOAD_CONFIG.maxFileSize) {
+                showError('图片大小不能超过10MB');
+                return;
+            }
+            
+            const uploadArea = document.getElementById('admin-cover-upload-area');
+            const progressArea = document.getElementById('admin-upload-progress');
+            const percentEl = document.getElementById('admin-upload-percent');
+            const progressBar = document.getElementById('admin-progress-bar');
+            const previewArea = document.getElementById('admin-cover-preview');
+            const previewImg = document.getElementById('admin-preview-img');
+            const hiddenInput = document.getElementById('guide-cover');
+            
+            // 显示进度条
+            uploadArea.style.display = 'none';
+            progressArea.style.display = 'block';
+            percentEl.textContent = '0%';
+            progressBar.style.width = '0%';
+            
+            try {
+                // 通过后端代理上传到COS（安全无需暴露SecretKey）
+                const formData = new FormData();
+                formData.append('image', file);
+                
+                // 模拟进度（因为fetch不支持进度回调）
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    if (progress < 90) {
+                        progress += Math.random() * 10;
+                        const percent = Math.min(Math.round(progress), 90);
+                        percentEl.textContent = percent + '%';
+                        progressBar.style.width = percent + '%';
+                    }
+                }, 200);
+                
+                const response = await fetch(`${API_BASE}/upload/image`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                clearInterval(progressInterval);
+                
+                const result = await response.json();
+                
+                if (result.code === 200 && result.success) {
+                    // 上传成功
+                    percentEl.textContent = '100%';
+                    progressBar.style.width = '100%';
+                    
+                    // 显示预览
+                    previewImg.src = result.data.url;
+                    previewArea.style.display = 'block';
+                    progressArea.style.display = 'none';
+                    
+                    // 保存URL到隐藏字段
+                    hiddenInput.value = result.data.url;
+                    
+                    showSuccess('图片上传成功！');
+                } else {
+                    throw new Error(result.message || '上传失败');
+                }
+            } catch (error) {
+                console.error('上传失败:', error);
+                uploadArea.style.display = 'block';
+                progressArea.style.display = 'none';
+                showError('上传失败: ' + (error.message || '请检查网络后重试'));
+            }
+        };
+        
+        // 删除管理员已上传的封面图
+        window.removeAdminCover = function(event) {
+            event.stopPropagation();
+            
+            const uploadArea = document.getElementById('admin-cover-upload-area');
+            const previewArea = document.getElementById('admin-cover-preview');
+            const hiddenInput = document.getElementById('guide-cover');
+            const fileInput = document.getElementById('admin-cover-file');
+            
+            uploadArea.style.display = 'block';
+            previewArea.style.display = 'none';
+            hiddenInput.value = '';
+            fileInput.value = '';
+        };
+
+        // 生成罪人下拉选项
+        function generateSinnerOptions() {
+            return sinnerData.map(s => {
+                const name = s.name.split(' ')[0];
+                return `<option value="${name}">${name}</option>`;
+            }).join('');
+        }
+
+        // 生成人格下拉选项
+        function generatePersonaOptions(sinnerName) {
+            const sinner = sinnerData.find(s => s.name.includes(sinnerName));
+            if (!sinner) return '<option value="">请先选择罪人</option>';
+            return sinner.personalities.map(p => 
+                `<option value="${p.name}">${p.name}</option>`
+            ).join('');
+        }
+
+        // 更新人格下拉框
+        window.updateAdminPersonaSelect = function() {
+            const sinnerSelect = document.getElementById('guide-sinner');
+            const personaSelect = document.getElementById('guide-persona');
+            const selectedSinner = sinnerSelect.value;
+            
+            if (!selectedSinner) {
+                personaSelect.innerHTML = '<option value="">-- 请先选择罪人 --</option>';
+                return;
+            }
+            
+            personaSelect.innerHTML = '<option value="">-- 请选择人格 --</option>' + generatePersonaOptions(selectedSinner);
+        };
+
+        // 发布攻略弹窗
+        function openGuideUploadModal() {
+            const modal = document.createElement('div');
+            modal.className = 'custom-modal-overlay';
+            modal.id = 'guide-upload-modal';
+            modal.innerHTML = `
+                <div class="custom-modal" style="min-width: 560px; max-width: 640px; max-height: 85vh; overflow-y: auto;">
+                    <div class="custom-modal-header" style="border-bottom: 1px solid var(--lc-border); padding-bottom: 16px; margin-bottom: 20px;">
+                        ➕
+                        <h2 class="custom-modal-title">发布新攻略</h2>
+                    </div>
+                    <div class="custom-modal-body" style="margin-bottom: 0;">
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; margin-bottom: 8px; color: var(--lc-gold); font-weight: 600; font-size: 0.9rem;">
+                                📝 攻略标题 <span style="color: var(--lc-red);">*</span>
+                            </label>
+                            <input type="text" id="guide-title" placeholder="输入攻略标题" style="width: 100%; padding: 12px 16px; background: var(--lc-bg-secondary); border: 1px solid var(--lc-border); border-radius: 8px; color: var(--lc-text); font-size: 1rem; box-sizing: border-box;">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                            <div>
+                                <label style="display: block; margin-bottom: 8px; color: var(--lc-gold); font-weight: 600; font-size: 0.9rem;">
+                                    👤 罪人 <span style="color: var(--lc-red);">*</span>
+                                </label>
+                                <select id="guide-sinner" onchange="updateAdminPersonaSelect()" style="width: 100%; padding: 12px 16px; background: var(--lc-bg-secondary); border: 1px solid var(--lc-border); border-radius: 8px; color: var(--lc-text); box-sizing: border-box; cursor: pointer;">
+                                    <option value="">-- 请选择罪人 --</option>
+                                    ${generateSinnerOptions()}
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 8px; color: var(--lc-gold); font-weight: 600; font-size: 0.9rem;">
+                                    🎭 人格 <span style="color: var(--lc-red);">*</span>
+                                </label>
+                                <select id="guide-persona" style="width: 100%; padding: 12px 16px; background: var(--lc-bg-secondary); border: 1px solid var(--lc-border); border-radius: 8px; color: var(--lc-text); box-sizing: border-box; cursor: pointer;">
+                                    <option value="">-- 请先选择罪人 --</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                            <div>
+                                <label style="display: block; margin-bottom: 8px; color: var(--lc-gold); font-weight: 600; font-size: 0.9rem;">
+                                    📶 层数 <span style="color: var(--lc-red);">*</span>
+                                </label>
+                                <select id="guide-floor" style="width: 100%; padding: 12px 16px; background: var(--lc-bg-secondary); border: 1px solid var(--lc-border); border-radius: 8px; color: var(--lc-text); box-sizing: border-box; cursor: pointer;">
+                                    <option value="5-2">5-H (困难)</option>
+                                    <option value="10">10层</option>
+                                    <option value="15">15层</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 8px; color: var(--lc-gold); font-weight: 600; font-size: 0.9rem;">
+                                    📷 媒体类型
+                                </label>
+                                <select id="guide-media-type" style="width: 100%; padding: 12px 16px; background: var(--lc-bg-secondary); border: 1px solid var(--lc-border); border-radius: 8px; color: var(--lc-text); box-sizing: border-box; cursor: pointer;">
+                                    <option value="video">视频</option>
+                                    <option value="image">图片/长图</option>
+                                    <option value="text">纯文本</option>
+                                    <option value="mixed">混合</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; margin-bottom: 8px; color: var(--lc-gold); font-weight: 600; font-size: 0.9rem;">
+                                📝 攻略内容 <span style="color: var(--lc-red);">*</span>
+                            </label>
+                            <textarea id="guide-content" rows="4" placeholder="输入攻略简介或说明..." style="width: 100%; padding: 12px 16px; background: var(--lc-bg-secondary); border: 1px solid var(--lc-border); border-radius: 8px; color: var(--lc-text); resize: vertical; box-sizing: border-box; font-family: inherit;"></textarea>
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; margin-bottom: 8px; color: var(--lc-gold); font-weight: 600; font-size: 0.9rem;">
+                                🔗 媒体链接 <span style="color: var(--lc-text-muted); font-weight: 400;">(每行一个)</span>
+                            </label>
+                            <textarea id="guide-media-urls" rows="3" placeholder="视频地址或图片链接，每行一个..." style="width: 100%; padding: 12px 16px; background: var(--lc-bg-secondary); border: 1px solid var(--lc-border); border-radius: 8px; color: var(--lc-text); resize: vertical; box-sizing: border-box; font-family: inherit;"></textarea>
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; margin-bottom: 8px; color: var(--lc-gold); font-weight: 600; font-size: 0.9rem;">
+                                🖼️ 封面图片 <span style="color: var(--lc-text-muted); font-weight: 400;">(可选)</span>
+                            </label>
+                            
+                            <!-- 图片上传区域 -->
+                            <div id="admin-cover-upload-area" style="border:2px dashed rgba(201,169,97,0.3);border-radius:12px;padding:24px;text-align:center;background:rgba(0,0,0,0.2);transition:all 0.3s;cursor:pointer;position:relative;" 
+                                 ondragover="event.preventDefault();this.style.borderColor='var(--lc-gold)';this.style.background='rgba(201,169,97,0.05)';" 
+                                 ondragleave="this.style.borderColor='rgba(201,169,97,0.3)';this.style.background='rgba(0,0,0,0.2)';"
+                                 onclick="document.getElementById('admin-cover-file').click()">
+                                ☁️
+                                <div style="color:var(--lc-text-secondary);font-size:0.95rem;margin-bottom:6px;">点击或拖拽图片到此处上传</div>
+                                <div style="color:var(--lc-text-muted);font-size:0.8rem;">支持 JPG, PNG, GIF, WEBP 格式，最大 10MB</div>
+                                <input type="file" id="admin-cover-file" accept="image/*" style="display:none;" onchange="handleAdminCoverUpload(event)">
+                            </div>
+                            
+                            <!-- 上传进度 -->
+                            <div id="admin-upload-progress" style="display:none;margin-top:12px;">
+                                <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                                    <span style="font-size:0.85rem;color:var(--lc-gold);">上传中...</span>
+                                    <span id="admin-upload-percent" style="font-size:0.85rem;color:var(--lc-text);font-weight:600;">0%</span>
+                                </div>
+                                <div style="height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;">
+                                    <div id="admin-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--lc-gold),#b8942d);transition:width 0.3s;"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- 预览区域 -->
+                            <div id="admin-cover-preview" style="display:none;margin-top:12px;position:relative;">
+                                <img id="admin-preview-img" src="" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;border:1px solid rgba(201,169,97,0.3);">
+                                <button onclick="removeAdminCover(event)" style="position:absolute;top:8px;right:8px;width:30px;height:30px;background:rgba(201,79,79,0.9);border:none;border-radius:50%;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" title="删除图片">
+                                    ✕
+                                </button>
+                            </div>
+                            
+                            <input type="hidden" id="guide-cover" value="">
+                            
+                            <div style="background:linear-gradient(135deg,rgba(59,130,246,0.1),rgba(59,130,246,0.05));border:1px solid rgba(59,130,246,0.2);border-radius:8px;padding:10px 12px;font-size:0.8rem;color:var(--lc-text-secondary);margin-top:10px;">
+                                💡
+                                也可以直接粘贴外链图片URL在下方
+                            </div>
+                            
+                            <input type="text" id="guide-cover-url" placeholder="或者粘贴图片URL" style="width:100%;padding:12px 16px;background:var(--lc-bg-secondary);border:1px solid var(--lc-border);border-radius:8px;color:var(--lc-text);box-sizing:border-box;font-family:inherit;margin-top:10px;">
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <label style="display: block; margin-bottom: 8px; color: var(--lc-gold); font-weight: 600; font-size: 0.9rem;">
+                                🏷️ 标签 <span style="color: var(--lc-text-muted); font-weight: 400;">(用逗号分隔)</span>
+                            </label>
+                            <input type="text" id="guide-tags" placeholder="新手友好, 高造价, 视频攻略..." style="width: 100%; padding: 12px 16px; background: var(--lc-bg-secondary); border: 1px solid var(--lc-border); border-radius: 8px; color: var(--lc-text); box-sizing: border-box;">
+                        </div>
+                    </div>
+                    <div class="custom-modal-footer" style="border-top: 1px solid var(--lc-border); padding-top: 20px; margin-top: 24px;">
+                        <button class="custom-modal-btn custom-modal-btn-cancel" onclick="closeGuideModal()">取消</button>
+                        <button class="custom-modal-btn custom-modal-btn-confirm" onclick="submitGuide()" style="background: linear-gradient(135deg, #22c55e, #16a34a);">
+                            📤 发布攻略
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeGuideModal();
+            });
+        }
+
+        function closeGuideModal() {
+            const modal = document.getElementById('guide-upload-modal');
+            if (modal) modal.remove();
+        }
+
+        // ==================== 暴露函数到全局作用域 ====================
+        window.logout = logout;
+        window.switchModule = switchModule;
+        window.switchTab = switchTab;
+        window.loadAllRecords = loadAllRecords;
+        window.approveRecord = approveRecord;
+        window.rejectRecord = rejectRecord;
+        window.deleteRecord = deleteRecord;
+        window.loadGuides = loadGuides;
+        window.switchGuideTab = switchGuideTab;
+        window.reviewGuide = reviewGuide;
+        window.deleteGuide = deleteGuide;
+        window.viewGuide = viewGuide;
+        window.openGuideUploadModal = openGuideUploadModal;
+        window.closeGuideModal = closeGuideModal;
+        window.submitGuide = submitGuide;
+        window.toggleMediaPreview = toggleMediaPreview;
+        window.toggleGuideMediaPreview = toggleGuideMediaPreview;
+        window.openImagePreview = openImagePreview;
+
+        async function submitGuide() {
+            const titleEl = document.getElementById('guide-title');
+            const sinnerEl = document.getElementById('guide-sinner');
+            const personaEl = document.getElementById('guide-persona');
+            const floorEl = document.getElementById('guide-floor');
+            const mediaTypeEl = document.getElementById('guide-media-type');
+            const contentEl = document.getElementById('guide-content');
+            const mediaUrlsEl = document.getElementById('guide-media-urls');
+            const coverEl = document.getElementById('guide-cover');
+            const coverUrlEl = document.getElementById('guide-cover-url');
+            const tagsEl = document.getElementById('guide-tags');
+
+            const title = titleEl ? titleEl.value.trim() : '';
+            const sinner = sinnerEl ? sinnerEl.value : '';
+            const persona = personaEl ? personaEl.value : '';
+            const floorLevel = floorEl ? floorEl.value : '5-2';
+            const mediaType = mediaTypeEl ? mediaTypeEl.value : 'video';
+            const content = contentEl ? contentEl.value.trim() : '';
+            const mediaUrlsRaw = mediaUrlsEl ? mediaUrlsEl.value : '';
+            const coverUrl = coverEl?.value.trim() || coverUrlEl?.value.trim() || null;
+            const tagsRaw = tagsEl ? tagsEl.value : '';
+            
+            const mediaUrls = mediaUrlsRaw.split('\n').map(u => u.trim()).filter(u => u);
+            const tags = tagsRaw.split(/[,，]/).map(t => t.trim()).filter(t => t);
+
+            // 验证必填字段
+            let errors = [];
+            if (!title) errors.push('攻略标题');
+            if (!sinner) errors.push('罪人');
+            if (!persona) errors.push('人格');
+            if (!content) errors.push('攻略内容');
+            
+            if (errors.length > 0) {
+                showError('请填写以下必填项：' + errors.join('、'));
+                return;
+            }
+
+            const loading = showLoading('发布中...');
+
+            try {
+                const response = await fetchWithAuth(`${API_BASE}/guides/submit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title,
+                        sinner,
+                        persona,
+                        floorLevel,
+                        mediaType,
+                        content,
+                        mediaUrls,
+                        coverUrl,
+                        tags
+                    })
+                });
+
+                const result = await response.json();
+
+                hideLoading();
+
+                if (result.code === 200) {
+                    showSuccess('发布成功');
+                    closeGuideModal();
+                    loadGuides();
+                } else {
+                    showError('发布失败: ' + result.message);
+                }
+            } catch (error) {
+                hideLoading();
+                showError('发布失败: ' + error.message);
+            }
+        }
+
+    </script>
+    <script src="/js/custom-dialog.js"></script>
+</body>
+</html>

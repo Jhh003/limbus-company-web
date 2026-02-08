@@ -1,0 +1,19 @@
+name = "limbus-72b"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "."
+
+[[d1_databases]]
+binding = "DB"
+database_name = "limbus-db"
+database_id = "ec60dc31-5a42-49b6-be8f-bc2157b78afc"
+
+[[r2_buckets]]
+binding = "IMAGES_BUCKET"
+bucket_name = "limbus-images"
+
+[[kv_namespaces]]
+binding = "CAPTCHA_KV"
+id = "e66c7d393f9b47ca8ce50997c5d940cd"
+
+[vars]
+R2_PUBLIC_URL = "https://pub-85e5adbda62644849fa4e161195ea01a.r2.dev"

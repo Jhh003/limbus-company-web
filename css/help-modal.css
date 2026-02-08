@@ -1,0 +1,330 @@
+/* ==================== 使用说明弹窗样式 ==================== */
+
+#help-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.3s ease-out;
+}
+
+#help-modal.active {
+    display: flex;
+}
+
+.help-modal-container {
+    background: var(--lc-bg-card);
+    border: 1px solid var(--lc-border);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 720px;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.9);
+    animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* 弹窗头部 */
+.help-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    background: linear-gradient(90deg, rgba(201, 169, 97, 0.1) 0%, transparent 100%);
+    border-bottom: 1px solid var(--lc-border);
+}
+
+.help-header-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.title-icon {
+    font-size: 28px;
+}
+
+.title-text h3 {
+    color: var(--lc-gold);
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    font-family: 'Noto Serif SC', serif;
+}
+
+.title-text span {
+    color: var(--lc-text-muted);
+    font-size: 11px;
+    letter-spacing: 2px;
+    font-family: 'Cinzel', serif;
+}
+
+.help-close-btn {
+    background: none;
+    border: none;
+    color: var(--lc-text-muted);
+    font-size: 20px;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.help-close-btn:hover {
+    color: var(--lc-gold);
+    background: rgba(201, 169, 97, 0.1);
+}
+
+/* 弹窗主体 */
+.help-modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    max-height: calc(90vh - 80px);
+}
+
+/* 章节标题 */
+.help-section {
+    margin-bottom: 28px;
+}
+
+.help-section:last-of-type {
+    margin-bottom: 20px;
+}
+
+.help-section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.section-num {
+    font-family: 'Cinzel', serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--lc-gold);
+    opacity: 0.5;
+}
+
+.section-label {
+    color: var(--lc-gold);
+    font-size: 15px;
+    font-weight: 600;
+    font-family: 'Noto Serif SC', serif;
+}
+
+/* 步骤卡片 */
+.help-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.help-step {
+    background: var(--lc-bg-secondary);
+    border: 1px solid var(--lc-border);
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    gap: 12px;
+    transition: all 0.3s;
+}
+
+.help-step:hover {
+    border-color: var(--lc-gold-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.step-icon {
+    font-size: 28px;
+    flex-shrink: 0;
+}
+
+.step-content h4 {
+    color: var(--lc-text);
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 6px 0;
+}
+
+.step-content p {
+    color: var(--lc-text-secondary);
+    font-size: 12px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* 功能介绍 */
+.help-features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.help-feature {
+    background: var(--lc-bg-secondary);
+    border: 1px solid var(--lc-border);
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    gap: 12px;
+    transition: all 0.3s;
+}
+
+.help-feature:hover {
+    border-color: var(--lc-gold-dark);
+}
+
+.feature-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.feature-icon i {
+    font-size: 18px;
+}
+
+.feature-timer {
+    background: rgba(100, 150, 200, 0.15);
+    color: rgba(150, 180, 220, 0.9);
+}
+
+.feature-ranking {
+    background: rgba(201, 169, 97, 0.15);
+    color: var(--lc-gold);
+}
+
+.feature-filter {
+    background: rgba(150, 100, 200, 0.15);
+    color: rgba(180, 150, 220, 0.9);
+}
+
+.feature-content h4 {
+    color: var(--lc-text);
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 6px 0;
+}
+
+.feature-content p {
+    color: var(--lc-text-secondary);
+    font-size: 12px;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* 小贴士 */
+.help-tips .tips-grid {
+    display: grid;
+    gap: 10px;
+}
+
+.tip-item {
+    background: rgba(201, 169, 97, 0.05);
+    border: 1px solid rgba(201, 169, 97, 0.2);
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--lc-text-secondary);
+    font-size: 13px;
+}
+
+.tip-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+/* 页脚 */
+.help-footer {
+    text-align: center;
+    padding-top: 20px;
+    border-top: 1px solid var(--lc-border);
+    color: var(--lc-text-muted);
+    font-size: 12px;
+}
+
+.help-footer a {
+    color: var(--lc-gold-dark);
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.help-footer a:hover {
+    color: var(--lc-gold);
+}
+
+.help-version {
+    margin-top: 8px;
+    opacity: 0.7;
+    font-size: 11px;
+}
+
+/* 响应式设计 */
+@media (max-width: 640px) {
+    .help-modal-container {
+        max-height: 95vh;
+        border-radius: 10px;
+    }
+    
+    .help-modal-header {
+        padding: 16px 20px;
+    }
+    
+    .help-modal-body {
+        padding: 16px;
+    }
+    
+    .help-steps,
+    .help-features {
+        grid-template-columns: 1fr;
+    }
+    
+    .help-step,
+    .help-feature {
+        padding: 14px;
+    }
+    
+    .section-num {
+        font-size: 20px;
+    }
+    
+    .section-label {
+        font-size: 14px;
+    }
+}
+
+/* 方便JS通过id访问 */
+#help-modal {
+    /* ID选择器在前面定义 */
+}

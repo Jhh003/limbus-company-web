@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全球排行榜 - 今天蛋筒什么</title>
+    <link rel="stylesheet" href="/css/reset.css">
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="/css/limbus-theme-v2.css">
+    <link rel="stylesheet" href="/css/module/global-ranking.css">
+    <link rel="stylesheet" href="/css/custom-dialog.css">
+    <link rel="stylesheet" href="/css/auth-module.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <nav class="top-nav">
+        <div class="nav-brand">
+            <div class="logo-icon logo-icon-ranking">
+                <i class="fas fa-trophy"></i>
+            </div>
+            <div class="logo-text">
+                <h1 data-i18n="pageTitle">全球排行榜</h1>
+                <span class="logo-subtitle" data-i18n="pageSubtitle">Limbus Company · 单通竞速</span>
+            </div>
+        </div>
+        <div class="nav-meta">
+            <div class="version-tag">
+                <span class="label" data-i18n="version">版本</span>
+                <span class="value">1.6.0</span>
+            </div>
+            <button class="nav-btn nav-btn-help" id="help-btn" onclick="showHelpModal()">
+                <i class="fas fa-question-circle"></i>
+                <span data-i18n="help">使用说明</span>
+            </button>
+            <button class="nav-btn lang-switcher" onclick="toggleLanguage()">
+                <i class="fas fa-globe"></i>
+                <span id="lang-label" class="lang-code">CN</span>
+            </button>
+            <a href="/guides" class="nav-btn nav-btn-guides" style="text-decoration:none;">
+                <i class="fas fa-book-open"></i>
+                <span data-i18n="guides">攻略中心</span>
+            </a>
+            <!-- 用户登录状态按钮 -->
+            <button class="nav-btn nav-btn-auth" id="auth-btn" onclick="handleAuthClick()">
+                <i class="fas fa-user"></i>
+                <span id="auth-text">登录/注册</span>
+            </button>
+            <a href="/" class="nav-btn nav-btn-primary" style="text-decoration:none;">
+                <i class="fas fa-dice"></i>
+                <span data-i18n="backHome">返回主页</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- 主容器 -->
+    <div class="ranking-container">
+        <!-- 提交记录按钮 -->
+        <div class="submit-ranking-banner">
+            <button id="submit-ranking-btn" class="submit-ranking-btn">
+                <i class="fas fa-plus-circle"></i>
+                <span data-i18n="submitRecord">提交我的通关记录</span>
+            </button>
+            <button id="check-my-records-btn" class="submit-ranking-btn" style="background: linear-gradient(135deg, #4a5568, #2d3748); margin-left: 15px;">
+                <i class="fas fa-list-check"></i>
+                <span data-i18n="myRecords">查看我的记录</span>
+            </button>
+        </div>
+
+        <!-- 筛选面板 -->
+        <aside class="ranking-filters">
+            <div class="filter-section">
+                <h3 class="filter-title" data-i18n="filterSinner">罪人筛选</h3>
+                <div class="filter-group" id="sinner-filters">
+                    <button class="filter-btn active" data-filter-type="sinner" data-filter-value="all">
+                        <i class="fas fa-th"></i> <span data-i18n="all">全部</span>
+                    </button>
+                    <!-- 动态生成罪人按钮 -->
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <h3 class="filter-title" data-i18n="filterFloor">层数筛选</h3>
+                <div class="filter-group floor-filter-grid" id="floor-filters">
+                    <button class="filter-btn active floor-all" data-filter-type="floor" data-filter-value="all">
+                        <i class="fas fa-th"></i> <span data-i18n="allFloors">全部楼层</span>
+                    </button>
+                    <button class="filter-btn floor-btn" data-filter-type="floor" data-filter-value="1" data-i18n="floor1">F1</button>
+                    <button class="filter-btn floor-btn" data-filter-type="floor" data-filter-value="2" data-i18n="floor2">F2</button>
+                    <button class="filter-btn floor-btn" data-filter-type="floor" data-filter-value="3" data-i18n="floor3">F3</button>
+                    <button class="filter-btn floor-btn" data-filter-type="floor" data-filter-value="4" data-i18n="floor4">F4</button>
+                    <button class="filter-btn floor-btn" data-filter-type="floor" data-filter-value="5-1" data-i18n="floor5N">F5-N</button>
+                    <button class="filter-btn floor-btn" data-filter-type="floor" data-filter-value="5-2" data-i18n="floor5H">F5-H</button>
+                    <button class="filter-btn floor-btn" data-filter-type="floor" data-filter-value="6" data-i18n="floor6">F6</button>
+                    <button class="filter-btn floor-btn" data-filter-type="floor" data-filter-value="7" data-i18n="floor7">F7</button>
+                    <button class="filter-btn floor-btn" data-filter-type="floor" data-filter-value="8" data-i18n="floor8">F8</button>
+                    <button class="filter-btn floor-btn" data-filter-type="floor" data-filter-value="9" data-i18n="floor9">F9</button>
+                    <button class="filter-btn floor-btn" data-filter-type="floor" data-filter-value="10" data-i18n="floor10">F10</button>
+                    <button class="filter-btn floor-btn" data-filter-type="floor" data-filter-value="11" data-i18n="floor11">F11</button>
+                    <button class="filter-btn floor-btn" data-filter-type="floor" data-filter-value="12" data-i18n="floor12">F12</button>
+                    <button class="filter-btn floor-btn" data-filter-type="floor" data-filter-value="13" data-i18n="floor13">F13</button>
+                    <button class="filter-btn floor-btn" data-filter-type="floor" data-filter-value="14" data-i18n="floor14">F14</button>
+                    <button class="filter-btn floor-btn" data-filter-type="floor" data-filter-value="15" data-i18n="floor15">F15</button>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <h3 class="filter-title" data-i18n="sortBy">排序方式</h3>
+                <select id="sort-dropdown" class="sort-dropdown">
+                    <option value="time" data-i18n="sortTime">按速度 (最快)</option>
+                    <option value="date" data-i18n="sortDate">按时间 (最新)</option>
+                </select>
+            </div>
+
+            <div class="filter-section">
+                <button class="reset-filters-btn">
+                    <i class="fas fa-undo"></i> <span data-i18n="resetFilter">重置筛选</span>
+                </button>
+            </div>
+
+            <div class="filter-stats" id="filter-stats" style="display: none;">
+                <span data-i18n="showing">显示</span> <span id="filtered-count">0</span> <span data-i18n="records">条记录</span>
+            </div>
+        </aside>
+
+        <!-- 排行榜内容 -->
+        <main class="ranking-content">
+            <!-- 加载状态 -->
+            <div id="loading-state" class="loading-state">
+                <div class="spinner"></div>
+                <p data-i18n="loading">正在加载排行榜...</p>
+            </div>
+
+            <!-- 空状态 -->
+            <div id="empty-state" class="empty-state" style="display: none;">
+                <i class="fas fa-inbox"></i>
+                <p data-i18n="noRecords">暂无符合条件的记录</p>
+                <p class="empty-state-hint" data-i18n="beFirst">成为第一个提交记录的人吧！</p>
+            </div>
+
+            <!-- 错误状态 -->
+            <div id="error-state" class="error-state" style="display: none;">
+                <i class="fas fa-exclamation-circle"></i>
+                <p data-i18n="loadError">加载排行榜失败，请稍后重试</p>
+            </div>
+
+            <!-- 排行榜列表 -->
+            <div id="ranking-list" class="ranking-list" style="display: none;">
+                <!-- 动态生成排行榜卡片 -->
+            </div>
+
+            <!-- 分页器 -->
+            <div id="pagination" class="pagination-container" style="display: none;">
+                <!-- 动态生成分页按钮 -->
+            </div>
+            
+            <!-- 加载更多 -->
+            <div id="load-more-container" class="load-more-container" style="display: none;">
+                <button id="load-more-btn" class="load-more-btn">
+                    <i class="fas fa-chevron-down"></i>
+                    <span data-i18n="loadMore">加载更多</span>
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="ranking-page-footer">
+        <div class="footer-content">
+            <p data-i18n="updateInfo">数据每30分钟自动更新</p>
+            <p class="version-info" data-i18n="seasonInfo">第七赛季 · 提交的记录需管理员审核后显示</p>
+            <p class="copyright-info" style="margin-top: 8px; font-size: 11px; color: var(--lc-text-muted); opacity: 0.6;">
+                <span data-i18n="fanWork">本项目为粉丝作品，与 Project Moon 官方无关</span> | <span data-i18n="dataSource">数据来源于玩家贡献</span>
+            </p>
+        </div>
+    </footer>
+
+    <!-- 帮助说明弹窗 -->
+    <div id="help-modal" class="modal" style="display: none;">
+        <div class="modal-overlay" onclick="closeHelpModal()"></div>
+        <div class="modal-content help-modal-content">
+            <div class="modal-header">
+                <h2 data-i18n="helpTitle">📜 如何使用排行榜</h2>
+                <button class="modal-close" onclick="closeHelpModal()">&times;</button>
+            </div>
+            <div class="help-content">
+                <div class="help-section">
+                    <h3 data-i18n="helpView">👁️ 查看排行榜</h3>
+                    <ul>
+                        <li data-i18n="helpViewTip1">使用左侧筛选面板按<strong>罪人</strong>或<strong>楼层</strong>筛选记录</li>
+                        <li data-i18n="helpViewTip2">支持按通关速度（最快）或提交时间（最新）排序</li>
+                        <li data-i18n="helpViewTip3">点击卡片可查看详细信息和EGO饰品配置</li>
+                    </ul>
+                </div>
+                <div class="help-section">
+                    <h3 data-i18n="helpSubmit">🔑 提交通关记录</h3>
+                    <ul>
+                        <li data-i18n="helpSubmitTip1">点击顶部<strong>"提交我的通关记录"</strong>按钮</li>
+                        <li data-i18n="helpSubmitTip2">填写必填信息：用户名、罪人、人格、通关时间、楼层</li>
+                        <li data-i18n="helpSubmitTip3">可选填写：EGO饰品、截图链接、视频链接、备注</li>
+                        <li data-i18n="helpSubmitTip4">提交后需等待管理员审核，通过后显示在排行榜</li>
+                    </ul>
+                </div>
+                <div class="help-section">
+                    <h3 data-i18n="helpMyRecord">📋 查看我的记录</h3>
+                    <ul>
+                        <li data-i18n="helpRecordTip1">点击<strong>"查看我的记录"</strong>按钮</li>
+                        <li data-i18n="helpRecordTip2">输入提交时使用的用户名即可查询</li>
+                        <li data-i18n="helpRecordTip3">可查看所有提交记录的审核状态（待审核/已通过/已拒绝）</li>
+                    </ul>
+                </div>
+                <div class="help-section">
+                    <h3 data-i18n="helpTips">⭐ 小贴士</h3>
+                    <ul>
+                        <li data-i18n="helpTip1">通关时间以秒为单位计算，主页计时器可自动跳转填充</li>
+                        <li data-i18n="helpTip2">请确保提交的信息真实准确，虚假信息可能被封禁</li>
+                        <li data-i18n="helpTip3">第5层区分普通地狱和困难地狱两个模式</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提交记录弹窗 -->
+    <div id="submit-modal" class="modal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 data-i18n="submitModalTitle">提交通关记录</h2>
+                <button class="modal-close" id="modal-close-btn">&times;</button>
+            </div>
+            <form id="submit-ranking-form" class="submit-form">
+                <div class="form-group">
+                    <label for="username" data-i18n="labelUsername">用户名 <span class="required">*</span></label>
+                    <input type="text" id="username" name="username" required data-i18n-ph="phUsername" readonly style="background:var(--lc-bg-secondary);cursor:not-allowed;">
+                    <small style="color:var(--lc-gold);">已使用登录账号自动填充</small>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="sinner" data-i18n="labelSinner">罪人 <span class="required">*</span></label>
+                        <select id="sinner" name="sinner" required>
+                            <option value="" data-i18n="selectSinner">请选择罪人</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="persona" data-i18n="labelPersona">人格 <span class="required">*</span></label>
+                        <select id="persona" name="persona" required disabled>
+                            <option value="" data-i18n="selectPersonaHint">请先选择罪人</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="time" data-i18n="labelTime">通关时间（秒） <span class="required">*</span></label>
+                        <input type="number" id="time" name="time" required data-i18n-ph="phTime">
+                        <small data-i18n="hintReview">管理员将进行人工审核</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="floorLevel" data-i18n="labelFloor">通关楼层 <span class="required">*</span></label>
+                        <select id="floorLevel" name="floorLevel" required>
+                            <option value="" data-i18n="selectFloor">请选择楼层</option>
+                            <option value="1">第1层</option>
+                            <option value="2">第2层</option>
+                            <option value="3">第3层</option>
+                            <option value="4">第4层</option>
+                            <option value="5-1">第5层 - 普牢</option>
+                            <option value="5-2">第5层 - 困牢</option>
+                            <option value="6">第6层</option>
+                            <option value="7">第7层</option>
+                            <option value="8">第8层</option>
+                            <option value="9">第9层</option>
+                            <option value="10">第10层</option>
+                            <option value="11">第11层</option>
+                            <option value="12">第12层</option>
+                            <option value="13">第13层</option>
+                            <option value="14">第14层</option>
+                            <option value="15">第15层</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="egoGifts" data-i18n="labelEgo">EGO饰品配置</label>
+                    <textarea id="egoGifts" name="egoGifts" rows="2" data-i18n-ph="phEgo"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>截图证明 <span style="color:var(--lc-text-muted);font-weight:400;">(上传通关截图或外链)</span></label>
+                    
+                    <!-- 图片上传区域 -->
+                    <div id="ranking-screenshot-upload" style="border:2px dashed rgba(201,169,97,0.3);border-radius:8px;padding:16px;text-align:center;background:rgba(0,0,0,0.2);cursor:pointer;margin-bottom:10px;transition:all 0.3s;"
+                         ondragover="event.preventDefault();this.style.borderColor='var(--lc-gold)';this.style.background='rgba(201,169,97,0.05)';" 
+                         ondragleave="this.style.borderColor='rgba(201,169,97,0.3)';this.style.background='rgba(0,0,0,0.2)';"
+                         onclick="document.getElementById('ranking-screenshot-file').click()">
+                        <span id="ranking-screenshot-icon" style="font-size:24px;display:block;margin-bottom:6px;">📷</span>
+                        <div id="ranking-screenshot-text" style="color:var(--lc-text-secondary);font-size:0.85rem;">点击或拖拽截图到此处上传</div>
+                        <div style="color:var(--lc-text-muted);font-size:0.75rem;margin-top:4px;">支持 JPG, PNG 格式，最大 10MB</div>
+                        <input type="file" id="ranking-screenshot-file" accept="image/*" style="display:none;" onchange="handleRankingScreenshotUpload(event)">
+                    </div>
+                    
+                    <!-- 上传进度 -->
+                    <div id="ranking-upload-progress" style="display:none;margin-bottom:10px;">
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+                            <span style="font-size:0.8rem;color:var(--lc-gold);">上传中...</span>
+                            <span id="ranking-upload-percent" style="font-size:0.8rem;color:var(--lc-text);font-weight:600;">0%</span>
+                        </div>
+                        <div style="height:3px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;">
+                            <div id="ranking-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--lc-gold),#b8942d);transition:width 0.3s;"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 预览区域 -->
+                    <div id="ranking-screenshot-preview" style="display:none;margin-bottom:10px;position:relative;">
+                        <img id="ranking-preview-img" src="" style="width:100%;max-height:150px;object-fit:cover;border-radius:6px;border:1px solid rgba(201,169,97,0.3);">
+                        <button type="button" onclick="removeRankingScreenshot(event)" style="position:absolute;top:6px;right:6px;width:26px;height:26px;background:rgba(201,79,79,0.9);border:none;border-radius:50%;color:#fff;cursor:pointer;font-size:12px;" title="删除图片">✕</button>
+                    </div>
+                    
+                    <input type="hidden" id="ranking-screenshot-value" name="screenshotUrl">
+                    
+                    <input type="url" id="screenshotUrl" name="screenshotUrl" placeholder="或者粘贴外部图片链接 (https://...)" 
+                           style="width:100%;padding:10px 12px;background:var(--lc-bg-secondary);border:1px solid var(--lc-border);border-radius:6px;color:var(--lc-text);box-sizing:border-box;">
+                </div>
+
+                <div class="form-group">
+                    <label for="videoUrl" data-i18n="labelVideo">视频链接</label>
+                    <input type="url" id="videoUrl" name="videoUrl" data-i18n-ph="phVideo">
+                </div>
+
+                <div class="form-group">
+                    <label for="notes" data-i18n="labelNotes">备注说明</label>
+                    <textarea id="notes" name="notes" rows="3" data-i18n-ph="phNotes"></textarea>
+                </div>
+
+                <!-- 同步提交攻略选项 -->
+                <div class="form-group" style="background:rgba(201,169,97,0.05);border:1px solid rgba(201,169,97,0.2);border-radius:8px;padding:12px;margin-top:15px;">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;">
+                        <input type="checkbox" id="sync-guide-check" style="width:18px;height:18px;cursor:pointer;">
+                        <span style="color:var(--lc-gold);font-weight:600;">同步提交为攻略</span>
+                    </label>
+                    <p style="margin:6px 0 0 26px;color:var(--lc-text-muted);font-size:0.8rem;">
+                        提交后将跳转到攻略页面，填写详细攻略内容后发布
+                    </p>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" id="cancel-btn" data-i18n="btnCancel">取消</button>
+                    <button type="submit" class="btn-submit" data-i18n="btnSubmit">提交记录</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 查看我的记录模态框 -->
+    <div id="my-records-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2 data-i18n="myRecordsTitle">我的提交记录</h2>
+                <button class="modal-close" id="my-records-close-btn">&times;</button>
+            </div>
+            
+            <div id="username-input-section" style="padding: 20px;">
+                <div class="form-group">
+                    <label for="query-username" data-i18n="queryUsername">请输入您的用户名</label>
+                    <input type="text" id="query-username" data-i18n-ph="queryPlaceholder" style="width: 100%; padding: 10px; border: 1px solid var(--lc-border); background: var(--lc-bg-secondary); color: var(--lc-text); border-radius: 4px;">
+                </div>
+                <button id="query-records-btn" class="btn-submit" style="width: 100%; margin-top: 10px;">
+                    <i class="fas fa-search"></i> <span data-i18n="queryBtn">查询记录</span>
+                </button>
+            </div>
+
+            <div id="my-records-content" style="display: none; padding: 20px;">
+                <div id="records-stats" style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 150px; background: var(--lc-bg-card); padding: 15px; border-radius: 6px; border: 1px solid var(--lc-border);">
+                        <div style="color: var(--lc-text-muted); font-size: 0.8rem; margin-bottom: 5px;" data-i18n="totalLabel">总记录数</div>
+                        <div id="total-count" style="color: var(--lc-gold); font-size: 1.5rem; font-weight: bold;">0</div>
+                    </div>
+                    <div style="flex: 1; min-width: 150px; background: var(--lc-bg-card); padding: 15px; border-radius: 6px; border: 1px solid rgba(255, 193, 7, 0.3);">
+                        <div style="color: var(--lc-text-muted); font-size: 0.8rem; margin-bottom: 5px;" data-i18n="pendingLabel">待审核</div>
+                        <div id="pending-count" style="color: #ffc107; font-size: 1.5rem; font-weight: bold;">0</div>
+                    </div>
+                    <div style="flex: 1; min-width: 150px; background: var(--lc-bg-card); padding: 15px; border-radius: 6px; border: 1px solid rgba(76, 175, 80, 0.3);">
+                        <div style="color: var(--lc-text-muted); font-size: 0.8rem; margin-bottom: 5px;" data-i18n="approvedLabel">已通过</div>
+                        <div id="approved-count" style="color: #4caf50; font-size: 1.5rem; font-weight: bold;">0</div>
+                    </div>
+                    <div style="flex: 1; min-width: 150px; background: var(--lc-bg-card); padding: 15px; border-radius: 6px; border: 1px solid rgba(244, 67, 54, 0.3);">
+                        <div style="color: var(--lc-text-muted); font-size: 0.8rem; margin-bottom: 5px;" data-i18n="rejectedLabel">已拒绝</div>
+                        <div id="rejected-count" style="color: #f44336; font-size: 1.5rem; font-weight: bold;">0</div>
+                    </div>
+                </div>
+
+                <div id="records-list" style="max-height: 500px; overflow-y: auto;"></div>
+            </div>
+
+            <div id="no-records-message" style="display: none; padding: 40px; text-align: center; color: var(--lc-text-muted);">
+                <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i>
+                <p data-i18n="noRecordsFound">未找到相关记录</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 脚本 -->
+    <!-- API 配置 -->
+    <script src="/js/config.js"></script>
+    <script src="/js/custom-dialog.js"></script>
+    <script src="/js/i18n/zh.js"></script>
+    <script src="/js/i18n/en.js"></script>
+    <script src="/js/i18n.js"></script>
+    <script type="module">
+        import { globalRankingController } from '/js/controllers/globalRankingController.js';
+        import { sinnerData } from '/data/characters.js';
+        import { logger } from '/js/core/logger.js';
+
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                logger.info('[Global Ranking] 页面初始化开始');
+
+                // ⭐ 第一步：初始化语言管理器（必须先做这个）
+                await I18nManager.init();
+                logger.info('[Global Ranking] 语言初始化完成，当前语言: ' + I18nManager.currentLang);
+
+                // 生成罪人筛选按钮
+                const sinnerFilters = document.getElementById('sinner-filters');
+                if (sinnerFilters && sinnerData) {
+                    // 保留"全部"按钮，然后添加罪人按钮
+                    const allButton = sinnerFilters.querySelector('[data-filter-value="all"]');
+                    sinnerFilters.innerHTML = (allButton ? allButton.outerHTML : '') + 
+                        sinnerData.map(sinner => {
+                            // 提取英文名（括号内的部分）
+                            const enMatch = sinner.name.match(/\(([^)]+)\)/);
+                            const enName = enMatch ? enMatch[1] : sinner.name.split(' ')[0];
+                            // 使用 I18nManager 的映射获取显示名称
+                            const displayName = I18nManager.getSinnerName(enName);
+                            return `
+                            <button class="filter-btn sinner-filter-btn" data-filter-type="sinner" data-filter-value="${sinner.name}" data-en="${enName}">
+                                ${displayName}
+                            </button>
+                        `}).join('');
+                }
+
+                // 初始化Controller
+                globalRankingController.initDOM({
+                    container: document.querySelector('.ranking-container'),
+                    list: document.getElementById('ranking-list'),
+                    pagination: document.getElementById('pagination'),
+                    filterBtns: document.querySelectorAll('.filter-btn'), // 在按钮生成后再获取
+                    sortDropdown: document.getElementById('sort-dropdown'),
+                    loading: document.getElementById('loading-state'),
+                    empty: document.getElementById('empty-state'),
+                    error: document.getElementById('error-state')
+                });
+
+                // 重置按钮事件
+                document.querySelector('.reset-filters-btn').addEventListener('click', () => {
+                    globalRankingController.setFilters({
+                        sinner: null,
+                        floorLevel: null,
+                        sortBy: 'time'
+                    });
+                    document.querySelectorAll('.filter-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    globalRankingController.loadRankings();
+                });
+
+                // 加载初始数据
+                await globalRankingController.loadRankings();
+
+                // 启用实时更新（30分钟刷新一次）
+                globalRankingController.startWatchingUpdates(1800000);
+
+                logger.info('[Global Ranking] 页面初始化完成');
+            } catch (error) {
+                logger.error('[Global Ranking] 初始化失败:', error);
+                document.getElementById('loading-state').style.display = 'none';
+                document.getElementById('error-state').style.display = 'block';
+            }
+        });
+
+        // 页面卸载时停止更新
+        window.addEventListener('beforeunload', () => {
+            if (globalRankingController && globalRankingController.stopWatchingUpdates) {
+                globalRankingController.stopWatchingUpdates();
+            }
+        });
+    </script>
+
+    <script type="module">
+        import { sinnerData } from '/data/characters.js';
+        import { cloudbaseAPI } from '/js/api/cloudbaseApi.js';
+        import { AuthModule } from '/js/modules/authModule.js';
+
+        // 用户登录状态
+        let currentUser = null;
+
+        // 更新用户登录状态UI
+        function updateUserUI(user) {
+            const authBtn = document.getElementById('auth-btn');
+            const authText = document.getElementById('auth-text');
+            
+            // 防御性检查
+            if (!authBtn || !authText) {
+                console.error('[Global Ranking] 认证按钮元素未找到');
+                return;
+            }
+            
+            currentUser = user;
+            
+            if (currentUser && currentUser.username) {
+                // 更新为登录状态
+                authText.textContent = currentUser.username;
+                authBtn.classList.add('logged-in');
+                authBtn.title = '点击登出';
+                // 同步设置 cloudbaseAPI 的 token
+                cloudbaseAPI.setToken(currentUser.token);
+                console.log('[Global Ranking] 登录状态已更新:', currentUser.username);
+            } else {
+                // 更新为未登录状态
+                authText.textContent = '登录/注册';
+                authBtn.classList.remove('logged-in');
+                authBtn.title = '点击登录/注册';
+                // 清除 cloudbaseAPI 的 token
+                cloudbaseAPI.setToken(null);
+                console.log('[Global Ranking] 已切换为未登录状态');
+            }
+        }
+
+        // 初始化认证模块
+        AuthModule.init({
+            onUserChange: updateUserUI,
+            showMessage: (msg, type) => {
+                if (type === 'success') showSuccess(msg);
+                else if (type === 'error') showError(msg);
+                else showError(msg); // warning也用error显示
+            }
+        });
+
+        // 从 AuthModule 获取当前用户
+        currentUser = AuthModule.getUser();
+
+        // 监听 storage 事件，实现多页面登录状态同步
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'limbus_user') {
+                const newUser = e.newValue ? JSON.parse(e.newValue) : null;
+                updateUserUI(newUser);
+                // 更新 AuthModule 内部状态
+                if (newUser) {
+                    AuthModule.currentUser = newUser;
+                } else {
+                    AuthModule.currentUser = null;
+                }
+            }
+        });
+        
+        // 初始化时立即更新一次UI（确保页面刷新后正确显示登录状态）
+        updateUserUI(currentUser);
+
+        // 处理登录按钮点击 - 使用AuthModule
+        window.handleAuthClick = function() {
+            AuthModule.openAuthModal();
+        };
+
+        // 打开登录提示弹窗（需要登录时显示）
+        function showLoginRequired() {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay login-required-modal';
+            modal.style.cssText = 'display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;';
+            modal.innerHTML = `
+                <div style="background:var(--lc-bg-card);border:1px solid var(--lc-border);border-radius:12px;padding:30px;max-width:400px;text-align:center;">
+                    <i class="fas fa-user-lock" style="font-size:3rem;color:var(--lc-gold);margin-bottom:15px;"></i>
+                    <h3 style="color:var(--lc-text);margin-bottom:10px;">需要登录</h3>
+                    <p style="color:var(--lc-text-muted);margin-bottom:20px;">请先登录后再提交通关记录</p>
+                    <div style="display:flex;gap:10px;justify-content:center;">
+                        <button onclick="this.closest('.login-required-modal').remove()" style="padding:10px 20px;background:var(--lc-bg-secondary);border:1px solid var(--lc-border);border-radius:6px;color:var(--lc-text);cursor:pointer;">取消</button>
+                        <button onclick="this.closest('.login-required-modal').remove(); AuthModule.openAuthModal();" style="padding:10px 20px;background:linear-gradient(135deg,var(--lc-gold),var(--lc-gold-dark));border:none;border-radius:6px;color:#1a1a2e;cursor:pointer;font-weight:600;">登录/注册</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            // 修复：使用 mousedown/mouseup 组合判断点击外部
+            let isMouseDownOnOverlay = false;
+            
+            modal.addEventListener('mousedown', (e) => {
+                isMouseDownOnOverlay = (e.target === modal);
+            });
+            
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal && isMouseDownOnOverlay) {
+                    modal.remove();
+                }
+                isMouseDownOnOverlay = false;
+            });
+        }
+
+        // 提交记录按钮 - 添加登录验证
+        document.getElementById('submit-ranking-btn').addEventListener('click', () => {
+            // 检查登录状态
+            currentUser = AuthModule.getUser();
+            if (!currentUser) {
+                showLoginRequired();
+                return;
+            }
+            // 自动填充用户名
+            document.getElementById('username').value = currentUser.username;
+            document.getElementById('submit-modal').style.display = 'flex';
+        });
+
+        // 关闭弹窗
+        const closeModal = () => {
+            document.getElementById('submit-modal').style.display = 'none';
+            document.getElementById('submit-ranking-form').reset();
+            document.getElementById('persona').disabled = true;
+            document.getElementById('persona').innerHTML = '<option value="">' + I18nManager.t('selectPersonaHint') + '</option>';
+        };
+
+        document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+        document.getElementById('cancel-btn').addEventListener('click', closeModal);
+        
+        // 修复：点击外部关闭弹窗时，避免文本选择时意外触发
+        const submitModalOverlay = document.querySelector('#submit-modal .modal-overlay');
+        if (submitModalOverlay) {
+            let isMouseDownOnOverlay = false;
+            
+            submitModalOverlay.addEventListener('mousedown', (e) => {
+                isMouseDownOnOverlay = (e.target === submitModalOverlay);
+            });
+            
+            submitModalOverlay.addEventListener('click', (e) => {
+                if (e.target === submitModalOverlay && isMouseDownOnOverlay) {
+                    closeModal();
+                }
+                isMouseDownOnOverlay = false;
+            });
+        }
+
+        // 填充表单选项
+        const sinnerSelect = document.getElementById('sinner');
+        if (sinnerData && sinnerSelect) {
+            sinnerData.forEach(sinner => {
+                const option = document.createElement('option');
+                option.value = sinner.name;
+                option.textContent = sinner.name;
+                sinnerSelect.appendChild(option);
+            });
+        }
+
+        // 罪人选择变化时更新人格列表
+        sinnerSelect.addEventListener('change', (e) => {
+            const personaSelect = document.getElementById('persona');
+            personaSelect.innerHTML = '<option value="">' + I18nManager.t('selectPersona') + '</option>';
+            personaSelect.disabled = false;
+            
+            const selectedSinnerName = e.target.value;
+            const selectedSinner = sinnerData.find(s => s.name === selectedSinnerName);
+            
+            if (selectedSinner && selectedSinner.personalities) {
+                selectedSinner.personalities.forEach(persona => {
+                    const option = document.createElement('option');
+                    option.value = persona.name;
+                    option.textContent = persona.name;
+                    personaSelect.appendChild(option);
+                });
+            } else {
+                personaSelect.disabled = true;
+            }
+        });
+
+        // 处理 URL 参数（从计时器跳转过来）
+        function handleUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const time = urlParams.get('time');
+            const sinner = urlParams.get('sinner');
+            const persona = urlParams.get('persona');
+
+            if (time) {
+                // 自动打开提交弹窗
+                document.getElementById('submit-modal').style.display = 'flex';
+                
+                // 填充时间
+                document.getElementById('time').value = time;
+                
+                // 填充罪人
+                if (sinner) {
+                    const sinnerSelect = document.getElementById('sinner');
+                    // 精确匹配：检查罪人名称是否包含在选项值中
+                    let selectedOption = null;
+                    for (let option of sinnerSelect.options) {
+                        // 例如：sinner="李箱" 应该匹配 option.value="李箱 (Yi Sang)"
+                        if (option.value.startsWith(sinner)) {
+                            selectedOption = option;
+                            break;
+                        }
+                    }
+                    
+                    if (selectedOption) {
+                        sinnerSelect.value = selectedOption.value;
+                        // 触发 change 事件来加载人格列表
+                        sinnerSelect.dispatchEvent(new Event('change'));
+                        
+                        // 填充人格（需要等人格列表加载）
+                        if (persona) {
+                            setTimeout(() => {
+                                const personaSelect = document.getElementById('persona');
+                                // 精确匹配人格名称
+                                for (let pOption of personaSelect.options) {
+                                    if (pOption.value === persona) {
+                                        personaSelect.value = pOption.value;
+                                        break;
+                                    }
+                                }
+                            }, 100);
+                        }
+                    }
+                }
+            }
+        }
+
+        // 页面加载时处理 URL 参数
+        handleUrlParams();
+
+        // ==================== 截图上传功能（使用后端代理上传到COS）====================
+        // 使用全局 API_BASE 或回退到相对路径
+        const API_BASE = window.API_BASE || '/api';
+        
+        window.handleRankingScreenshotUpload = async function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // 验证文件类型
+            if (!file.type.startsWith('image/')) {
+                showError('请上传图片文件');
+                return;
+            }
+            
+            // 验证文件大小 (10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                showError('图片大小不能超过10MB');
+                return;
+            }
+            
+            const uploadArea = document.getElementById('ranking-screenshot-upload');
+            const progressArea = document.getElementById('ranking-upload-progress');
+            const percentEl = document.getElementById('ranking-upload-percent');
+            const progressBar = document.getElementById('ranking-progress-bar');
+            const previewArea = document.getElementById('ranking-screenshot-preview');
+            const previewImg = document.getElementById('ranking-preview-img');
+            const hiddenInput = document.getElementById('ranking-screenshot-value');
+            
+            // 显示进度条
+            uploadArea.style.display = 'none';
+            progressArea.style.display = 'block';
+            percentEl.textContent = '0%';
+            progressBar.style.width = '0%';
+            
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+                
+                // 模拟进度
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    if (progress < 90) {
+                        progress += Math.random() * 10;
+                        const percent = Math.min(Math.round(progress), 90);
+                        percentEl.textContent = percent + '%';
+                        progressBar.style.width = percent + '%';
+                    }
+                }, 200);
+                
+                const response = await fetch(`${API_BASE}/upload/image`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                clearInterval(progressInterval);
+                
+                const result = await response.json();
+                
+                if (result.code === 200 && result.success) {
+                    percentEl.textContent = '100%';
+                    progressBar.style.width = '100%';
+                    
+                    // 显示预览
+                    previewImg.src = result.data.url;
+                    previewArea.style.display = 'block';
+                    progressArea.style.display = 'none';
+                    
+                    // 保存URL到隐藏字段和输入框
+                    hiddenInput.value = result.data.url;
+                    document.getElementById('screenshotUrl').value = result.data.url;
+                    
+                    showSuccess('截图上传成功！');
+                } else {
+                    throw new Error(result.message || '上传失败');
+                }
+            } catch (error) {
+                console.error('上传失败:', error);
+                uploadArea.style.display = 'block';
+                progressArea.style.display = 'none';
+                showError('上传失败: ' + (error.message || '请检查网络后重试'));
+            }
+        };
+        
+        window.removeRankingScreenshot = function(event) {
+            event.stopPropagation();
+            
+            document.getElementById('ranking-screenshot-upload').style.display = 'block';
+            document.getElementById('ranking-screenshot-preview').style.display = 'none';
+            document.getElementById('ranking-upload-progress').style.display = 'none';
+            document.getElementById('ranking-screenshot-value').value = '';
+            document.getElementById('screenshotUrl').value = '';
+            document.getElementById('ranking-screenshot-file').value = '';
+        };
+
+        // 提交表单
+        document.getElementById('submit-ranking-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // 再次检查登录状态
+            currentUser = AuthModule.getUser();
+            if (!currentUser) {
+                showLoginRequired();
+                return;
+            }
+            
+            const formData = new FormData(e.target);
+            const data = {
+                username: formData.get('username'),
+                sinner: formData.get('sinner'),
+                persona: formData.get('persona'),
+                time: parseInt(formData.get('time')),
+                floorLevel: formData.get('floorLevel'), // 保持字符串，支持 "5-1", "5-2"
+                egoGifts: formData.get('egoGifts') ? formData.get('egoGifts').split(/[,，、\n]/).map(s => s.trim()).filter(Boolean) : [],
+                screenshotUrl: formData.get('screenshotUrl') || null,
+                videoUrl: formData.get('videoUrl') || null,
+                notes: formData.get('notes') || null
+            };
+
+            // 检查是否勾选了同步提交攻略
+            const syncGuide = document.getElementById('sync-guide-check').checked;
+
+            try {
+                const loading = showLoading(I18nManager.t('submitting'));
+                await cloudbaseAPI.submitRanking(data);
+                
+                // 保存提交数据到 localStorage，供攻略表单自动填充使用
+                localStorage.setItem('last_ranking_submission', JSON.stringify({
+                    ...data,
+                    submittedAt: new Date().toISOString()
+                }));
+                
+                loading.close();
+                
+                // 如果勾选了同步提交攻略，跳转到攻略页面让用户填写详细内容
+                if (syncGuide) {
+                    // 标记需要打开攻略提交表单
+                    localStorage.setItem('open_guide_submit', 'true');
+                    showSuccess('排行榜记录提交成功！即将跳转到攻略提交页面...', 2000);
+                    // 延迟跳转，让用户看到成功提示
+                    setTimeout(() => {
+                        closeModal();
+                        window.location.href = '/guides';
+                    }, 1500);
+                } else {
+                    showSuccess(I18nManager.t('submitSuccess'), 2000);
+                    setTimeout(() => {
+                        closeModal();
+                        window.location.reload();
+                    }, 1500);
+                }
+            } catch (error) {
+                showError(I18nManager.t('submitError') + error.message);
+            }
+        });
+
+        // 查看我的记录功能 - 需要登录
+        document.getElementById('check-my-records-btn').addEventListener('click', async () => {
+            // 检查登录状态
+            currentUser = AuthModule.getUser();
+            if (!currentUser) {
+                showLoginRequired();
+                return;
+            }
+            
+            // 直接使用登录用户的用户名查询
+            document.getElementById('my-records-modal').style.display = 'flex';
+            document.getElementById('username-input-section').style.display = 'none';
+            document.getElementById('my-records-content').style.display = 'none';
+            document.getElementById('no-records-message').style.display = 'none';
+            
+            const loading = showLoading(I18nManager.t('searching'));
+            try {
+                // 使用用户 token 进行认证的请求
+                const response = await fetch(`${API_BASE}/rankings/my-records?username=${encodeURIComponent(currentUser.username)}`, {
+                    headers: {
+                        ...(currentUser.token && { 'Authorization': `Bearer ${currentUser.token}` })
+                    }
+                });
+                const result = await response.json();
+                loading.close();
+
+                if (result.code === 200 && result.data.records.length > 0) {
+                    displayMyRecords(result.data);
+                } else {
+                    document.getElementById('no-records-message').style.display = 'block';
+                }
+            } catch (error) {
+                loading.close();
+                showError(I18nManager.t('searchError') + error.message);
+            }
+        });
+
+        // 关闭按钮
+        document.getElementById('my-records-close-btn').addEventListener('click', () => {
+            document.getElementById('my-records-modal').style.display = 'none';
+        });
+        
+        // 修复：点击外部关闭弹窗时，避免文本选择时意外触发
+        const myRecordsModal = document.getElementById('my-records-modal');
+        if (myRecordsModal) {
+            let isMouseDownOnMyRecordsOverlay = false;
+            
+            myRecordsModal.addEventListener('mousedown', (e) => {
+                isMouseDownOnMyRecordsOverlay = (e.target === myRecordsModal);
+            });
+            
+            myRecordsModal.addEventListener('click', (e) => {
+                if (e.target === myRecordsModal && isMouseDownOnMyRecordsOverlay) {
+                    myRecordsModal.style.display = 'none';
+                }
+                isMouseDownOnMyRecordsOverlay = false;
+            });
+        }
+
+        // 保留手动查询功能（但隐藏了输入区域）
+        document.getElementById('query-records-btn').addEventListener('click', async () => {
+            const username = document.getElementById('query-username').value.trim();
+            if (!username) {
+                showError(I18nManager.t('enterUsername'));
+                return;
+            }
+
+            const loading = showLoading(I18nManager.t('searching'));
+            try {
+                // 使用相对路径，通过 Nginx 反向代理，带上认证信息
+                const headers = {};
+                if (currentUser && currentUser.token) {
+                    headers['Authorization'] = `Bearer ${currentUser.token}`;
+                }
+                const response = await fetch(`${API_BASE}/rankings/my-records?username=${encodeURIComponent(username)}`, { headers });
+                const result = await response.json();
+                loading.close();
+
+                if (result.code === 200 && result.data.records.length > 0) {
+                    displayMyRecords(result.data);
+                } else {
+                    document.getElementById('username-input-section').style.display = 'none';
+                    document.getElementById('my-records-content').style.display = 'none';
+                    document.getElementById('no-records-message').style.display = 'block';
+                }
+            } catch (error) {
+                loading.close();
+                showError(I18nManager.t('searchError') + error.message);
+            }
+        });
+
+        function displayMyRecords(data) {
+            document.getElementById('username-input-section').style.display = 'none';
+            document.getElementById('my-records-content').style.display = 'block';
+            document.getElementById('no-records-message').style.display = 'none';
+
+            // 显示统计
+            document.getElementById('total-count').textContent = data.total;
+            document.getElementById('pending-count').textContent = data.stats.pending;
+            document.getElementById('approved-count').textContent = data.stats.approved;
+            document.getElementById('rejected-count').textContent = data.stats.rejected;
+
+            // 显示记录列表
+            const recordsList = document.getElementById('records-list');
+            recordsList.innerHTML = data.records.map(record => {
+                const statusText = I18nManager.t('status' + record.status.charAt(0).toUpperCase() + record.status.slice(1));
+                const statusInfo = {
+                    pending: { icon: '⏳', text: statusText, color: '#ffc107', bg: 'rgba(255, 193, 7, 0.1)' },
+                    approved: { icon: '✅', text: statusText, color: '#4caf50', bg: 'rgba(76, 175, 80, 0.1)' },
+                    rejected: { icon: '❌', text: statusText, color: '#f44336', bg: 'rgba(244, 67, 54, 0.1)' }
+                }[record.status];
+
+                const date = new Date(record.created_at).toLocaleString(I18nManager.currentLang === 'zh' ? 'zh-CN' : 'en-US');
+                const timeFormatted = Math.floor(record.time / 60).toString().padStart(2, '0') + ':' + 
+                                     (record.time % 60).toString().padStart(2, '0');
+
+                return `
+                    <div style="background: var(--lc-bg-card); border: 1px solid var(--lc-border); border-radius: 6px; padding: 15px; margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                            <div>
+                                <div style="font-size: 1rem; color: var(--lc-text); margin-bottom: 5px;">
+                                    <strong>${record.sinner}</strong> · ${record.persona}
+                                </div>
+                                <div style="color: var(--lc-text-muted); font-size: 0.85rem;">
+                                    <i class="fas fa-layer-group"></i> 第${record.floor_level}层 · 
+                                    <i class="fas fa-clock"></i> ${timeFormatted}
+                                </div>
+                            </div>
+                            <div style="background: ${statusInfo.bg}; color: ${statusInfo.color}; padding: 6px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; white-space: nowrap;">
+                                ${statusInfo.icon} ${statusInfo.text}
+                            </div>
+                        </div>
+                        <div style="color: var(--lc-text-muted); font-size: 0.8rem; border-top: 1px solid var(--lc-border); padding-top: 8px;">
+                            <i class="fas fa-calendar"></i> ${I18nManager.t('submitTime')}: ${date}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 页面加载时初始化用户UI
+        updateUserUI();
+    </script>
+
+    <!-- 帮助弹窗函数 -->
+    <script>
+        function showHelpModal() {
+            document.getElementById('help-modal').style.display = 'flex';
+        }
+        
+        function closeHelpModal() {
+            document.getElementById('help-modal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

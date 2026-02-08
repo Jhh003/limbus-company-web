@@ -1,0 +1,38 @@
+/* 第七赛季动画效果 */
+@import url("https://fonts.googleapis.com/css?family=Lora:400,400i,700");
+
+.season-text {
+    color: #ff4500; /* 猩红偏黄 */
+    font-weight: bold;
+    font-family: Lora, serif;
+    display: inline-block;
+    margin: 0 10px;
+}
+
+.glowIn {
+    display: inline-block;
+}
+
+.glowIn span {
+    animation: glow-in 0.8s both infinite alternate;
+    display: inline-block;
+    color: #ff4500;
+    font-weight: bold;
+    font-family: Lora, serif;
+}
+
+@keyframes glow-in {
+    from {
+        opacity: 0;
+    }
+    65% {
+        opacity: 1;
+        text-shadow: 0 0 25px #ff4500;
+    }
+    75% {
+        opacity: 1;
+    }
+    to {
+        opacity: 0.7;
+    }
+}

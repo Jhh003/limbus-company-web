@@ -1,0 +1,305 @@
+/* 人格设置标签页样式 */
+
+/* 空状态提示 */
+.personality-empty-state {
+    padding: 60px 30px;
+    text-align: center;
+    background: rgba(20, 20, 30, 0.6);
+    border: 2px dashed rgba(212, 175, 55, 0.3);
+    border-radius: 15px;
+    margin: 20px 0;
+}
+
+.personality-empty-state p {
+    color: #d4af37;
+    font-size: 1.1rem;
+    margin: 10px 0;
+}
+
+/* 标签页导航 */
+.personality-tab-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 25px;
+    justify-content: center;
+    padding: 15px;
+    background: rgba(10, 10, 10, 0.5);
+    border-radius: 12px;
+}
+
+.personality-tab-btn {
+    padding: 12px 20px;
+    background: rgba(30, 30, 40, 0.8);
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    border-radius: 10px;
+    color: #d4d4d4;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1rem;
+    font-weight: bold;
+    min-height: 50px;
+}
+
+.personality-tab-btn img {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid currentColor;
+}
+
+.personality-tab-btn:hover {
+    background: rgba(212, 175, 55, 0.1);
+    border-color: #d4af37;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+}
+
+.personality-tab-btn.active {
+    background: linear-gradient(145deg, #d4af37, #b8860b);
+    border-color: #d4af37;
+    color: #000;
+    box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);
+}
+
+/* 标签页内容 */
+.personality-tab-content {
+    position: relative;
+    min-height: 400px;
+}
+
+.personality-tab-pane {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.personality-tab-pane.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 设置区块样式 */
+.settings-section {
+    background: rgba(20, 20, 30, 0.7);
+    border: 2px solid rgba(212, 175, 55, 0.4);
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 20px;
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid rgba(212, 175, 55, 0.3);
+}
+
+.settings-header h3 {
+    font-size: 1.8rem;
+    margin: 0;
+    text-shadow: 0 0 10px currentColor;
+}
+
+.settings-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.settings-actions button {
+    padding: 8px 16px;
+    background: rgba(30, 30, 40, 0.8);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 8px;
+    color: #d4d4d4;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.settings-actions button:hover {
+    background: rgba(212, 175, 55, 0.2);
+    border-color: #d4af37;
+    transform: translateY(-2px);
+}
+
+/* 人格列表 */
+.personality-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+/* 人格项 */
+.personality-item {
+    background: rgba(30, 30, 40, 0.8);
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    border-radius: 10px;
+    padding: 12px 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.personality-item:hover {
+    background: rgba(212, 175, 55, 0.1);
+    border-color: #d4af37;
+    transform: translateX(5px);
+    box-shadow: 0 3px 10px rgba(212, 175, 55, 0.3);
+}
+
+.personality-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #d4af37;
+}
+
+.personality-item label {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    margin: 0;
+}
+
+/* 人格头像 */
+.personality-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 2px solid rgba(212, 175, 55, 0.5);
+    background: rgba(50, 50, 60, 0.8);
+    transition: all 0.3s ease;
+}
+
+.personality-item:hover .personality-avatar {
+    border-color: #d4af37;
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+    transform: scale(1.1);
+}
+
+.personality-avatar-placeholder {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    background: rgba(80, 80, 90, 0.8);
+    border: 2px solid rgba(212, 175, 55, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #d4af37;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+/* 人格名称 */
+.personality-name {
+    flex: 1;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .personality-tab-nav {
+        gap: 8px;
+        padding: 10px;
+    }
+    
+    .personality-tab-btn {
+        padding: 10px 15px;
+        font-size: 0.9rem;
+        min-height: 45px;
+    }
+    
+    .personality-tab-btn img {
+        width: 30px;
+        height: 30px;
+    }
+    
+    .personality-list {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 12px;
+    }
+    
+    .personality-item {
+        padding: 10px 12px;
+    }
+    
+    .personality-avatar,
+    .personality-avatar-placeholder {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .personality-name {
+        font-size: 0.9rem;
+    }
+    
+    .settings-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    
+    .settings-header h3 {
+        font-size: 1.5rem;
+    }
+    
+    .settings-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .settings-actions button {
+        flex: 1;
+        font-size: 0.85rem;
+        padding: 8px 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .personality-tab-nav {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .personality-tab-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .personality-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .personality-empty-state {
+        padding: 40px 20px;
+    }
+    
+    .personality-empty-state p {
+        font-size: 1rem;
+    }
+}

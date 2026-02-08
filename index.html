@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>今天蛋筒什么 - Limbus Company 随机选择器</title>
+    <link rel="stylesheet" href="/css/reset.css">
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="/css/season.css">
+    <link rel="stylesheet" href="/css/module/dynamic-styles.css">
+    <link rel="stylesheet" href="/css/module/personality-tabs.css">
+    <!-- 边狱巴士主题 -->
+    <link rel="stylesheet" href="/css/limbus-theme-v2.css">
+    <link rel="stylesheet" href="/css/help-modal.css">
+    <link rel="stylesheet" href="/css/auth-module.css">
+    <!-- 字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <nav class="top-nav">
+        <div class="nav-brand">
+            <div class="logo-icon logo-icon-selector">
+                <i class="fas fa-bus"></i>
+            </div>
+            <div class="logo-text">
+                <h1>今天蛋筒什么</h1>
+                <span class="logo-subtitle">Limbus Company · 随机选择器</span>
+            </div>
+        </div>
+        <div class="nav-meta">
+            <div class="version-tag">
+                <span class="label">版本</span>
+                <span class="value">1.6.0</span>
+            </div>
+            <div class="season-tag">
+                <span class="label">第七赛季</span>
+                <span class="value">蛛丝赤</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主导航按钮 -->
+    <div class="main-nav">
+        <button id="main-page-btn" class="nav-btn nav-btn-selector active">
+            <i class="fas fa-dice"></i>
+            <span>主选择器</span>
+        </button>
+        <button id="settings-page-btn" class="nav-btn nav-btn-settings">
+            <i class="fas fa-sliders-h"></i>
+            <span>筛选设置</span>
+        </button>
+        <button id="timer-toggle-btn" class="nav-btn nav-btn-timer">
+            <i class="fas fa-stopwatch"></i>
+            <span>单通计时</span>
+        </button>
+        <a href="global-ranking" class="nav-btn nav-btn-ranking" style="text-decoration:none;">
+            <i class="fas fa-trophy"></i>
+            <span>全球排行榜</span>
+        </a>
+        <a href="/guides" class="nav-btn nav-btn-guides" style="text-decoration:none;">
+            <i class="fas fa-book-open"></i>
+            <span>单通攻略</span>
+            <span class="nav-badge">NEW</span>
+        </a>
+        <button id="auth-btn" class="nav-btn nav-btn-auth" onclick="handleAuthClick()">
+            <i class="fas fa-user"></i>
+            <span id="auth-text">登录/注册</span>
+        </button>
+        <button id="help-btn" class="nav-btn nav-btn-help nav-btn-right">
+            <i class="fas fa-question-circle"></i>
+            <span>使用说明</span>
+        </button>
+    </div>
+
+    <!-- 主选择器页面 -->
+    <div id="main-selector-page" class="page-container">
+        <div class="selector-layout">
+            <!-- 左侧选择区 -->
+            <div class="selector-left">
+                <!-- 一级选择 - 罪人 -->
+                <div class="selector-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span class="title-bar"></span>
+                            <h2>一级选择</h2>
+                        </div>
+                        <span class="card-subtitle">12名罪人</span>
+                    </div>
+                    <div class="card-content">
+                        <div class="selector-box">
+                            <div class="corner corner-tl">┌</div>
+                            <div class="corner corner-tr">┐</div>
+                            <div class="corner corner-bl">└</div>
+                            <div class="corner corner-br">┘</div>
+                            <div class="scroll-container" id="sinner-scroll-container">
+                                <div id="sinner-scroll" class="scroll-list"></div>
+                            </div>
+                            <div class="empty-state" id="sinner-empty">
+                                <div class="empty-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <path d="M12 16v-4M12 8h.01"/>
+                                    </svg>
+                                </div>
+                                <div class="empty-text">等待抽取</div>
+                            </div>
+                        </div>
+                        <div class="selector-controls">
+                            <button id="sinner-start-btn" class="btn-play">
+                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;">
+                                    <path d="M8 5v14l11-7z"/>
+                                </svg>
+                                <span>开始滚动</span>
+                            </button>
+                            <button id="sinner-stop-btn" class="btn-stop" disabled>
+                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;">
+                                    <rect x="6" y="6" width="12" height="12"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="selector-meta">
+                            <span>可用罪人: <span id="available-sinners">12/12</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 二级选择 - 人格 -->
+                <div class="selector-card selector-card-secondary">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span class="title-bar title-bar-secondary"></span>
+                            <h2>二级选择</h2>
+                        </div>
+                        <span class="card-subtitle">罪人人格</span>
+                    </div>
+                    <div class="card-content">
+                        <div class="selector-box selector-box-secondary">
+                            <div class="corner corner-tl">┌</div>
+                            <div class="corner corner-tr">┐</div>
+                            <div class="corner corner-bl">└</div>
+                            <div class="corner corner-br">┘</div>
+                            <div class="scroll-container" id="persona-scroll-container">
+                                <div id="persona-scroll" class="scroll-list"></div>
+                            </div>
+                            <div class="empty-state locked" id="persona-empty">
+                                <div class="empty-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <rect x="3" y="11" width="18" height="11" rx="2"/>
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                    </svg>
+                                </div>
+                                <div class="empty-text">请先选择罪人</div>
+                            </div>
+                        </div>
+                        <div class="selector-controls">
+                            <button id="persona-start-btn" class="btn-play" disabled>
+                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;">
+                                    <path d="M8 5v14l11-7z"/>
+                                </svg>
+                                <span>开始滚动</span>
+                            </button>
+                            <button id="persona-stop-btn" class="btn-stop" disabled>
+                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;">
+                                    <rect x="6" y="6" width="12" height="12"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧结果区 -->
+            <div class="selector-right">
+                <div class="result-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span class="title-bar title-bar-result"></span>
+                            <h2>选择结果</h2>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <!-- 空状态 -->
+                        <div class="result-display" id="result-display">
+                            <div class="result-empty">
+                                <div class="result-empty-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                                    </svg>
+                                </div>
+                                <div class="result-empty-text">等待抽取</div>
+                                <div class="result-empty-hint">完成两级选择查看结果</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 选择结果展示 -->
+                        <div class="result-final" id="result-final" style="display: none;">
+                            <!-- 罪人信息 -->
+                            <div class="result-sinner-section">
+                                <div class="result-section-label">选中罪人</div>
+                                <div class="result-sinner-card">
+                                    <div class="result-sinner-avatar" id="result-sinner-avatar">
+                                        <img src="" alt="" id="result-sinner-img" style="display: none;">
+                                        <div class="avatar-fallback" id="result-sinner-fallback">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div class="result-sinner-name" id="selected-sinner">未选择</div>
+                                </div>
+                            </div>
+                            
+                            <!-- 连接箭头 -->
+                            <div class="result-connector">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 5v14M19 12l-7 7-7-7"/>
+                                </svg>
+                            </div>
+                            
+                            <!-- 人格信息 -->
+                            <div class="result-persona-section">
+                                <div class="result-section-label">选中人格</div>
+                                <div class="result-persona-card">
+                                    <div class="result-persona-avatar" id="result-persona-avatar">
+                                        <img src="" alt="" id="result-persona-img" style="display: none;">
+                                        <div class="avatar-fallback" id="result-persona-fallback">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div class="result-persona-name" id="selected-persona">未选择</div>
+                                </div>
+                            </div>
+                            
+                            <!-- 攻略入口 -->
+                            <div class="result-guides-section" id="result-guides-section" style="display: none;">
+                                <div class="guides-divider">
+                                    <span>社区攻略</span>
+                                </div>
+                                <a href="#" class="guides-btn" id="guides-btn" target="_blank">
+                                    <i class="fas fa-book-open"></i>
+                                    <span>查看该人格单通攻略</span>
+                                    <span class="guides-count" id="guides-count"></span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 筛选设置页面 -->
+    <div id="settings-page" class="settings-page page-container" style="display: none;">
+        <div class="settings-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <span class="title-bar"></span>
+                    <h2>筛选设置</h2>
+                </div>
+            </div>
+            
+            <div class="settings-content">
+                <div class="settings-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-users"></i> 罪人筛选设置</h3>
+                        <div class="filter-actions">
+                            <button id="select-all-btn" class="btn-small">全选</button>
+                            <button id="deselect-all-btn" class="btn-small">全不选</button>
+                            <button id="invert-selection-btn" class="btn-small">反选</button>
+                        </div>
+                    </div>
+                    <div id="sinner-filter" class="sinner-filter-grid"></div>
+                </div>
+                
+                <div class="settings-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-id-card"></i> 人格整体筛选设置</h3>
+                        <div class="filter-actions">
+                            <button class="btn-small" onclick="toggleAllPersonalities(true)">全选所有人格</button>
+                            <button class="btn-small" onclick="toggleAllPersonalities(false)">取消所有人格</button>
+                            <button class="btn-small" onclick="invertAllPersonalities()">反选所有人格</button>
+                        </div>
+                    </div>
+                    <div id="personality-settings-container"></div>
+                </div>
+                
+                <div class="settings-footer">
+                    <button id="apply-filters-btn" class="btn-primary">
+                        <i class="fas fa-check"></i>
+                        应用筛选设置
+                    </button>
+                    <button id="reset-filters-btn" class="btn-secondary">
+                        <i class="fas fa-redo"></i>
+                        重置筛选设置
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据统计区 -->
+    <div class="stats-bar">
+        <div class="stat-card">
+            <div class="stat-label">罪人总数</div>
+            <div class="stat-value">12</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">人格总数</div>
+            <div class="stat-value" id="persona-total">-</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">当前赛季</div>
+            <div class="stat-value season-num">7</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">更新日期</div>
+            <div class="stat-value">2025.02</div>
+        </div>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="main-footer">
+        <div class="footer-left">
+            <p>支持手机、平板、电脑等多种设备访问</p>
+            <p>欢迎反馈、提建议、报告Bug</p>
+        </div>
+        <div class="footer-right">
+            <a href="https://github.com/Jhh003/limbus" target="_blank" class="footer-link">
+                <i class="fab fa-github"></i> GitHub
+            </a>
+            <div class="footer-badge">
+                <i class="fab fa-qq"></i> QQ交流群: 313198040
+            </div>
+        </div>
+    </footer>
+
+    <div class="copyright">                         
+        <p>本网站为粉丝制作，与Project Moon官方无关</p>
+        <p>所有游戏内容版权归Project Moon所有</p>
+    </div>
+    
+    <!-- 通用彩蛋视频播放框架 -->
+    <div id="universal-easter-egg-modal" class="easter-egg-modal">
+        <button id="universal-easter-egg-close-btn" class="easter-egg-close-btn">X</button>
+        <video id="universal-easter-egg-video" preload="auto">
+            您的浏览器不支持视频播放。
+        </video>
+    </div>
+    
+    <!-- 计时器弹窗 - 边狱主题风格 -->
+    <div id="timer-modal" class="timer-modal">
+        <div class="timer-modal-content">
+            <div class="timer-modal-header">
+                <div class="timer-header-title">
+                    <i class="fas fa-stopwatch"></i>
+                    <div class="timer-title-text">
+                        <h3>单通计时器</h3>
+                        <span>THE TIMER</span>
+                    </div>
+                </div>
+                <button id="timer-close-btn" class="timer-close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="timer-modal-body">
+                <!-- 时间显示区域 -->
+                <div class="timer-display-wrapper">
+                    <div class="timer-display-label">ELAPSED TIME</div>
+                    <div id="timer-display" class="timer-display">00:00:00</div>
+                    <div class="timer-display-decorator"></div>
+                </div>
+                
+                <!-- 控制按钮 -->
+                <div class="timer-controls">
+                    <button id="timer-start-btn" class="timer-btn btn-start">
+                        <i class="fas fa-play"></i>
+                        <span>开始</span>
+                    </button>
+                    <button id="timer-pause-btn" class="timer-btn btn-pause" disabled>
+                        <i class="fas fa-pause"></i>
+                        <span>暂停</span>
+                    </button>
+                    <button id="timer-reset-btn" class="timer-btn btn-reset">
+                        <i class="fas fa-redo"></i>
+                        <span>重置</span>
+                    </button>
+                </div>
+                
+                <!-- 提交区域 -->
+                <div class="timer-submit-section">
+                    <div class="timer-submit-header">
+                        <div class="title-bar"></div>
+                        <h4>提交记录</h4>
+                    </div>
+                    
+                    <div class="timer-current-selection" id="timer-selection-info">
+                        <div class="selection-item">
+                            <span class="selection-label">罪人</span>
+                            <span class="selection-value" id="timer-sinner-name">未选择</span>
+                        </div>
+                        <div class="selection-item">
+                            <span class="selection-label">人格</span>
+                            <span class="selection-value" id="timer-persona-name">未选择</span>
+                        </div>
+                    </div>
+                    
+                    <div class="timer-submit-actions">
+                        <button type="button" id="submit-to-global-btn" class="timer-submit-btn btn-global" disabled>
+                            <i class="fas fa-globe"></i>
+                            <div class="btn-content">
+                                <span class="btn-main-text">提交到全球排行榜</span>
+                                <span class="btn-sub-text">Submit to Global Ranking</span>
+                            </div>
+                        </button>
+                        <button type="button" id="submit-to-local-btn" class="timer-submit-btn btn-local">
+                            <i class="fas fa-save"></i>
+                            <div class="btn-content">
+                                <span class="btn-main-text">保存到本地</span>
+                                <span class="btn-sub-text">Save Locally</span>
+                            </div>
+                        </button>
+                    </div>
+                    
+                    <p class="timer-hint">
+                        <i class="fas fa-info-circle"></i>
+                        提交到全球排行榜需要填写完整信息
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 使用说明弹窗 -->
+    <div id="help-modal" class="help-modal-overlay">
+        <div class="help-modal-container">
+            <div class="help-modal-header">
+                <div class="help-header-title">
+                    <span class="title-icon">📜</span>
+                    <div class="title-text">
+                        <h3>使用指南</h3>
+                        <span>USER GUIDE</span>
+                    </div>
+                </div>
+                <button id="help-close-btn" class="help-close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="help-modal-body">
+                <!-- 步骤引导 -->
+                <div class="help-section">
+                    <div class="help-section-title">
+                        <span class="section-num">01</span>
+                        <span class="section-label">快速开始</span>
+                    </div>
+                    <div class="help-steps">
+                        <div class="help-step">
+                            <div class="step-icon">🎯</div>
+                            <div class="step-content">
+                                <h4>筛选人格池</h4>
+                                <p>点击顶部"筛选设置"，勾选想要参与随机的罪人和人格</p>
+                            </div>
+                        </div>
+                        <div class="help-step">
+                            <div class="step-icon">🎲</div>
+                            <div class="step-content">
+                                <h4>抽取罪人</h4>
+                                <p>点击"开始滚动"抽取罪人，确定后二级选择器解锁</p>
+                            </div>
+                        </div>
+                        <div class="help-step">
+                            <div class="step-icon">🏆</div>
+                            <div class="step-content">
+                                <h4>抽取人格</h4>
+                                <p>再次点击"开始滚动"抽取具体人格，接受命运的安排！</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 功能说明 -->
+                <div class="help-section">
+                    <div class="help-section-title">
+                        <span class="section-num">02</span>
+                        <span class="section-label">功能介绍</span>
+                    </div>
+                    <div class="help-features">
+                        <div class="help-feature">
+                            <div class="feature-icon feature-timer">
+                                <i class="fas fa-stopwatch"></i>
+                            </div>
+                            <div class="feature-content">
+                                <h4>单通计时器</h4>
+                                <p>记录你的速通挑战时长，支持一键提交到排行榜</p>
+                            </div>
+                        </div>
+                        <div class="help-feature">
+                            <div class="feature-icon feature-ranking">
+                                <i class="fas fa-trophy"></i>
+                            </div>
+                            <div class="feature-content">
+                                <h4>全球排行榜</h4>
+                                <p>与其他经理人一较高下，分享你的通关成绩</p>
+                            </div>
+                        </div>
+                        <div class="help-feature">
+                            <div class="feature-icon feature-filter">
+                                <i class="fas fa-sliders-h"></i>
+                            </div>
+                            <div class="feature-content">
+                                <h4>精细筛选</h4>
+                                <p>自由设定参与随机的罪人和人格，打造专属挑战</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 小贴士 -->
+                <div class="help-section help-tips">
+                    <div class="help-section-title">
+                        <span class="section-num">03</span>
+                        <span class="section-label">小贴士</span>
+                    </div>
+                    <div class="tips-grid">
+                        <div class="tip-item">
+                            <span class="tip-icon">✨</span>
+                            <span>只选一个罪人即可随机该罪人的不同人格</span>
+                        </div>
+                        <div class="tip-item">
+                            <span class="tip-icon">🔄</span>
+                            <span>点击罪人头像可快速切换其人格筛选</span>
+                        </div>
+                        <div class="tip-item">
+                            <span class="tip-icon">📱</span>
+                            <span>支持手机、平板、电脚多端访问</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 数据来源 -->
+                <div class="help-footer">
+                    <p>
+                        <i class="fas fa-database"></i>
+                        数据来源：<a href="https://limbuscompany.huijiwiki.com/wiki/%E9%A6%96%E9%A1%B5" target="_blank" rel="noopener">Limbus Company 中文维基</a>
+                    </p>
+                    <p class="help-version">版本 1.6.0 · 第七赛季 · 边狱巴士粉丝作品</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+<!-- 核心应用脚本 -->
+<!-- API 配置 -->
+<script src="/js/config.js"></script>
+<script type="module">
+    // 导入主程序
+    import { main } from '/js/main.js';
+    
+    // 导入Modal
+    import modal from '/js/modal.js';
+    
+    // 导入认证模块
+    import { AuthModule } from '/js/modules/authModule.js';
+    
+    // 全局导出Modal供兼容层使用
+    window.Modal = modal;
+    
+    // 初始化认证模块
+    AuthModule.init({
+        onUserChange: updateUserUI,
+        showMessage: (msg, type) => {
+            // 使用alert显示所有类型的消息
+            const titles = {
+                'success': '✅ 成功',
+                'error': '❌ 错误',
+                'warning': '⚠️ 警告'
+            };
+            modal.alert(msg, titles[type] || '提示');
+        }
+    });
+    
+    // 更新用户UI
+    function updateUserUI(user) {
+        const authBtn = document.getElementById('auth-btn');
+        const authText = document.getElementById('auth-text');
+        
+        if (!authBtn || !authText) return;
+        
+        if (user) {
+            authText.textContent = user.username;
+            authBtn.classList.add('logged-in');
+            authBtn.title = '点击登出';
+        } else {
+            authText.textContent = '登录/注册';
+            authBtn.classList.remove('logged-in');
+            authBtn.title = '点击登录/注册';
+        }
+    }
+    
+    // 处理登录按钮点击
+    window.handleAuthClick = function() {
+        AuthModule.openAuthModal();
+    };
+    
+    // 启动应用
+    window.addEventListener('DOMContentLoaded', () => {
+        main().catch(error => {
+            console.error('应用启动失败:', error);
+            alert('应用启动失败: ' + error.message);
+        });
+    });
+</script>
+
+</html>

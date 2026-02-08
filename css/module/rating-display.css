@@ -1,0 +1,741 @@
+/**
+ * 人格评分 CSS 样式
+ * 包括评分卡片、排行榜、对比图表等
+ */
+
+/* ==================== 评分卡片 ==================== */
+
+.rating-card {
+    background: linear-gradient(135deg, rgba(20, 20, 40, 0.8) 0%, rgba(30, 25, 50, 0.9) 100%);
+    border: 2px solid rgba(100, 100, 150, 0.3);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 15px 0;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.rating-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
+    border-color: rgba(150, 150, 200, 0.5);
+}
+
+/* 评级相关样式 */
+.rating-card.rank-S { border-color: rgba(255, 215, 0, 0.6); }
+.rating-card.rank-A { border-color: rgba(220, 100, 100, 0.6); }
+.rating-card.rank-B { border-color: rgba(100, 180, 255, 0.6); }
+.rating-card.rank-C { border-color: rgba(150, 180, 150, 0.6); }
+.rating-card.rank-D { border-color: rgba(150, 150, 150, 0.6); }
+.rating-card.rank-E { border-color: rgba(100, 100, 100, 0.6); }
+
+/* 评分卡片头部 */
+.rating-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(100, 100, 150, 0.2);
+}
+
+.personality-name {
+    font-size: 18px;
+    font-weight: bold;
+    color: #e8d5b7;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* 等级徽章 */
+.rank-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-weight: bold;
+    min-width: 80px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.rank-badge.rank-S {
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    color: #000;
+}
+
+.rank-badge.rank-A {
+    background: linear-gradient(135deg, #FF6B6B 0%, #DC143C 100%);
+    color: #fff;
+}
+
+.rank-badge.rank-B {
+    background: linear-gradient(135deg, #4169E1 0%, #1E90FF 100%);
+    color: #fff;
+}
+
+.rank-badge.rank-C {
+    background: linear-gradient(135deg, #90EE90 0%, #3CB371 100%);
+    color: #000;
+}
+
+.rank-badge.rank-D {
+    background: linear-gradient(135deg, #A9A9A9 0%, #696969 100%);
+    color: #fff;
+}
+
+.rank-badge.rank-E {
+    background: linear-gradient(135deg, #696969 0%, #2F4F4F 100%);
+    color: #aaa;
+}
+
+.rank-letter {
+    font-size: 20px;
+}
+
+.rank-level {
+    font-size: 11px;
+    opacity: 0.9;
+}
+
+/* 评分显示 */
+.rating-score {
+    margin-bottom: 16px;
+}
+
+.score-display {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.score-value {
+    font-size: 32px;
+    font-weight: bold;
+    color: #FFD700;
+    text-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+.score-max {
+    font-size: 16px;
+    color: #aaa;
+}
+
+.score-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(100, 100, 150, 0.2);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.score-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #FFD700, #FF6B6B);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+/* ==================== 详细评分 ==================== */
+
+.rating-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.dimension {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px;
+    background: rgba(50, 50, 80, 0.5);
+    border-radius: 8px;
+    border: 1px solid rgba(100, 100, 150, 0.2);
+}
+
+.dimension-name {
+    font-size: 12px;
+    color: #aaa;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.dimension-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(100, 100, 150, 0.2);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.dimension-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4169E1, #1E90FF);
+    transition: width 0.3s ease;
+}
+
+.dimension-score {
+    font-size: 13px;
+    color: #8dd3ff;
+    font-weight: bold;
+}
+
+/* ==================== 描述文本 ==================== */
+
+.rating-description {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.strength, .weakness {
+    padding: 12px;
+    border-radius: 8px;
+    border-left: 4px solid;
+}
+
+.strength {
+    background: rgba(0, 150, 0, 0.1);
+    border-color: #90EE90;
+}
+
+.strength .label {
+    color: #90EE90;
+    font-weight: bold;
+}
+
+.weakness {
+    background: rgba(220, 20, 60, 0.1);
+    border-color: #FF6B6B;
+}
+
+.weakness .label {
+    color: #FF6B6B;
+    font-weight: bold;
+}
+
+.strength .label, .weakness .label {
+    display: block;
+    font-size: 12px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.strength .text, .weakness .text {
+    font-size: 13px;
+    color: #ddd;
+    line-height: 1.4;
+}
+
+/* ==================== 队伍建议 ==================== */
+
+.team-suggestions {
+    padding: 12px;
+    background: rgba(70, 70, 120, 0.3);
+    border-radius: 8px;
+    border: 1px solid rgba(100, 100, 150, 0.2);
+    margin-bottom: 12px;
+}
+
+.team-suggestions .label {
+    display: block;
+    color: #b0a0ff;
+    font-weight: bold;
+    font-size: 12px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.team-suggestions ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.team-suggestions li {
+    padding: 6px 0;
+    padding-left: 20px;
+    position: relative;
+    color: #ccc;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.team-suggestions li:before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: #b0a0ff;
+    font-weight: bold;
+}
+
+/* ==================== 评分元数据 ==================== */
+
+.rating-meta {
+    text-align: center;
+    color: #888;
+    font-size: 12px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(100, 100, 150, 0.1);
+}
+
+/* ==================== 排行榜表格 ==================== */
+
+.rating-ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+.ranking-header {
+    display: grid;
+    grid-template-columns: 60px 1fr 80px 60px 80px;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(50, 50, 80, 0.6);
+    border-bottom: 2px solid rgba(100, 100, 150, 0.3);
+    font-weight: bold;
+    color: #b0a0ff;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ranking-body {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.ranking-row {
+    display: grid;
+    grid-template-columns: 60px 1fr 80px 60px 80px;
+    gap: 12px;
+    padding: 12px 16px;
+    align-items: center;
+    border-bottom: 1px solid rgba(100, 100, 150, 0.1);
+    transition: background 0.2s ease;
+}
+
+.ranking-row:hover {
+    background: rgba(100, 100, 150, 0.1);
+}
+
+.ranking-row.rank-S { border-left: 3px solid #FFD700; }
+.ranking-row.rank-A { border-left: 3px solid #FF6B6B; }
+.ranking-row.rank-B { border-left: 3px solid #4169E1; }
+.ranking-row.rank-C { border-left: 3px solid #90EE90; }
+.ranking-row.rank-D { border-left: 3px solid #A9A9A9; }
+
+.rank-number {
+    font-weight: bold;
+    font-size: 14px;
+    color: #FFD700;
+}
+
+.score-mini-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(100, 100, 150, 0.2);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+
+.score-mini-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #FFD700, #FF6B6B);
+}
+
+.score-text {
+    font-size: 12px;
+    color: #aaa;
+}
+
+.btn-detail {
+    padding: 4px 12px;
+    background: rgba(100, 100, 150, 0.3);
+    border: 1px solid rgba(150, 150, 200, 0.3);
+    color: #b0a0ff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.btn-detail:hover {
+    background: rgba(150, 150, 200, 0.3);
+    border-color: rgba(150, 150, 200, 0.6);
+}
+
+/* ==================== 对比图表 ==================== */
+
+.rating-comparison-chart {
+    margin: 20px 0;
+    padding: 20px;
+    background: rgba(30, 30, 50, 0.6);
+    border-radius: 12px;
+    border: 1px solid rgba(100, 100, 150, 0.2);
+}
+
+.chart-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #e8d5b7;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.chart-bars {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 16px;
+    align-items: flex-end;
+    min-height: 300px;
+}
+
+.chart-bar-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.chart-bar {
+    width: 60px;
+    min-height: 200px;
+    background: rgba(100, 100, 150, 0.2);
+    border-radius: 6px 6px 0 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.chart-bar.rank-S { background: rgba(255, 215, 0, 0.1); }
+.chart-bar.rank-A { background: rgba(255, 107, 107, 0.1); }
+.chart-bar.rank-B { background: rgba(65, 105, 225, 0.1); }
+.chart-bar.rank-C { background: rgba(144, 238, 144, 0.1); }
+.chart-bar.rank-D { background: rgba(169, 169, 169, 0.1); }
+
+.chart-bar-fill {
+    width: 100%;
+    background: linear-gradient(180deg, #4169E1, #1E90FF);
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    transition: all 0.5s ease;
+}
+
+.chart-bar:hover .chart-bar-fill {
+    filter: brightness(1.2);
+}
+
+.bar-label {
+    padding-bottom: 8px;
+    font-weight: bold;
+    color: #fff;
+    font-size: 12px;
+}
+
+.chart-bar-name {
+    font-size: 12px;
+    color: #aaa;
+    text-align: center;
+    max-width: 60px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chart-bar-rank {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* ==================== 详细面板 ==================== */
+
+.rating-detail-panel {
+    background: linear-gradient(135deg, rgba(20, 20, 40, 0.95) 0%, rgba(30, 25, 50, 0.95) 100%);
+    border: 2px solid rgba(100, 100, 150, 0.3);
+    border-radius: 16px;
+    padding: 30px;
+    max-width: 800px;
+    margin: 20px auto;
+    box-shadow: 0 16px 64px rgba(0, 0, 0, 0.4);
+}
+
+.detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid rgba(100, 100, 150, 0.2);
+}
+
+.detail-header h2 {
+    font-size: 28px;
+    color: #e8d5b7;
+    margin: 0;
+}
+
+.rank-badge-large {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: bold;
+}
+
+.detail-section {
+    margin-bottom: 24px;
+}
+
+.detail-section h3 {
+    font-size: 16px;
+    color: #b0a0ff;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-score-large {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 20px;
+    background: rgba(50, 50, 80, 0.5);
+    border-radius: 12px;
+    border: 1px solid rgba(100, 100, 150, 0.2);
+}
+
+.score-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 107, 107, 0.2));
+    border: 2px solid rgba(255, 215, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.score-number {
+    font-size: 48px;
+    font-weight: bold;
+    color: #FFD700;
+}
+
+.score-suffix {
+    font-size: 14px;
+    color: #aaa;
+}
+
+.dimensions-radar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.dimension-row {
+    display: grid;
+    grid-template-columns: 100px 1fr 50px;
+    gap: 12px;
+    align-items: center;
+}
+
+.dimension-label {
+    font-size: 13px;
+    color: #aaa;
+}
+
+.dimension-progress {
+    position: relative;
+    height: 24px;
+    background: rgba(100, 100, 150, 0.2);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #4169E1, #1E90FF);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 8px;
+    transition: width 0.3s ease;
+}
+
+.progress-value {
+    font-size: 12px;
+    color: #fff;
+    font-weight: bold;
+}
+
+.dimension-percent {
+    font-size: 12px;
+    color: #aaa;
+    text-align: right;
+}
+
+.strength-list, .weakness-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.strength-item, .weakness-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: rgba(50, 50, 80, 0.5);
+    border-radius: 6px;
+    border-left: 3px solid;
+}
+
+.strength-item {
+    border-left-color: #90EE90;
+}
+
+.weakness-item {
+    border-left-color: #FF6B6B;
+}
+
+.strength-name, .weakness-name {
+    color: #ddd;
+    font-size: 13px;
+}
+
+.strength-score, .weakness-score {
+    font-weight: bold;
+    font-size: 13px;
+}
+
+.strength-score {
+    color: #90EE90;
+}
+
+.weakness-score {
+    color: #FF6B6B;
+}
+
+.team-recommendations {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.recommendation-item {
+    display: flex;
+    gap: 8px;
+    padding: 10px 12px;
+    background: rgba(50, 50, 80, 0.5);
+    border-radius: 6px;
+    border-left: 3px solid #b0a0ff;
+    color: #ddd;
+    font-size: 13px;
+}
+
+.assessment-notes {
+    background: rgba(50, 50, 80, 0.5);
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(100, 100, 150, 0.2);
+}
+
+.assessment-notes p {
+    margin: 8px 0;
+    color: #ddd;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.assessment-notes strong {
+    color: #b0a0ff;
+}
+
+.detail-footer {
+    text-align: center;
+    color: #888;
+    font-size: 12px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(100, 100, 150, 0.1);
+}
+
+/* ==================== 响应式设计 ==================== */
+
+@media (max-width: 768px) {
+    .rating-details {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .rating-description {
+        grid-template-columns: 1fr;
+    }
+
+    .ranking-header, .ranking-row {
+        grid-template-columns: 40px 1fr 60px 50px;
+    }
+
+    .action-col {
+        display: none;
+    }
+
+    .chart-bars {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .detail-header {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .dimension-row {
+        grid-template-columns: 80px 1fr 40px;
+    }
+}
+
+@media (max-width: 480px) {
+    .rating-card {
+        padding: 16px;
+    }
+
+    .rating-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .rating-details {
+        grid-template-columns: 1fr;
+    }
+
+    .ranking-header, .ranking-row {
+        grid-template-columns: 1fr;
+    }
+
+    .rank-col, .score-col, .rank-col {
+        display: none;
+    }
+
+    .chart-bars {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

@@ -1,0 +1,3245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人格单通攻略 - 今天蛋筒什么</title>
+    <link rel="stylesheet" href="/css/reset.css">
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="/css/limbus-theme-v2.css">
+    <link rel="stylesheet" href="/css/module/guides.css">
+    <link rel="stylesheet" href="/css/custom-dialog.css">
+    <link rel="stylesheet" href="/css/auth-module.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Quill富文本编辑器 -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    
+    <!-- DOMPurify安全防护 -->
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+    
+    <!-- 正文图片上传样式 -->
+    <style>
+        .content-image-item {
+            animation: scaleIn 0.25s ease;
+        }
+        .content-image-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .content-image-item ::-webkit-scrollbar {
+            width: 3px;
+        }
+        .content-image-item ::-webkit-scrollbar-thumb {
+            background: rgba(201,169,97,0.5);
+            border-radius: 2px;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .image-viewer-modal {
+            animation: fadeIn 0.2s ease;
+        }
+        /* 点赞按钮样式 */
+        .like-btn {
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, rgba(201, 79, 79, 0.1), rgba(201, 79, 79, 0.05));
+            border: 1px solid rgba(201, 79, 79, 0.3);
+            color: var(--lc-red);
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(201, 79, 79, 0.15);
+        }
+        .like-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(201, 79, 79, 0.2), rgba(201, 79, 79, 0.1));
+            border-color: rgba(201, 79, 79, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(201, 79, 79, 0.25);
+        }
+        .like-btn.liked {
+            background: linear-gradient(135deg, var(--lc-red), #a63d3d);
+            border-color: var(--lc-red);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(201, 79, 79, 0.4);
+        }
+        .like-btn.liked i {
+            color: #fff;
+            animation: heartBeat 0.5s ease;
+        }
+        @keyframes heartBeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+        .like-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* 分享按钮样式 */
+        .share-btn {
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, rgba(201, 169, 97, 0.1), rgba(201, 169, 97, 0.05));
+            border: 1px solid rgba(201, 169, 97, 0.3);
+            color: var(--lc-gold);
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(201, 169, 97, 0.15);
+        }
+        .share-btn:hover {
+            background: linear-gradient(135deg, rgba(201, 169, 97, 0.2), rgba(201, 169, 97, 0.1));
+            border-color: rgba(201, 169, 97, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(201, 169, 97, 0.25);
+        }
+        
+        /* 按钮容器 */
+        .guide-detail-actions {
+            display: flex;
+            gap: 16px;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(201, 169, 97, 0.15);
+        }
+        
+        /* 图片预览模态框样式 */
+        .image-preview-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .image-preview-toolbar {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            padding: 10px 20px;
+            background: rgba(30, 30, 40, 0.9);
+            border: 1px solid rgba(201, 169, 97, 0.3);
+            border-radius: 30px;
+            z-index: 10001;
+            backdrop-filter: blur(10px);
+        }
+        .image-preview-toolbar button {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: transparent;
+            color: var(--lc-gold);
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .image-preview-toolbar button:hover {
+            background: rgba(201, 169, 97, 0.2);
+        }
+        .image-preview-container {
+            flex: 1;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            overflow: auto;
+            padding: 80px 20px 20px;
+            cursor: grab;
+        }
+        .image-preview-container img {
+            max-width: none;
+            max-height: none;
+            border-radius: 4px;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+            transition: transform 0.2s ease;
+            transform-origin: center top;
+            user-select: none;
+        }
+        
+        /* 视频容器样式 */
+        .guide-video {
+            width: 100%;
+            height: 400px;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            margin: 16px 0;
+        }
+        
+        .video-placeholder {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .guide-video iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        /* 视频封面 */
+        .video-cover {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+        }
+        
+        .video-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .video-cover::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 1;
+        }
+        
+        /* 播放覆盖层 */
+        .play-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .play-overlay:hover {
+            transform: translate(-50%, -50%) scale(1.05);
+        }
+        
+        .play-overlay i {
+            width: 80px;
+            height: 80px;
+            background: rgba(201, 169, 97, 0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: var(--lc-bg);
+            box-shadow: 0 4px 20px rgba(201, 169, 97, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .play-overlay:hover i {
+            background: var(--lc-gold);
+            box-shadow: 0 6px 25px rgba(201, 169, 97, 0.5);
+        }
+        
+        .play-overlay span {
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+        }
+        
+        /* 新窗口打开按钮 */
+        .open-new-tab {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid var(--lc-gold);
+            border-radius: 8px;
+            color: var(--lc-gold);
+            padding: 8px 12px;
+            font-size: 12px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 3;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .open-new-tab:hover {
+            background: var(--lc-gold);
+            color: var(--lc-bg);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(201, 169, 97, 0.4);
+        }
+        
+        .open-new-tab i {
+            font-size: 10px;
+        }
+        
+        /* 视频加载状态 */
+        .video-loading, .video-error {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #fff;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .video-loading i, .video-error i {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        
+        .video-error a {
+            color: #3498db;
+            text-decoration: underline;
+            margin-top: 12px;
+        }
+        
+        /* 攻略详情样式 */
+        .guide-detail {
+            padding: 30px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .guide-detail-header {
+            border-bottom: 1px solid var(--lc-border);
+            padding-bottom: 20px;
+            margin-bottom: 24px;
+        }
+        
+        .guide-detail-header h2 {
+            font-size: 28px;
+            color: var(--lc-text);
+            margin-bottom: 16px;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+        
+        .guide-detail-meta {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .guide-author, .guide-date, .guide-views {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--lc-text-secondary);
+            font-size: 14px;
+        }
+        
+        .guide-author i, .guide-date i, .guide-views i {
+            color: var(--lc-gold);
+            font-size: 12px;
+        }
+        
+        .guide-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+        
+        .tag {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .tag-sinner {
+            background: rgba(201, 169, 97, 0.2);
+            color: var(--lc-gold);
+            border: 1px solid var(--lc-gold);
+        }
+        
+        .tag-persona {
+            background: rgba(74, 158, 255, 0.2);
+            color: var(--lc-settings);
+            border: 1px solid var(--lc-settings);
+        }
+        
+        .tag-floor {
+            background: rgba(155, 89, 182, 0.2);
+            color: var(--lc-timer);
+            border: 1px solid var(--lc-timer);
+        }
+        
+        .tag:not(.tag-sinner):not(.tag-persona):not(.tag-floor) {
+            background: rgba(160, 160, 160, 0.2);
+            color: var(--lc-text-secondary);
+            border: 1px solid var(--lc-text-secondary);
+        }
+        
+        .guide-detail-content {
+            line-height: 1.6;
+        }
+        
+        .guide-description {
+            background: var(--lc-bg-secondary);
+            border: 1px solid var(--lc-border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            color: var(--lc-text);
+            font-size: 15px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .guide-media-container {
+            margin-top: 20px;
+        }
+        
+        .guide-media-title {
+            color: var(--lc-gold);
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .guide-media-title i {
+            font-size: 16px;
+        }
+        
+        /* 响应式优化 */
+        @media (max-width: 768px) {
+            .guide-detail {
+                padding: 20px;
+            }
+            
+            .guide-detail-header h2 {
+                font-size: 24px;
+            }
+            
+            .guide-detail-meta {
+                gap: 16px;
+            }
+            
+            .guide-tags {
+                gap: 6px;
+            }
+            
+            .tag {
+                padding: 4px 8px;
+                font-size: 11px;
+            }
+        }
+        
+        /* 滚动条美化 */
+        .guide-detail::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .guide-detail::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+        
+        .guide-detail::-webkit-scrollbar-thumb {
+            background: var(--lc-gold);
+            border-radius: 4px;
+        }
+        
+        .guide-detail::-webkit-scrollbar-thumb:hover {
+            background: var(--lc-gold-light);
+        }
+        
+        /* Quill富文本编辑器暗色主题 */
+        .ql-toolbar.ql-snow {
+            background: var(--lc-bg-secondary);
+            border: 1px solid var(--lc-border);
+            border-radius: 8px 8px 0 0;
+            padding: 12px;
+        }
+
+        .ql-container.ql-snow {
+            background: var(--lc-bg-secondary);
+            border: 1px solid var(--lc-border);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            color: var(--lc-text);
+            font-family: inherit;
+        }
+
+        .ql-editor {
+            color: var(--lc-text);
+            font-size: 15px;
+            line-height: 1.8;
+            min-height: 300px;
+            padding: 20px;
+        }
+
+        .ql-editor.ql-blank::before {
+            color: var(--lc-text-muted);
+            font-style: normal;
+        }
+
+        /* 工具栏图标颜色 */
+        .ql-snow .ql-stroke {
+            stroke: var(--lc-text-secondary);
+        }
+
+        .ql-snow .ql-fill {
+            fill: var(--lc-text-secondary);
+        }
+
+        .ql-snow .ql-picker-label {
+            color: var(--lc-text);
+        }
+
+        .ql-snow .ql-picker-options {
+            background: var(--lc-bg-secondary);
+            border: 1px solid var(--lc-border);
+        }
+
+        .ql-snow .ql-picker-item:hover {
+            color: var(--lc-gold);
+        }
+
+        /* 激活状态 */
+        .ql-toolbar button:hover,
+        .ql-toolbar button:focus,
+        .ql-toolbar button.ql-active {
+            color: var(--lc-gold) !important;
+        }
+
+        .ql-toolbar button:hover .ql-stroke,
+        .ql-toolbar button:focus .ql-stroke,
+        .ql-toolbar button.ql-active .ql-stroke {
+            stroke: var(--lc-gold) !important;
+        }
+
+        .ql-toolbar button:hover .ql-fill,
+        .ql-toolbar button:focus .ql-fill,
+        .ql-toolbar button.ql-active .ql-fill {
+            fill: var(--lc-gold) !important;
+        }
+
+        /* 下拉菜单样式 */
+        .ql-snow .ql-picker.ql-expanded .ql-picker-label {
+            border-color: var(--lc-gold);
+        }
+
+        /* 富文本内容渲染样式 */
+        .richtext-content {
+            line-height: 1.8;
+        }
+
+        .richtext-content h1 {
+            color: var(--lc-gold);
+            font-size: 28px;
+            font-weight: 600;
+            margin: 28px 0 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--lc-border);
+        }
+
+        .richtext-content h2 {
+            color: var(--lc-gold);
+            font-size: 24px;
+            font-weight: 600;
+            margin: 24px 0 14px;
+        }
+
+        .richtext-content h3 {
+            color: var(--lc-gold);
+            font-size: 20px;
+            font-weight: 600;
+            margin: 20px 0 12px;
+        }
+
+        .richtext-content p {
+            margin: 12px 0;
+        }
+
+        .richtext-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 16px 0;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .richtext-content img:hover {
+            transform: scale(1.02);
+        }
+
+        .richtext-content blockquote {
+            border-left: 4px solid var(--lc-gold);
+            padding-left: 16px;
+            margin: 16px 0;
+            color: var(--lc-text-secondary);
+            font-style: italic;
+        }
+
+        .richtext-content code {
+            background: var(--lc-bg);
+            padding: 3px 8px;
+            border-radius: 4px;
+            color: var(--lc-gold);
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .richtext-content pre {
+            background: var(--lc-bg);
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 16px 0;
+        }
+
+        .richtext-content pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .richtext-content a {
+            color: var(--lc-settings);
+            text-decoration: underline;
+            transition: color 0.2s;
+        }
+
+        .richtext-content a:hover {
+            color: var(--lc-gold);
+        }
+
+        .richtext-content ul,
+        .richtext-content ol {
+            padding-left: 28px;
+            margin: 12px 0;
+        }
+
+        .richtext-content li {
+            margin: 8px 0;
+        }
+
+        .richtext-content strong {
+            font-weight: 600;
+            color: var(--lc-text);
+        }
+
+        .richtext-content em {
+            font-style: italic;
+            color: var(--lc-text-secondary);
+        }
+
+        /* 编辑器容器 */
+        .editor-wrapper {
+            margin-bottom: 16px;
+        }
+
+        .editor-tips {
+            font-size: 12px;
+            color: var(--lc-text-muted);
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .editor-tips i {
+            color: var(--lc-gold);
+        }
+    </style>
+
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <nav class="top-nav">
+        <div class="nav-brand">
+            <div class="logo-icon logo-icon-guides">
+                <i class="fas fa-book-open"></i>
+            </div>
+            <div class="logo-text">
+                <h1>人格单通攻略</h1>
+                <span class="logo-subtitle">Limbus Company · 社区攻略中心</span>
+            </div>
+        </div>
+        <div class="nav-meta">
+            <div class="version-tag">
+                <span class="label">版本</span>
+                <span class="value">1.6.0</span>
+            </div>
+            <button onclick="openUserSubmitModal()" class="nav-btn nav-btn-guides">
+                <i class="fas fa-plus"></i>
+                <span>投稿攻略</span>
+            </button>
+            <button id="user-auth-btn" onclick="openAuthModal()" class="nav-btn nav-btn-help">
+                <i class="fas fa-user"></i>
+                <span id="user-auth-text">登录/注册</span>
+            </button>
+            <a href="/" class="nav-btn nav-btn-primary" style="text-decoration:none;">
+                <i class="fas fa-dice"></i>
+                <span>去抽人格</span>
+            </a>
+            <a href="/global-ranking" class="nav-btn nav-btn-ranking" style="text-decoration:none;">
+                <i class="fas fa-trophy"></i>
+                <span>排行榜</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- 主容器 -->
+    <div class="guides-container">
+        <!-- 筛选面板 -->
+        <aside class="guides-filters">
+            <div class="filter-section">
+                <h3 class="filter-title"><i class="fas fa-user"></i> 选择罪人</h3>
+                <div class="filter-group" id="sinner-filters">
+                    <button class="filter-btn active" data-sinner="all">
+                        <i class="fas fa-th"></i> 全部
+                    </button>
+                    <!-- 动态生成 -->
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <h3 class="filter-title"><i class="fas fa-masks-theater"></i> 选择人格</h3>
+                <div class="filter-group" id="persona-filters">
+                    <button class="filter-btn active" data-persona="all">
+                        <i class="fas fa-layer-group"></i> 全部人格
+                    </button>
+                    <!-- 动态生成 -->
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <h3 class="filter-title"><i class="fas fa-signal"></i> 挑战层数</h3>
+                <div class="floor-filter-grid" id="floor-filters">
+                    <button class="filter-btn active" data-floor="all">全部</button>
+                    <button class="filter-btn" data-floor="5-2">5-H</button>
+                    <button class="filter-btn" data-floor="10">10</button>
+                    <button class="filter-btn" data-floor="15">15</button>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <h3 class="filter-title"><i class="fas fa-sort"></i> 排序方式</h3>
+                <select id="sort-select" class="sort-select">
+                    <option value="created_at">最新发布</option>
+                    <option value="views">最多浏览</option>
+                    <option value="likes">最多点赞</option>
+                </select>
+            </div>
+        </aside>
+
+        <!-- 攻略列表区域 -->
+        <main class="guides-main">
+            <!-- 搜索框 -->
+            <div class="search-box" style="margin-bottom:16px;">
+                <div style="display:flex;gap:10px;align-items:center;background:var(--lc-bg-secondary);border:1px solid var(--lc-border);border-radius:8px;padding:8px 12px;">
+                    <i class="fas fa-search" style="color:var(--lc-text-muted);"></i>
+                    <input type="text" id="guide-search-input" placeholder="搜索攻略标题、作者、罪人、人格..." 
+                           style="flex:1;background:transparent;border:none;color:var(--lc-text);font-size:0.9rem;outline:none;"
+                           onkeyup="handleSearchInput(event)">
+                    <button onclick="clearSearch()" id="clear-search-btn" style="display:none;background:transparent;border:none;color:var(--lc-text-muted);cursor:pointer;padding:4px;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <button onclick="performSearch()" style="padding:6px 16px;background:var(--lc-gold);border:none;border-radius:6px;color:#1a1a2e;font-size:0.85rem;cursor:pointer;font-weight:600;">
+                        搜索
+                    </button>
+                </div>
+            </div>
+
+            <!-- 当前筛选状态 -->
+            <div class="guides-header">
+                <div class="current-filter">
+                    <span id="current-sinner">全部罪人</span>
+                    <span class="separator">·</span>
+                    <span id="current-persona">全部人格</span>
+                    <span class="separator">·</span>
+                    <span id="current-floor">全部层数</span>
+                    <span id="search-status" style="display:none;color:var(--lc-gold);margin-left:8px;"></span>
+                </div>
+                <div class="guides-count">
+                    共 <span id="total-guides">0</span> 篇攻略
+                </div>
+            </div>
+
+            <!-- 攻略卡片网格 -->
+            <div class="guides-grid" id="guides-grid">
+                <!-- 动态生成攻略卡片 -->
+            </div>
+
+            <!-- 分页 -->
+            <div class="pagination" id="pagination">
+                <!-- 动态生成 -->
+            </div>
+        </main>
+    </div>
+
+    <!-- 攻略详情弹窗 -->
+    <div class="modal-overlay" id="guide-modal">
+        <div class="modal-content guide-modal-content">
+            <button class="modal-close" onclick="closeGuideModal()">
+                ✕
+            </button>
+            <div class="guide-detail" id="guide-detail">
+                <!-- 动态填充 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载动画 -->
+    <div class="loading-overlay" id="loading">
+        <div class="loading-spinner">
+            ⭕
+            <span>加载中...</span>
+        </div>
+    </div>
+
+    <!-- API 配置 -->
+    <script src="/js/config.js"></script>
+    
+    <script type="module">
+        import { sinnerData } from '/data/characters.js';
+        import { createGuideImageManager } from '/js/modules/guideImageUploader.js';
+
+        // 使用全局 API_BASE 或回退到相对路径
+        const API_BASE = window.API_BASE || '/api';
+        
+        // 图片上传配置
+        const UPLOAD_CONFIG = {
+            maxFileSize: 10 * 1024 * 1024 // 10MB 限制
+        };
+        
+        let currentState = {
+            sinner: 'all',
+            persona: 'all',
+            floor: 'all',
+            sortBy: 'created_at',
+            page: 1,
+            pageSize: 12,
+            searchQuery: ''
+        };
+        
+        // 搜索缓存
+        let searchTimeout = null;
+        let allGuidesCache = []; // 用于客户端搜索的缓存
+
+        // 用户认证状态
+        let currentUser = JSON.parse(localStorage.getItem('limbus_user') || 'null');
+        
+        // 更新用户UI
+        function updateUserUI() {
+            const authBtn = document.getElementById('user-auth-btn');
+            const authText = document.getElementById('user-auth-text');
+            currentUser = JSON.parse(localStorage.getItem('limbus_user') || 'null');
+            if (currentUser) {
+                authText.textContent = currentUser.username;
+                authBtn.title = '点击登出';
+                // 用户登录后加载今日点赞列表
+                loadTodayLikes();
+            } else {
+                authText.textContent = '登录/注册';
+                authBtn.title = '';
+                // 清空点赞列表
+                todayLikedGuideIds = [];
+            }
+        }
+        
+        // 监听 storage 事件，实现多页面登录状态同步
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'limbus_user') {
+                updateUserUI();
+            }
+        });
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initSinnerFilters();
+            initEventListeners();
+            loadGuides();
+            updateUserUI();
+            
+            // 检查是否从排行榜页面跳转过来需要打开攻略提交表单
+            if (localStorage.getItem('open_guide_submit') === 'true') {
+                localStorage.removeItem('open_guide_submit');
+                // 延迟打开，确保页面加载完成
+                setTimeout(() => {
+                    if (currentUser) {
+                        openUserSubmitModal();
+                        showMessage('请填写详细的攻略内容后提交', 'info');
+                    } else {
+                        showMessage('请先登录后再投稿攻略', 'warning');
+                        setTimeout(() => openAuthModal(), 500);
+                    }
+                }, 500);
+            }
+        });
+
+        // 初始化罪人筛选按钮
+        function initSinnerFilters() {
+            const container = document.getElementById('sinner-filters');
+            
+            // 为"全部"按钮添加事件监听
+            const allBtn = container.querySelector('[data-sinner="all"]');
+            if (allBtn) {
+                allBtn.addEventListener('click', () => {
+                    setActiveFilter('sinner', 'all');
+                    updatePersonaFilters('all');
+                });
+            }
+            
+            sinnerData.forEach(sinner => {
+                const btn = document.createElement('button');
+                btn.className = 'filter-btn sinner-btn';
+                btn.dataset.sinner = sinner.name.split(' ')[0];
+                btn.innerHTML = `
+                    <img src="${sinner.avatar}" alt="${sinner.name}" class="sinner-avatar-mini">
+                    <span>${sinner.name.split(' ')[0]}</span>
+                `;
+                btn.addEventListener('click', () => {
+                    setActiveFilter('sinner', btn.dataset.sinner);
+                    updatePersonaFilters(btn.dataset.sinner);
+                });
+                container.appendChild(btn);
+            });
+        }
+
+        // 更新人格筛选按钮
+        function updatePersonaFilters(sinnerName) {
+            const container = document.getElementById('persona-filters');
+            container.innerHTML = `
+                <button class="filter-btn active" data-persona="all" id="persona-all-btn">
+                    🔽 全部人格
+                </button>
+            `;
+            
+            // 为"全部人格"按钮添加事件监听
+            document.getElementById('persona-all-btn').addEventListener('click', () => {
+                setActiveFilter('persona', 'all');
+            });
+
+            if (sinnerName === 'all') return;
+
+            const sinner = sinnerData.find(s => s.name.includes(sinnerName));
+            if (sinner) {
+                sinner.personalities.forEach(persona => {
+                    const btn = document.createElement('button');
+                    btn.className = 'filter-btn persona-btn';
+                    btn.dataset.persona = persona.name;
+                    btn.innerHTML = `<span>${persona.name}</span>`;
+                    btn.addEventListener('click', () => setActiveFilter('persona', persona.name));
+                    container.appendChild(btn);
+                });
+            }
+        }
+
+        // 设置活跃筛选
+        function setActiveFilter(type, value) {
+            currentState[type] = value;
+            currentState.page = 1;
+
+            // 更新按钮状态
+            document.querySelectorAll(`[data-${type}]`).forEach(btn => {
+                btn.classList.toggle('active', btn.dataset[type] === value);
+            });
+
+            // 更新显示文本
+            updateFilterDisplay();
+            loadGuides();
+        }
+
+        // 搜索功能
+        window.handleSearchInput = function(event) {
+            const input = document.getElementById('guide-search-input');
+            const clearBtn = document.getElementById('clear-search-btn');
+            
+            // 显示/隐藏清空按钮
+            clearBtn.style.display = input.value ? 'block' : 'none';
+            
+            // 实时搜索（延迟300ms）
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                performSearch();
+            }, 300);
+            
+            // 回车直接搜索
+            if (event.key === 'Enter') {
+                clearTimeout(searchTimeout);
+                performSearch();
+            }
+        };
+        
+        window.performSearch = function() {
+            const input = document.getElementById('guide-search-input');
+            const query = input.value.trim();
+            
+            currentState.searchQuery = query;
+            currentState.page = 1;
+            
+            // 更新搜索状态显示
+            const searchStatus = document.getElementById('search-status');
+            if (query) {
+                searchStatus.textContent = `· 搜索: "${query}"`;
+                searchStatus.style.display = 'inline';
+            } else {
+                searchStatus.style.display = 'none';
+            }
+            
+            loadGuides();
+        };
+        
+        window.clearSearch = function() {
+            const input = document.getElementById('guide-search-input');
+            input.value = '';
+            document.getElementById('clear-search-btn').style.display = 'none';
+            currentState.searchQuery = '';
+            currentState.page = 1;
+            document.getElementById('search-status').style.display = 'none';
+            loadGuides();
+        };
+
+        // 更新筛选显示
+        function updateFilterDisplay() {
+            const sinnerName = currentState.sinner === 'all' ? '全部罪人' : currentState.sinner;
+            const personaName = currentState.persona === 'all' ? '全部人格' : currentState.persona;
+            const floorName = currentState.floor === 'all' ? '全部层数' : `第${currentState.floor}层`;
+
+            document.getElementById('current-sinner').textContent = sinnerName;
+            document.getElementById('current-persona').textContent = personaName;
+            document.getElementById('current-floor').textContent = floorName;
+        }
+
+        // 初始化事件监听
+        function initEventListeners() {
+            // 层数筛选
+            document.querySelectorAll('#floor-filters .filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    setActiveFilter('floor', btn.dataset.floor);
+                });
+            });
+
+            // 排序
+            document.getElementById('sort-select').addEventListener('change', (e) => {
+                currentState.sortBy = e.target.value;
+                currentState.page = 1;
+                loadGuides();
+            });
+
+            // 点击遮罩关闭弹窗
+            document.getElementById('guide-modal').addEventListener('click', (e) => {
+                if (e.target.classList.contains('modal-overlay')) {
+                    closeGuideModal();
+                }
+            });
+        }
+
+        // 加载攻略列表
+        async function loadGuides() {
+            showLoading(true);
+            try {
+                const params = new URLSearchParams({
+                    page: 1,
+                    pageSize: 1000, // 获取更多数据用于客户端搜索
+                    sortBy: currentState.sortBy
+                });
+                if (currentState.sinner !== 'all') params.append('sinner', currentState.sinner);
+                if (currentState.persona !== 'all') params.append('persona', currentState.persona);
+                if (currentState.floor !== 'all') params.append('floorLevel', currentState.floor);
+                // 添加搜索参数（如果后端支持）
+                if (currentState.searchQuery) params.append('keyword', currentState.searchQuery);
+
+                const response = await fetch(`${API_BASE}/guides/list?${params}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    let guides = result.data.guides;
+                    
+                    // 如果有搜索关键词，在客户端进行过滤（作为后端搜索的后备）
+                    if (currentState.searchQuery) {
+                        const query = currentState.searchQuery.toLowerCase();
+                        guides = guides.filter(guide => {
+                            return (
+                                (guide.title && guide.title.toLowerCase().includes(query)) ||
+                                (guide.author && guide.author.toLowerCase().includes(query)) ||
+                                (guide.sinner && guide.sinner.toLowerCase().includes(query)) ||
+                                (guide.persona && guide.persona.toLowerCase().includes(query)) ||
+                                (guide.content && guide.content.toLowerCase().includes(query)) ||
+                                (guide.tags && guide.tags.some(tag => tag.toLowerCase().includes(query)))
+                            );
+                        });
+                    }
+                    
+                    // 缓存结果
+                    allGuidesCache = guides;
+                    
+                    // 分页显示
+                    const total = guides.length;
+                    const start = (currentState.page - 1) * currentState.pageSize;
+                    const end = start + currentState.pageSize;
+                    const pageGuides = guides.slice(start, end);
+                    
+                    renderGuides(pageGuides);
+                    renderPagination({
+                        page: currentState.page,
+                        totalPages: Math.ceil(total / currentState.pageSize) || 1,
+                        total: total
+                    });
+                    document.getElementById('total-guides').textContent = total;
+                }
+            } catch (error) {
+                console.error('加载攻略失败:', error);
+                showEmptyState('加载失败，请检查服务器是否运行');
+            }
+            showLoading(false);
+        }
+
+        // 渲染攻略卡片
+        function renderGuides(guides) {
+            const container = document.getElementById('guides-grid');
+            
+            if (guides.length === 0) {
+                showEmptyState('暂无该筛选条件下的攻略');
+                return;
+            }
+
+            container.innerHTML = guides.map(guide => {
+                // 获取视频封面（如果是视频类型且有链接）
+                let coverImage = guide.coverUrl;
+                if (!coverImage && guide.mediaType === 'video' && guide.mediaUrls && guide.mediaUrls.length > 0) {
+                    coverImage = getVideoCover(guide.mediaUrls[0]);
+                }
+                
+                // 获取前3个标签显示
+                const displayTags = (guide.tags || []).slice(0, 3);
+                
+                // 媒体类型图标
+                const mediaIcon = guide.mediaType === 'video' ? 'fa-video' : guide.mediaType === 'image' ? 'fa-image' : 'fa-file-alt';
+                
+                return `
+                <div class="guide-card" onclick="window.openGuideDetail(${guide.id})">
+                    <div class="guide-cover">
+                        ${coverImage ? 
+                            `<img src="${coverImage}" alt="${guide.title}" loading="lazy">` :
+                            `<div class="guide-cover-placeholder ${guide.mediaType}">
+                                <i class="fas ${mediaIcon}"></i>
+                                <span>${getMediaLabel(guide.mediaType)}</span>
+                            </div>`
+                        }
+                        <div class="guide-media-badge">
+                            <i class="fas ${mediaIcon}"></i>
+                            ${getMediaLabel(guide.mediaType)}
+                        </div>
+                        <div class="guide-floor-badge">${guide.floorLevel}层</div>
+                    </div>
+                    <div class="guide-info">
+                        <h3 class="guide-title">${guide.title}</h3>
+                        <div class="guide-meta">
+                            <span class="guide-sinner">${guide.sinner} · ${guide.persona}</span>
+                        </div>
+                        ${displayTags.length > 0 ? `
+                        <div class="guide-tags-preview">
+                            ${displayTags.map(tag => `<span class="guide-tag">${tag}</span>`).join('')}
+                        </div>
+                        ` : ''}
+                        <div class="guide-stats">
+                            <span><i class="fas fa-eye"></i> ${guide.views || 0}</span>
+                            <span><i class="fas fa-heart"></i> ${guide.likes || 0}</span>
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        // 获取媒体图标
+        function getMediaIcon(type) {
+            const icons = {
+                video: 'video',
+                image: 'image',
+                text: 'file-alt',
+                mixed: 'layer-group'
+            };
+            return icons[type] || 'file-alt';
+        }
+
+        // 获取媒体标签
+        function getMediaLabel(type) {
+            const labels = {
+                video: '视频',
+                image: '图文',
+                text: '纯文',
+                mixed: '混合'
+            };
+            return labels[type] || '图文';
+        }
+
+        // 渲染分页
+        function renderPagination(pagination) {
+            const container = document.getElementById('pagination');
+            const { page, totalPages } = pagination;
+
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+            
+            // 上一页
+            html += `<button class="page-btn" ${page <= 1 ? 'disabled' : ''} onclick="window.changePage(${page - 1})">
+                ←
+            </button>`;
+
+            // 页码
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= page - 2 && i <= page + 2)) {
+                    html += `<button class="page-btn ${i === page ? 'active' : ''}" onclick="window.changePage(${i})">${i}</button>`;
+                } else if (i === page - 3 || i === page + 3) {
+                    html += `<span class="page-ellipsis">...</span>`;
+                }
+            }
+
+            // 下一页
+            html += `<button class="page-btn" ${page >= totalPages ? 'disabled' : ''} onclick="window.changePage(${page + 1})">
+                →
+            </button>`;
+
+            container.innerHTML = html;
+        }
+
+        // 切换页面
+        window.changePage = function(page) {
+            currentState.page = page;
+            loadGuides();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        // 打开攻略详情
+        window.openGuideDetail = async function(id) {
+            showLoading(true);
+            try {
+                // 先加载用户今日点赞列表（如果已登录）
+                if (currentUser && currentUser.token) {
+                    await loadTodayLikes();
+                }
+                
+                const response = await fetch(`${API_BASE}/guides/${id}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    renderGuideDetail(result.data);
+                    document.getElementById('guide-modal').classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+            } catch (error) {
+                console.error('加载攻略详情失败:', error);
+            }
+            showLoading(false);
+        };
+
+        // 渲染攻略详情
+        // 渲染攻略内容（支持富文本和纯文本）
+        function renderGuideContent(guide) {
+            if (guide.contentType === 'richtext') {
+                // 富文本内容需要清理XSS风险
+                if (typeof DOMPurify !== 'undefined') {
+                    return DOMPurify.sanitize(guide.content, {
+                        ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 's', 'h1', 'h2', 'h3', 
+                                     'img', 'a', 'ul', 'ol', 'li', 'blockquote', 'code', 'pre',
+                                     'span', 'div'],
+                        ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'target', 'class', 'style'],
+                        ALLOWED_STYLES: {
+                            '*': {
+                                'color': [/^#[0-9a-fA-F]{3,6}$/],
+                                'background-color': [/^#[0-9a-fA-F]{3,6}$/]
+                            }
+                        }
+                    });
+                } else {
+                    console.warn('[Security] DOMPurify未加载，直接显示富文本可能存在XSS风险');
+                    return guide.content;
+                }
+            } else {
+                // 纯文本内容，保持换行
+                return `<pre style="white-space: pre-wrap; word-wrap: break-word; font-family: inherit;">${guide.content}</pre>`;
+            }
+        }
+        
+        function renderGuideDetail(guide) {
+            console.log('[renderGuideDetail] 渲染攻略详情:', guide);
+            console.log('[renderGuideDetail] contentImages:', guide.contentImages);
+            console.log('[renderGuideDetail] mediaUrls:', guide.mediaUrls);
+            
+            const container = document.getElementById('guide-detail');
+            
+            // 媒体类型图标
+            const mediaIcon = guide.mediaType === 'video' ? 'fa-video' : guide.mediaType === 'image' ? 'fa-image' : 'fa-file-alt';
+            
+            // 检查是否已点赞
+            const alreadyLiked = hasLikedToday(guide.id);
+            const likeButtonDisabled = alreadyLiked ? 'disabled' : '';
+            const likeButtonClass = alreadyLiked ? 'like-btn liked' : 'like-btn';
+            const likeButtonText = alreadyLiked ? `已点赞 (${guide.likes})` : `点赞 (${guide.likes})`;
+            
+            container.innerHTML = `
+                <div class="guide-detail-header">
+                    <h2>${guide.title}</h2>
+                    <div class="guide-detail-meta">
+                        <span class="guide-author"><i class="fas fa-user"></i> ${guide.author}</span>
+                        <span class="guide-date"><i class="fas fa-calendar"></i> ${new Date(guide.created_at).toLocaleDateString()}</span>
+                        <span class="guide-views"><i class="fas fa-eye"></i> ${guide.views} 浏览</span>
+                    </div>
+                    <div class="guide-tags">
+                        <span class="tag tag-sinner">${guide.sinner}</span>
+                        <span class="tag tag-persona">${guide.persona}</span>
+                        <span class="tag tag-floor">${guide.floorLevel}层</span>
+                        ${guide.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                    </div>
+                </div>
+
+                <div class="guide-detail-content">
+                    <div class="guide-description ${guide.contentType === 'richtext' ? 'richtext-content' : ''}">
+                        ${renderGuideContent(guide)}
+                    </div>
+                    
+                    ${guide.contentImages && guide.contentImages.length > 0 ? `
+                        <div class="guide-content-images-section" style="margin-top:24px;">
+                            <h3 style="color:var(--lc-gold);font-size:1rem;margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+                                <i class="fas fa-images"></i> 正文图片
+                            </h3>
+                            <div class="guide-media-list">
+                                ${guide.contentImages.map((img, index) => {
+                                    const imageUrl = typeof img === 'string' ? img : img.url;
+                                    const isLongImage = typeof img === 'object' && img.isLongImage;
+                                    return `<div class="guide-image" style="${isLongImage ? 'max-height:600px;overflow-y:auto;' : ''}">
+                                        <img src="${imageUrl}" alt="攻略图片 ${index + 1}" 
+                                             style="width:100%;${isLongImage ? 'height:auto;' : ''}cursor:pointer;"
+                                             onclick="window.openImageModal('${imageUrl}')">
+                                    </div>`;
+                                }).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${guide.mediaUrls && guide.mediaUrls.length > 0 ? `
+                        <div class="guide-media-section">
+                            <h3><i class="fas ${mediaIcon}"></i> 攻略内容</h3>
+                            <div class="guide-media-list">
+                                ${guide.mediaUrls.map((url, index) => {
+                                    if (guide.mediaType === 'video') {
+                                        const embedUrl = convertToEmbedUrl(url);
+                                        return `<div class="guide-video" id="video-container-${index}">
+                                            <div class="video-placeholder" onclick="loadVideo(this, '${embedUrl}')">
+                                                <div class="video-cover">
+                                                    <img src="${getVideoCover(url)}" alt="视频封面" onerror="this.style.display='none'">
+                                                    <div class="play-overlay">
+                                                        <i class="fas fa-play-circle"></i>
+                                                        <span>点击播放</span>
+                                                    </div>
+                                                </div>
+                                                <a href="${url}" target="_blank" class="open-new-tab" onclick="event.stopPropagation()">
+                                                    <i class="fas fa-external-link-alt"></i> 新窗口打开
+                                                </a>
+                                            </div>
+                                        </div>`;
+                                    } else {
+                                        return `<div class="guide-image">
+                                            <img src="${url}" alt="攻略图片" onclick="window.openImageModal('${url}')">
+                                        </div>`;
+                                    }
+                                }).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <div class="guide-detail-actions">
+                    <button class="${likeButtonClass}" onclick="window.likeGuide(${guide.id})" ${likeButtonDisabled} title="${alreadyLiked ? '今天已点赞' : '点赞这个攻略'}">
+                        <i class="fas fa-heart"></i>
+                        <span>${likeButtonText}</span>
+                    </button>
+                    <button class="share-btn" onclick="window.shareGuide(${guide.id})">
+                        <i class="fas fa-share-alt"></i>
+                        <span>分享</span>
+                    </button>
+                </div>
+            `;
+            
+            // 为富文本中的图片添加点击放大功能
+            setTimeout(() => {
+                const richTextImages = container.querySelectorAll('.richtext-content img');
+                richTextImages.forEach(img => {
+                    img.style.cursor = 'pointer';
+                    img.onclick = function() {
+                        window.openImageModal(this.src);
+                    };
+                });
+            }, 100);
+        }
+
+        // 转换视频链接为嵌入链接
+        function convertToEmbedUrl(url) {
+            // B站
+            if (url.includes('bilibili.com')) {
+                const bvid = url.match(/BV[\w]+/) || url.match(/av\d+/);
+                if (bvid) {
+                    return `https://player.bilibili.com/player.html?bvid=${bvid[0]}&page=1&autoplay=false&high_quality=1&danmaku=0`;
+                }
+            }
+            // YouTube
+            if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                const videoId = url.match(/(?:v=|\/)([\w-]{11})/);
+                if (videoId) {
+                    return `https://www.youtube.com/embed/${videoId[1]}`;
+                }
+            }
+            return url;
+        }
+
+        // 获取视频封面
+        function getVideoCover(url) {
+            // YouTube封面
+            if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                const videoId = url.match(/(?:v=|\/)([\w-]{11})/);
+                if (videoId) {
+                    return `https://img.youtube.com/vi/${videoId[1]}/mqdefault.jpg`;
+                }
+            }
+            // B站封面需要通过API获取，这里返回空，让onerror处理显示默认占位符
+            return '';
+        }
+
+        // 延迟加载视频
+        window.loadVideo = function(element, embedUrl) {
+            const container = element.closest('.guide-video');
+            
+            // 添加加载提示
+            container.innerHTML = `
+                <div class="video-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    正在加载视频...
+                </div>
+            `;
+            
+            // 创建iframe
+            const iframe = document.createElement('iframe');
+            iframe.src = embedUrl;
+            iframe.frameBorder = '0';
+            iframe.allowFullscreen = true;
+            iframe.style.width = '100%';
+            iframe.style.height = '100%';
+            iframe.style.border = 'none';
+            iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+            iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
+            
+            // 超时处理
+            let timeoutId = setTimeout(() => {
+                if (container.querySelector('.video-loading')) {
+                    container.innerHTML = `
+                        <div class="video-error">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            视频加载超时，请尝试在原网站观看
+                            <br>
+                            <a href="${embedUrl.replace('player.html?', 'video/').split('&')[0]}" target="_blank" style="color: #3498db; text-decoration: underline;">
+                                在B站打开视频
+                            </a>
+                        </div>
+                    `;
+                }
+            }, 10000); // 10秒超时
+            
+            // 加载完成后替换内容
+            iframe.onload = function() {
+                clearTimeout(timeoutId);
+                if (container.querySelector('.video-loading')) {
+                    container.innerHTML = '';
+                    container.appendChild(iframe);
+                }
+            };
+            
+            // 错误处理
+            iframe.onerror = function() {
+                clearTimeout(timeoutId);
+                if (container.querySelector('.video-loading')) {
+                    container.innerHTML = `
+                        <div class="video-error">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            视频加载失败，请尝试在原网站观看
+                            <br>
+                            <a href="${embedUrl.replace('player.html?', 'video/').split('&')[0]}" target="_blank" style="color: #3498db; text-decoration: underline;">
+                                在B站打开视频
+                            </a>
+                        </div>
+                    `;
+                }
+            };
+            
+            // 开始加载
+            container.appendChild(iframe);
+        };
+
+        // 关闭弹窗
+        window.closeGuideModal = function() {
+            document.getElementById('guide-modal').classList.remove('active');
+            document.body.style.overflow = '';
+        };
+
+        // 用户今日点赞列表
+        let todayLikedGuideIds = [];
+        
+        // 获取用户今日点赞列表
+        async function loadTodayLikes() {
+            if (!currentUser || !currentUser.token) {
+                todayLikedGuideIds = [];
+                return;
+            }
+            try {
+                const response = await fetch(`${API_BASE}/guides/my-likes`, {
+                    headers: { 'Authorization': `Bearer ${currentUser.token}` }
+                });
+                const result = await response.json();
+                if (result.code === 200 && result.data) {
+                    todayLikedGuideIds = result.data.likedGuideIds || [];
+                    console.log('[loadTodayLikes] 今日点赞列表:', todayLikedGuideIds);
+                }
+            } catch (error) {
+                console.error('获取今日点赞列表失败:', error);
+            }
+        }
+        
+        // 检查是否已点赞
+        function hasLikedToday(guideId) {
+            return todayLikedGuideIds.includes(parseInt(guideId));
+        }
+        
+        // 点赞攻略
+        window.likeGuide = async function(id) {
+            // 检查是否已登录
+            if (!currentUser || !currentUser.token) {
+                showMessage('请先登录后再点赞', 'warning');
+                openAuthModal();
+                return;
+            }
+            
+            // 检查是否已经点过赞
+            if (hasLikedToday(id)) {
+                showMessage('您今天已经给这个攻略点过赞了，每天最多点赞1次', 'warning');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/guides/${id}/like`, { 
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${currentUser.token}` }
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    // 更新点赞数显示
+                    const btn = document.querySelector('.like-btn span');
+                    btn.textContent = `点赞 (${result.data.likes})`;
+                    btn.closest('.like-btn').classList.add('liked');
+                    
+                    // 添加到今日点赞列表
+                    if (!todayLikedGuideIds.includes(parseInt(id))) {
+                        todayLikedGuideIds.push(parseInt(id));
+                    }
+                    
+                    showMessage('点赞成功！', 'success');
+                } else if (result.data?.alreadyLiked) {
+                    showMessage('您今天已经给这个攻略点过赞了，每天最多点赞1次', 'warning');
+                    // 更新本地状态
+                    if (!todayLikedGuideIds.includes(parseInt(id))) {
+                        todayLikedGuideIds.push(parseInt(id));
+                    }
+                    // 更新按钮状态
+                    const btn = document.querySelector('.like-btn');
+                    if (btn) {
+                        btn.classList.add('liked');
+                        btn.disabled = true;
+                        btn.style.opacity = '0.6';
+                        btn.style.cursor = 'not-allowed';
+                    }
+                } else {
+                    showMessage(result.message || '点赞失败', 'error');
+                }
+            } catch (error) {
+                console.error('点赞失败:', error);
+                showMessage('点赞失败: ' + error.message, 'error');
+            }
+        };
+
+        // 分享攻略
+        window.shareGuide = function(id) {
+            const url = `${window.location.origin}/guides?id=${id}`;
+            
+            // 创建自定义分享弹窗
+            const modal = document.createElement('div');
+            modal.className = 'custom-modal-overlay';
+            modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;';
+            modal.innerHTML = `
+                <div style="background:var(--lc-bg-card);border:1px solid var(--lc-border);border-radius:12px;padding:24px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+                    <div style="display:flex;align-items:center;margin-bottom:20px;">
+                        <i class="fas fa-share-alt" style="font-size:1.5rem;margin-right:12px;color:var(--lc-gold);"></i>
+                        <h3 style="color:var(--lc-gold);margin:0;font-size:1.2rem;">分享攻略</h3>
+                    </div>
+                    <p style="color:var(--lc-text-secondary);margin:0 0 16px;font-size:0.9rem;">将以下链接分享给好友：</p>
+                    <div style="background:var(--lc-bg-secondary);border:1px solid var(--lc-border);border-radius:8px;padding:12px;margin-bottom:20px;word-break:break-all;">
+                        <code style="color:var(--lc-text);font-size:0.85rem;">${url}</code>
+                    </div>
+                    <div style="display:flex;gap:10px;">
+                        <button id="share-copy-btn" style="flex:1;padding:12px;background:linear-gradient(135deg,var(--lc-gold),#b8942d);border:none;border-radius:8px;color:#000;font-weight:600;cursor:pointer;transition:all 0.2s;">
+                            <i class="fas fa-copy"></i> 复制链接
+                        </button>
+                        <button id="share-close-btn" style="padding:12px 20px;background:transparent;border:1px solid var(--lc-border);border-radius:8px;color:var(--lc-text);cursor:pointer;">
+                            关闭
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // 复制按钮事件
+            document.getElementById('share-copy-btn').addEventListener('click', () => {
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(url).then(() => {
+                        showMessage('链接已复制到剪贴板', 'success');
+                        modal.remove();
+                    });
+                } else {
+                    // 降级方案
+                    const input = document.createElement('input');
+                    input.value = url;
+                    document.body.appendChild(input);
+                    input.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(input);
+                    showMessage('链接已复制到剪贴板', 'success');
+                    modal.remove();
+                }
+            });
+            
+            // 关闭按钮事件
+            document.getElementById('share-close-btn').addEventListener('click', () => {
+                modal.remove();
+            });
+            
+            // 点击遮罩关闭
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.remove();
+            });
+        };
+
+        // 图片弹窗（支持缩放和拖拽）
+        window.openImageModal = function(url) {
+            // 创建模态框
+            const modal = document.createElement('div');
+            modal.className = 'image-preview-modal';
+            
+            // 创建工具栏
+            const toolbar = document.createElement('div');
+            toolbar.className = 'image-preview-toolbar';
+            
+            // 缩放比例
+            let scale = 1;
+            let translateX = 0;
+            let translateY = 0;
+            let isDragging = false;
+            let startX = 0;
+            let startY = 0;
+            
+            // 创建图片容器
+            const container = document.createElement('div');
+            container.className = 'image-preview-container';
+            
+            // 创建图片
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = '攻略图片';
+            
+            // 更新变换
+            function updateTransform() {
+                img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            }
+            
+            // 创建按钮函数
+            function createButton(icon, title, onClick) {
+                const btn = document.createElement('button');
+                btn.innerHTML = `<i class="fas ${icon}"></i>`;
+                btn.title = title;
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    onClick();
+                };
+                return btn;
+            }
+            
+            // 添加按钮
+            toolbar.appendChild(createButton('fa-minus', '缩小', () => {
+                scale = Math.max(0.2, scale - 0.2);
+                updateTransform();
+            }));
+            
+            toolbar.appendChild(createButton('fa-expand', '适应屏幕', () => {
+                scale = 1;
+                translateX = 0;
+                translateY = 0;
+                img.style.maxWidth = '90vw';
+                img.style.maxHeight = '80vh';
+                updateTransform();
+            }));
+            
+            toolbar.appendChild(createButton('fa-plus', '放大', () => {
+                scale = Math.min(5, scale + 0.2);
+                img.style.maxWidth = 'none';
+                img.style.maxHeight = 'none';
+                updateTransform();
+            }));
+            
+            toolbar.appendChild(createButton('fa-search-plus', '原图尺寸', () => {
+                scale = 1;
+                translateX = 0;
+                translateY = 0;
+                img.style.maxWidth = 'none';
+                img.style.maxHeight = 'none';
+                updateTransform();
+            }));
+            
+            toolbar.appendChild(createButton('fa-download', '下载', () => {
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = url.split('/').pop() || 'image.jpg';
+                link.target = '_blank';
+                link.click();
+            }));
+            
+            toolbar.appendChild(createButton('fa-times', '关闭', () => {
+                modal.remove();
+            }));
+            
+            // 添加鼠标滚轮缩放
+            container.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? -0.1 : 0.1;
+                scale = Math.max(0.2, Math.min(5, scale + delta));
+                img.style.maxWidth = 'none';
+                img.style.maxHeight = 'none';
+                updateTransform();
+            });
+            
+            // 添加拖拽功能
+            container.addEventListener('mousedown', (e) => {
+                if (e.target === img || e.target === container) {
+                    isDragging = true;
+                    startX = e.clientX - translateX;
+                    startY = e.clientY - translateY;
+                    container.style.cursor = 'grabbing';
+                }
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    translateX = e.clientX - startX;
+                    translateY = e.clientY - startY;
+                    updateTransform();
+                }
+            });
+            
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+                container.style.cursor = 'grab';
+            });
+            
+            // 点击背景关闭
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal || e.target === container) {
+                    modal.remove();
+                }
+            });
+            
+            // ESC 键关闭
+            const keyHandler = (e) => {
+                if (e.key === 'Escape') {
+                    modal.remove();
+                    document.removeEventListener('keydown', keyHandler);
+                }
+            };
+            document.addEventListener('keydown', keyHandler);
+            
+            // 组装
+            container.appendChild(img);
+            modal.appendChild(toolbar);
+            modal.appendChild(container);
+            document.body.appendChild(modal);
+            
+            // 默认适应屏幕
+            img.onload = () => {
+                const aspectRatio = img.naturalWidth / img.naturalHeight;
+                // 如果是长图（高度大于宽度的2倍），默认显示原图尺寸
+                if (img.naturalHeight > img.naturalWidth * 2) {
+                    scale = 1;
+                    img.style.maxWidth = 'none';
+                    img.style.maxHeight = 'none';
+                } else {
+                    img.style.maxWidth = '90vw';
+                    img.style.maxHeight = '80vh';
+                }
+                updateTransform();
+            };
+        };
+
+        // 显示/隐藏加载
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'flex' : 'none';
+        }
+
+        // 显示空状态
+        function showEmptyState(message) {
+            const isSearch = currentState.searchQuery;
+            document.getElementById('guides-grid').innerHTML = `
+                <div class="empty-state">
+                    <i class="fas ${isSearch ? 'fa-search' : 'fa-book-open'}" style="font-size:3rem;color:var(--lc-gold);opacity:0.5;"></i>
+                    <h3>${isSearch ? '未找到相关攻略' : '暂无攻略'}</h3>
+                    <p>${message}</p>
+                    ${isSearch ? `<button onclick="clearSearch()" style="margin-top:16px;padding:8px 20px;background:var(--lc-gold);border:none;border-radius:6px;color:#1a1a2e;cursor:pointer;font-weight:600;">清空搜索</button>` : ''}
+                </div>
+            `;
+        }
+
+        // 自定义消息弹窗（替代浏览器alert）
+        window.showMessage = function(message, type = 'info') {
+            const existing = document.getElementById('custom-message-modal');
+            if (existing) existing.remove();
+            
+            const iconMap = {
+                success: 'fa-check-circle',
+                error: 'fa-times-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+            const colorMap = {
+                success: '#4ade80',
+                error: '#ef4444',
+                warning: 'var(--lc-gold)',
+                info: 'var(--lc-gold)'
+            };
+            const bgGradient = {
+                success: 'linear-gradient(135deg, rgba(74,222,128,0.15), rgba(34,197,94,0.08))',
+                error: 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(185,28,28,0.08))',
+                warning: 'linear-gradient(135deg, rgba(201,169,97,0.15), rgba(161,129,57,0.08))',
+                info: 'linear-gradient(135deg, rgba(201,169,97,0.15), rgba(161,129,57,0.08))'
+            };
+            
+            const modal = document.createElement('div');
+            modal.id = 'custom-message-modal';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.75);
+                backdrop-filter: blur(4px);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                animation: fadeIn 0.2s ease;
+            `;
+            modal.innerHTML = `
+                <div style="
+                    background: linear-gradient(145deg, #1a1a1a 0%, #0d0d0d 100%);
+                    border: 1px solid rgba(201,169,97,0.3);
+                    border-radius: 16px;
+                    padding: 40px 48px;
+                    max-width: 420px;
+                    text-align: center;
+                    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8), 0 0 40px rgba(201,169,97,0.1);
+                    animation: scaleIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+                ">
+                    <div style="
+                        width: 72px;
+                        height: 72px;
+                        margin: 0 auto 24px;
+                        border-radius: 50%;
+                        background: ${bgGradient[type]};
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        border: 2px solid ${colorMap[type]}33;
+                    ">
+                        <i class="fas ${iconMap[type]}" style="font-size:2rem;color:${colorMap[type]};"></i>
+                    </div>
+                    <div style="font-size:1rem;color:#e5e5e5;line-height:1.8;white-space:pre-line;margin-bottom:28px;">${message}</div>
+                    <button id="message-confirm-btn" style="
+                        padding: 14px 48px;
+                        background: linear-gradient(135deg, var(--lc-gold) 0%, #b8942d 100%);
+                        border: none;
+                        border-radius: 10px;
+                        color: #000;
+                        font-weight: 700;
+                        font-size: 1rem;
+                        cursor: pointer;
+                        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                        box-shadow: 0 4px 15px rgba(201,169,97,0.3);
+                    ">
+                        确定
+                    </button>
+                </div>
+                <style>
+                    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                    @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+                    #message-confirm-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(201,169,97,0.4); }
+                </style>
+            `;
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) window.closeMessageModal();
+            });
+            document.body.appendChild(modal);
+            
+            // 绑定确定按钮事件
+            document.getElementById('message-confirm-btn').addEventListener('click', window.closeMessageModal);
+        };
+        
+        window.closeMessageModal = function() {
+            const modal = document.getElementById('custom-message-modal');
+            if (modal) {
+                modal.style.animation = 'fadeIn 0.15s ease reverse';
+                setTimeout(() => modal.remove(), 150);
+            }
+        };
+
+        // ==================== 图片上传功能（通过后端代理上传到腾讯云COS，安全无需暴露SecretKey）====================
+        // 处理封面图片上传
+        window.handleUserCoverUpload = async function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // 验证文件类型
+            if (!file.type.startsWith('image/')) {
+                showMessage('请上传图片文件', 'warning');
+                return;
+            }
+            
+            // 验证文件大小 (10MB)
+            if (file.size > UPLOAD_CONFIG.maxFileSize) {
+                showMessage('图片大小不能超过10MB，请压缩后重试', 'warning');
+                return;
+            }
+            
+            const uploadArea = document.getElementById('user-cover-upload-area');
+            const progressArea = document.getElementById('user-upload-progress');
+            const percentEl = document.getElementById('user-upload-percent');
+            const progressBar = document.getElementById('user-progress-bar');
+            const previewArea = document.getElementById('user-cover-preview');
+            const previewImg = document.getElementById('user-preview-img');
+            const hiddenInput = document.getElementById('user-guide-cover');
+            
+            // 显示进度条
+            uploadArea.style.display = 'none';
+            progressArea.style.display = 'block';
+            percentEl.textContent = '0%';
+            progressBar.style.width = '0%';
+            
+            try {
+                // 通过后端代理上传到COS（安全无需暴露SecretKey）
+                const formData = new FormData();
+                formData.append('image', file);
+                
+                // 模拟进度（因为fetch不支持进度回调）
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    if (progress < 90) {
+                        progress += Math.random() * 10;
+                        const percent = Math.min(Math.round(progress), 90);
+                        percentEl.textContent = percent + '%';
+                        progressBar.style.width = percent + '%';
+                    }
+                }, 200);
+                
+                const response = await fetch(`${API_BASE}/upload/image`, {
+                    method: 'POST',
+                    headers: { 
+                        'Authorization': `Bearer ${currentUser.token}`
+                    },
+                    body: formData
+                });
+                
+                clearInterval(progressInterval);
+                
+                const result = await response.json();
+                
+                if (result.code === 200 && result.success) {
+                    // 上传成功
+                    percentEl.textContent = '100%';
+                    progressBar.style.width = '100%';
+                    
+                    // 显示预览
+                    previewImg.src = result.data.url;
+                    previewArea.style.display = 'block';
+                    progressArea.style.display = 'none';
+                    
+                    // 保存URL到隐藏字段
+                    hiddenInput.value = result.data.url;
+                    
+                    showMessage('图片上传成功！', 'success');
+                } else {
+                    throw new Error(result.message || '上传失败');
+                }
+            } catch (error) {
+                console.error('上传失败:', error);
+                uploadArea.style.display = 'block';
+                progressArea.style.display = 'none';
+                showMessage('上传失败: ' + (error.message || '请检查网络后重试'), 'error');
+            }
+        };
+        
+        // 删除已上传的封面图
+        window.removeUserCover = function(event) {
+            event.stopPropagation();
+            
+            const uploadArea = document.getElementById('user-cover-upload-area');
+            const previewArea = document.getElementById('user-cover-preview');
+            const hiddenInput = document.getElementById('user-guide-cover');
+            const fileInput = document.getElementById('user-cover-file');
+            
+            uploadArea.style.display = 'block';
+            previewArea.style.display = 'none';
+            hiddenInput.value = '';
+            fileInput.value = '';
+        };
+
+        // ESC关闭弹窗
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeGuideModal();
+                closeUserSubmitModal();
+            }
+        });
+
+        // ==================== 用户投稿攻略功能 ====================
+        // 生成罪人下拉选项
+        function generateSinnerOptions() {
+            return sinnerData.map(s => {
+                const name = s.name.split(' ')[0];
+                return `<option value="${name}">${name}</option>`;
+            }).join('');
+        }
+
+        // 生成人格下拉选项
+        function generatePersonaOptions(sinnerName) {
+            const sinner = sinnerData.find(s => s.name.includes(sinnerName));
+            if (!sinner) return '<option value="">请先选择罪人</option>';
+            return sinner.personalities.map(p => 
+                `<option value="${p.name}">${p.name}</option>`
+            ).join('');
+        }
+
+        // 用户提交记录存储（使用 localStorage）
+        function saveUserSubmission(guideData, serverId) {
+            const submissions = JSON.parse(localStorage.getItem('user_guide_submissions') || '[]');
+            submissions.unshift({
+                ...guideData,
+                id: serverId, // 保存后端返回的 ID
+                submittedAt: new Date().toISOString(),
+                status: 'pending'
+            });
+            // 只保留最近50条记录
+            localStorage.setItem('user_guide_submissions', JSON.stringify(submissions.slice(0, 50)));
+        }
+
+        // 获取用户投稿记录（优先从服务器获取）
+        async function getUserSubmissions() {
+            // 如果已登录，从服务器获取最新数据
+            if (currentUser && currentUser.token) {
+                try {
+                    const response = await fetch(`${API_BASE}/guides/my-submissions`, {
+                        headers: { 'Authorization': `Bearer ${currentUser.token}` }
+                    });
+                    const result = await response.json();
+                    
+                    if (result.code === 200 && result.data) {
+                        // 数据标准化处理 - 确保字段名兼容性
+                        const normalizedData = result.data.map(item => ({
+                            id: item.id,
+                            title: item.title,
+                            sinner: item.sinner,
+                            persona: item.persona,
+                            floorLevel: item.floorLevel || item.floor_level || 0,
+                            status: item.status,
+                            submittedAt: item.submittedAt || item.created_at || item.submitted_at,
+                            updatedAt: item.updatedAt || item.updated_at,
+                            content: item.content,
+                            category: item.category,
+                            coverImage: item.coverImage || item.cover_image,
+                            author: item.author,
+                            mediaType: item.mediaType || item.media_type,
+                            mediaUrls: item.mediaUrls || item.media_urls || [],
+                            contentImages: item.contentImages || item.content_images || [],
+                            contentType: item.contentType || item.content_type,
+                            tags: item.tags || [],
+                            views: item.views || 0
+                        }));
+                        
+                        // 更新本地缓存
+                        localStorage.setItem('user_guide_submissions', JSON.stringify(normalizedData));
+                        console.log('[投稿记录] 从服务器获取成功，共', normalizedData.length, '条');
+                        return normalizedData;
+                    }
+                } catch (error) {
+                    console.error('[投稿记录] 从服务器获取失败:', error);
+                }
+            }
+            
+            // 回退到本地缓存（游客模式或网络错误）
+            const localData = localStorage.getItem('user_guide_submissions') || '[]';
+            try {
+                const parsed = JSON.parse(localData);
+                // 同样进行数据标准化
+                return parsed.map(item => ({
+                    id: item.id,
+                    title: item.title,
+                    sinner: item.sinner,
+                    persona: item.persona,
+                    floorLevel: item.floorLevel || item.floor_level || 0,
+                    status: item.status,
+                    submittedAt: item.submittedAt || item.created_at || item.submitted_at,
+                    updatedAt: item.updatedAt || item.updated_at,
+                    content: item.content,
+                    category: item.category,
+                    coverImage: item.coverImage || item.cover_image,
+                    author: item.author,
+                    mediaType: item.mediaType || item.media_type,
+                    mediaUrls: item.mediaUrls || item.media_urls || [],
+                    contentImages: item.contentImages || item.content_images || [],
+                    contentType: item.contentType || item.content_type,
+                    tags: item.tags || [],
+                    views: item.views || 0
+                }));
+            } catch (e) {
+                console.error('[投稿记录] 解析本地数据失败:', e);
+                return [];
+            }
+        }
+        
+        // 清空用户投稿记录
+        window.clearUserSubmissions = async function() {
+            if (confirm('确定要清空所有投稿记录吗？此操作不可恢复。')) {
+                try {
+                    showMessage('正在删除...', 'info');
+                    
+                    // 获取用户投稿记录
+                    const submissions = await getUserSubmissions();
+                    
+                    if (!submissions || submissions.length === 0) {
+                        showMessage('没有投稿记录需要清空', 'info');
+                        return;
+                    }
+                    
+                    // 删除服务器上的每一条投稿
+                    const deletePromises = submissions.map(async (submission) => {
+                        const response = await fetch(`${API_BASE}/guides/user/${submission.id}`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': `Bearer ${currentUser.token}` }
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`删除投稿 ${submission.id} 失败`);
+                        }
+                        
+                        return response.json();
+                    });
+                    
+                    await Promise.all(deletePromises);
+                    
+                    // 清除本地缓存
+                    localStorage.removeItem('user_guide_submissions');
+                    
+                    showMessage('所有投稿记录已删除', 'success');
+                    await renderMySubmissions();
+                    
+                } catch (error) {
+                    console.error('清空投稿记录失败:', error);
+                    showMessage('删除失败，请稍后重试', 'error');
+                }
+            }
+        }
+        
+        // 手动刷新投稿状态
+        window.refreshMySubmissions = async function() {
+            const btn = document.querySelector('button[onclick="refreshMySubmissions()"] i');
+            if (btn) btn.classList.add('fa-spin');
+            
+            try {
+                showMessage('正在刷新...', 'info');
+                await renderMySubmissions();
+                showMessage('状态已更新', 'success');
+            } catch (error) {
+                console.error('刷新失败:', error);
+                showMessage('刷新失败，请稍后重试', 'error');
+            } finally {
+                if (btn) btn.classList.remove('fa-spin');
+            }
+        }
+
+        // 获取最近提交的排行榜数据（用于自动填充攻略表单）
+        function getLastRankingData() {
+            try {
+                const data = localStorage.getItem('last_ranking_submission');
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    // 检查数据是否在24小时内提交
+                    const submitTime = new Date(parsed.submittedAt).getTime();
+                    if (Date.now() - submitTime < 24 * 60 * 60 * 1000) {
+                        // 检查是否已经用于自动填充过
+                        if (!parsed.autoFilled) {
+                            return parsed;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('获取排行榜数据失败:', e);
+            }
+            return null;
+        }
+        
+        // 标记排行榜数据已用于自动填充
+        function markRankingDataAsAutoFilled() {
+            try {
+                const data = localStorage.getItem('last_ranking_submission');
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    parsed.autoFilled = true;
+                    localStorage.setItem('last_ranking_submission', JSON.stringify(parsed));
+                }
+            } catch (e) {
+                console.error('标记自动填充失败:', e);
+            }
+        }
+
+        window.openUserSubmitModal = function() {
+            // 强制登录检查
+            if (!currentUser) {
+                showMessage('请先登录后再投稿攻略', 'warning');
+                // 延迟打开登录弹窗
+                setTimeout(() => {
+                    openAuthModal();
+                }, 500);
+                return;
+            }
+            
+            const existing = document.getElementById('user-submit-modal');
+            if (existing) existing.remove();
+            
+            const modal = document.createElement('div');
+            modal.id = 'user-submit-modal';
+            modal.className = 'custom-modal-overlay';
+            modal.innerHTML = `
+                <div class="custom-modal" style="min-width:560px;max-width:640px;max-height:85vh;overflow-y:auto;">
+                    <div class="custom-modal-header" style="border-bottom:1px solid var(--lc-border);padding-bottom:16px;margin-bottom:20px;">
+                        <i class="fas fa-edit" style="font-size:1.5rem;margin-right:12px;color:var(--lc-red);"></i>
+                        <div>
+                            <h2 class="custom-modal-title">投稿单通攻略</h2>
+                            <p style="font-size:0.85rem;color:var(--lc-text-muted);margin:4px 0 0;">分享你的单通技巧，帮助更多玩家</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 标签页切换 -->
+                    <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid var(--lc-border);">
+                        <button id="tab-submit" onclick="switchSubmitTab('submit')" class="submit-tab active" style="flex:1;padding:12px;background:transparent;border:none;border-bottom:3px solid var(--lc-gold);color:var(--lc-gold);font-weight:600;cursor:pointer;transition:all 0.3s;">
+                            <i class="fas fa-plus"></i> 提交攻略
+                        </button>
+                        <button id="tab-status" onclick="switchSubmitTab('status')" class="submit-tab" style="flex:1;padding:12px;background:transparent;border:none;border-bottom:3px solid transparent;color:var(--lc-text-muted);font-weight:600;cursor:pointer;transition:all 0.3s;">
+                            <i class="fas fa-list"></i> 我的投稿
+                        </button>
+                    </div>
+                    
+                    <!-- 提交表单面板 -->
+                    <div id="panel-submit">
+                        <div style="background:rgba(201,169,97,0.1);border-left:3px solid var(--lc-gold);padding:12px 16px;margin-bottom:20px;border-radius:0 6px 6px 0;">
+                            <div style="font-size:0.85rem;color:var(--lc-gold);font-weight:600;margin-bottom:4px;">
+                                <i class="fas fa-info-circle"></i> 投稿须知
+                            </div>
+                            <div style="font-size:0.8rem;color:var(--lc-text-secondary);line-height:1.6;">
+                                攻略提交后需要管理员审核通过才会显示在列表中，请耐心等待
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom:18px;">
+                            <label style="display:block;margin-bottom:8px;color:var(--lc-gold);font-weight:600;font-size:0.9rem;">
+                                <i class="fas fa-heading"></i> 攻略标题 <span style="color:var(--lc-red);">*</span>
+                            </label>
+                            <input type="text" id="user-guide-title" placeholder="例：李箱剑契15层单通攻略" style="width:100%;padding:12px 16px;background:var(--lc-bg-secondary);border:1px solid var(--lc-border);border-radius:8px;color:var(--lc-text);font-size:1rem;box-sizing:border-box;">
+                        </div>
+                        
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;">
+                            <div>
+                                <label style="display:block;margin-bottom:8px;color:var(--lc-gold);font-weight:600;font-size:0.9rem;">
+                                    <i class="fas fa-user"></i> 罪人 <span style="color:var(--lc-red);">*</span>
+                                </label>
+                                <select id="user-guide-sinner" onchange="updatePersonaSelect()" style="width:100%;padding:12px 16px;background:var(--lc-bg-secondary);border:1px solid var(--lc-border);border-radius:8px;color:var(--lc-text);box-sizing:border-box;cursor:pointer;">
+                                    <option value="">-- 请选择罪人 --</option>
+                                    ${generateSinnerOptions()}
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display:block;margin-bottom:8px;color:var(--lc-gold);font-weight:600;font-size:0.9rem;">
+                                    <i class="fas fa-masks-theater"></i> 人格 <span style="color:var(--lc-red);">*</span>
+                                </label>
+                                <select id="user-guide-persona" style="width:100%;padding:12px 16px;background:var(--lc-bg-secondary);border:1px solid var(--lc-border);border-radius:8px;color:var(--lc-text);box-sizing:border-box;cursor:pointer;">
+                                    <option value="">-- 请先选择罪人 --</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;">
+                            <div>
+                                <label style="display:block;margin-bottom:8px;color:var(--lc-gold);font-weight:600;font-size:0.9rem;">
+                                    <i class="fas fa-signal"></i> 挑战层数 <span style="color:var(--lc-red);">*</span>
+                                </label>
+                                <select id="user-guide-floor" style="width:100%;padding:12px 16px;background:var(--lc-bg-secondary);border:1px solid var(--lc-border);border-radius:8px;color:var(--lc-text);box-sizing:border-box;cursor:pointer;">
+                                    <option value="5-2">5-H (困难)</option>
+                                    <option value="10">10层</option>
+                                    <option value="15">15层</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display:block;margin-bottom:8px;color:var(--lc-gold);font-weight:600;font-size:0.9rem;">
+                                    <i class="fas fa-camera"></i> 攻略类型
+                                </label>
+                                <select id="user-guide-media-type" onchange="updateMediaInputByType()" style="width:100%;padding:12px 16px;background:var(--lc-bg-secondary);border:1px solid var(--lc-border);border-radius:8px;color:var(--lc-text);box-sizing:border-box;cursor:pointer;">
+                                    <option value="video">视频攻略</option>
+                                    <option value="image">图文攻略</option>
+                                    <option value="text">纯文本</option>
+                                    <option value="mixed">混合类型</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom:18px;">
+                            <label style="display:block;margin-bottom:8px;color:var(--lc-gold);font-weight:600;font-size:0.9rem;">
+                                <i class="fas fa-align-left"></i> 攻略内容 <span style="color:var(--lc-red);">*</span>
+                            </label>
+                            
+                            <!-- 富文本编辑器容器 -->
+                            <div class="editor-wrapper">
+                                <div id="user-guide-content-editor"></div>
+                                <div class="editor-tips">
+                                    <i class="fas fa-lightbulb"></i>
+                                    <span>支持富文本编辑：图片可直接粘贴或点击工具栏插入，支持标题、列表、引用等格式</span>
+                                </div>
+                            </div>
+                            
+                            <!-- 正文图片上传区域 -->
+                            <div id="content-images-section" style="background:rgba(0,0,0,0.1);border-radius:8px;padding:12px;">
+                                <label style="display:block;margin-bottom:8px;color:var(--lc-gold);font-size:0.85rem;">
+                                    <i class="fas fa-images"></i> 正文图片 <span style="color:var(--lc-text-muted);font-weight:400;">(支持长图、拖拽排序)</span>
+                                </label>
+                                
+                                <!-- 图片网格 -->
+                                <div id="content-images-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;margin-bottom:12px;">
+                                </div>
+                                
+                                <!-- 上传区域 -->
+                                <div id="content-images-upload-area" 
+                                     style="border:2px dashed rgba(201,169,97,0.3);border-radius:10px;padding:16px;text-align:center;background:rgba(0,0,0,0.2);cursor:pointer;transition:all 0.3s;"
+                                     onclick="document.getElementById('content-images-file').click()">
+                                    <i class="fas fa-cloud-upload-alt" style="font-size:24px;color:rgba(201,169,97,0.5);margin-bottom:6px;display:block;"></i>
+                                    <div style="color:var(--lc-text-secondary);font-size:0.8rem;">点击或拖拽图片上传</div>
+                                    <div style="color:var(--lc-text-muted);font-size:0.7rem;margin-top:4px;">支持多选、JPG/PNG/GIF、最大10MB</div>
+                                    <input type="file" id="content-images-file" accept="image/*" multiple style="display:none;">
+                                </div>
+                                
+                                <!-- 进度条 -->
+                                <div id="content-images-progress" style="display:none;margin-top:10px;">
+                                    <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:4px;">
+                                        <span style="color:var(--lc-gold);">上传中...</span>
+                                        <span id="content-images-percent" style="color:var(--lc-text);font-weight:600;">0%</span>
+                                    </div>
+                                    <div style="height:3px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;">
+                                        <div id="content-images-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--lc-gold),#b8942d);transition:width 0.3s;"></div>
+                                    </div>
+                                    <div id="content-images-upload-status" style="font-size:0.7rem;color:var(--lc-text-muted);margin-top:4px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom:18px;">
+                            <label style="display:block;margin-bottom:8px;color:var(--lc-gold);font-weight:600;font-size:0.9rem;">
+                                <i class="fas fa-image"></i> 封面图片 <span style="color:var(--lc-text-muted);font-weight:400;">(推荐添加)</span>
+                            </label>
+                            
+                            <!-- 图片上传区域 -->
+                            <div id="user-cover-upload-area" style="border:2px dashed rgba(201,169,97,0.3);border-radius:12px;padding:24px;text-align:center;background:rgba(0,0,0,0.2);transition:all 0.3s;cursor:pointer;position:relative;" 
+                                 ondragover="event.preventDefault();this.style.borderColor='var(--lc-gold)';this.style.background='rgba(201,169,97,0.05)';" 
+                                 ondragleave="this.style.borderColor='rgba(201,169,97,0.3)';this.style.background='rgba(0,0,0,0.2)';"
+                                 onclick="document.getElementById('user-cover-file').click()">
+                                <i class="fas fa-cloud-upload-alt" style="font-size:36px;color:rgba(201,169,97,0.5);margin-bottom:12px;display:block;"></i>
+                                <div style="color:var(--lc-text-secondary);font-size:0.9rem;margin-bottom:6px;">点击或拖拽图片到此处上传</div>
+                                <div style="color:var(--lc-text-muted);font-size:0.75rem;">支持 JPG, PNG, GIF, WEBP 格式，最大 10MB</div>
+                                <input type="file" id="user-cover-file" accept="image/*" style="display:none;" onchange="handleUserCoverUpload(event)">
+                            </div>
+                            
+                            <!-- 上传进度 -->
+                            <div id="user-upload-progress" style="display:none;margin-top:12px;">
+                                <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                                    <span style="font-size:0.8rem;color:var(--lc-gold);">上传中...</span>
+                                    <span id="user-upload-percent" style="font-size:0.8rem;color:var(--lc-text);font-weight:600;">0%</span>
+                                </div>
+                                <div style="height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;">
+                                    <div id="user-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--lc-gold),#b8942d);transition:width 0.3s;"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- 预览区域 -->
+                            <div id="user-cover-preview" style="display:none;margin-top:12px;position:relative;">
+                                <img id="user-preview-img" src="" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;border:1px solid rgba(201,169,97,0.3);">
+                                <button onclick="removeUserCover(event)" style="position:absolute;top:8px;right:8px;width:28px;height:28px;background:rgba(201,79,79,0.9);border:none;border-radius:50%;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" title="删除图片">
+                                    <span style="font-size:12px;">✕</span>
+                                </button>
+                            </div>
+                            
+                            <input type="hidden" id="user-guide-cover" value="">
+                            
+                            <div style="background:linear-gradient(135deg,rgba(59,130,246,0.1),rgba(59,130,246,0.05));border:1px solid rgba(59,130,246,0.2);border-radius:8px;padding:10px 12px;font-size:0.8rem;color:var(--lc-text-secondary);line-height:1.5;margin-top:10px;">
+                                <i class="fas fa-lightbulb" style="color:#3b82f6;margin-right:6px;"></i>
+                                <strong>提示：</strong>添加封面图片能让你的攻略更吸引人！也可以直接粘贴外链在下方
+                            </div>
+                            
+                            <input type="text" id="user-guide-cover-url" placeholder="或者粘贴图片URL (可选)" style="width:100%;padding:12px 16px;background:var(--lc-bg-secondary);border:1px solid var(--lc-border);border-radius:8px;color:var(--lc-text);box-sizing:border-box;font-family:inherit;margin-top:10px;">
+                        </div>
+                        
+                        <div id="media-input-container" style="margin-bottom:18px;">
+                            <label id="media-input-label" style="display:block;margin-bottom:8px;color:var(--lc-gold);font-weight:600;font-size:0.9rem;">
+                                <i class="fas fa-link"></i> 视频链接 <span style="color:var(--lc-text-muted);font-weight:400;">(每行一个)</span>
+                            </label>
+                            <textarea id="user-guide-media-urls" rows="3" placeholder="粘贴视频链接..." style="width:100%;padding:12px 16px;background:var(--lc-bg-secondary);border:1px solid var(--lc-border);border-radius:8px;color:var(--lc-text);resize:vertical;box-sizing:border-box;font-family:inherit;"></textarea>
+                        </div>
+                        
+                        <div style="margin-bottom:18px;">
+                            <label style="display:block;margin-bottom:8px;color:var(--lc-gold);font-weight:600;font-size:0.9rem;">
+                                <i class="fas fa-tags"></i> 标签 <span style="color:var(--lc-text-muted);font-weight:400;">(用逗号分隔)</span>
+                            </label>
+                            <input type="text" id="user-guide-tags" placeholder="新手友好, 低配置, 速通..." style="width:100%;padding:12px 16px;background:var(--lc-bg-secondary);border:1px solid var(--lc-border);border-radius:8px;color:var(--lc-text);box-sizing:border-box;">
+                        </div>
+                        
+                        <div class="custom-modal-footer" style="border-top:1px solid var(--lc-border);padding-top:20px;margin-top:24px;">
+                            <button class="custom-modal-btn custom-modal-btn-cancel" onclick="closeUserSubmitModal()">取消</button>
+                            <button class="custom-modal-btn" onclick="submitUserGuide()" style="background:linear-gradient(135deg,var(--lc-red),#c94f4f);color:#fff;">
+                                <i class="fas fa-paper-plane"></i> 提交攻略
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 我的投稿面板 -->
+                    <div id="panel-status" style="display:none;">
+                        <div id="my-submissions-list">
+                            <!-- 动态填充 -->
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            // 初始化富文本编辑器
+            setTimeout(() => {
+                window.guideEditor = new Quill('#user-guide-content-editor', {
+                    theme: 'snow',
+                    placeholder: '开始编写你的攻略...\n\n💡 提示：\n• 可以直接粘贴图片\n• 支持标题、列表、引用等格式\n• 点击工具栏按钮插入图片和链接',
+                    modules: {
+                        toolbar: [
+                            [{ 'header': [1, 2, 3, false] }],
+                            ['bold', 'italic', 'underline', 'strike'],
+                            [{ 'color': [] }, { 'background': [] }],
+                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                            ['blockquote', 'code-block'],
+                            ['link', 'image'],
+                            ['clean']
+                        ]
+                    }
+                });
+                
+                // 自定义图片上传处理
+                const toolbar = window.guideEditor.getModule('toolbar');
+                toolbar.addHandler('image', handleQuillImageUpload);
+                
+                console.log('[Quill] 富文本编辑器初始化完成');
+            }, 100);
+            
+            // 初始化媒体输入框显示
+            updateMediaInputByType();
+            
+            // 初始化正文图片管理器
+            if (typeof createGuideImageManager !== 'undefined') {
+                window.contentImageManager = createGuideImageManager({
+                    containerId: 'content-images-grid',
+                    uploadAreaId: 'content-images-upload-area',
+                    progressAreaId: 'content-images-progress',
+                    inputId: 'content-images-file',
+                    onChange: (images) => {
+                        console.log('[Guide] 图片列表更新:', images);
+                    }
+                });
+                window.contentImageManager.init();
+            }
+            
+            // 从排行榜数据自动填充表单
+            const lastRanking = getLastRankingData();
+            if (lastRanking) {
+                // 自动填充罪人
+                const sinnerSelect = document.getElementById('user-guide-sinner');
+                if (sinnerSelect && lastRanking.sinner) {
+                    // 尝试匹配罪人名称
+                    for (let opt of sinnerSelect.options) {
+                        if (lastRanking.sinner.includes(opt.value) || opt.value.includes(lastRanking.sinner.split(' ')[0])) {
+                            sinnerSelect.value = opt.value;
+                            updatePersonaSelect(); // 触发人格更新
+                            break;
+                        }
+                    }
+                }
+                
+                // 延迟填充人格（等待人格列表加载）
+                if (lastRanking.persona) {
+                    setTimeout(() => {
+                        const personaSelect = document.getElementById('user-guide-persona');
+                        if (personaSelect) {
+                            for (let opt of personaSelect.options) {
+                                if (opt.value === lastRanking.persona) {
+                                    personaSelect.value = opt.value;
+                                    break;
+                                }
+                            }
+                        }
+                    }, 100);
+                }
+                
+                // 自动填充楼层
+                if (lastRanking.floorLevel) {
+                    const floorSelect = document.getElementById('user-guide-floor');
+                    if (floorSelect) {
+                        floorSelect.value = lastRanking.floorLevel;
+                    }
+                }
+                
+                // 自动填充截图作为封面
+                if (lastRanking.screenshotUrl) {
+                    const coverUrlInput = document.getElementById('user-guide-cover-url');
+                    if (coverUrlInput) {
+                        coverUrlInput.value = lastRanking.screenshotUrl;
+                    }
+                }
+                
+                // 自动填充视频链接
+                if (lastRanking.videoUrl) {
+                    const mediaUrlsInput = document.getElementById('user-guide-media-urls');
+                    if (mediaUrlsInput) {
+                        mediaUrlsInput.value = lastRanking.videoUrl;
+                    }
+                    // 设置为视频攻略类型
+                    const mediaTypeSelect = document.getElementById('user-guide-media-type');
+                    if (mediaTypeSelect) {
+                        mediaTypeSelect.value = 'video';
+                        updateMediaInputByType();
+                    }
+                }
+                
+                // 自动生成标题
+                if (lastRanking.sinner && lastRanking.persona && lastRanking.floorLevel) {
+                    const titleInput = document.getElementById('user-guide-title');
+                    if (titleInput && !titleInput.value) {
+                        const sinnerName = lastRanking.sinner.split(' ')[0];
+                        titleInput.value = `${sinnerName} ${lastRanking.persona} ${lastRanking.floorLevel}层单通攻略`;
+                    }
+                }
+                
+                // 显示提示
+                showMessage('已从您最近的排行榜提交中自动填充部分信息', 'info');
+                
+                // 标记数据已用于自动填充
+                markRankingDataAsAutoFilled();
+            }
+            
+            // 修复：使用 mousedown/mouseup 组合判断点击外部，避免文本选择时意外关闭
+            let isMouseDownOnOverlay = false;
+            
+            modal.addEventListener('mousedown', (e) => {
+                isMouseDownOnOverlay = (e.target === modal);
+            });
+            
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal && isMouseDownOnOverlay) {
+                    closeUserSubmitModal();
+                }
+                isMouseDownOnOverlay = false;
+            });
+        };
+
+        // 切换标签页
+        window.switchSubmitTab = function(tab) {
+            document.getElementById('tab-submit').style.borderBottomColor = tab === 'submit' ? 'var(--lc-gold)' : 'transparent';
+            document.getElementById('tab-submit').style.color = tab === 'submit' ? 'var(--lc-gold)' : 'var(--lc-text-muted)';
+            document.getElementById('tab-status').style.borderBottomColor = tab === 'status' ? 'var(--lc-gold)' : 'transparent';
+            document.getElementById('tab-status').style.color = tab === 'status' ? 'var(--lc-gold)' : 'var(--lc-text-muted)';
+            
+            document.getElementById('panel-submit').style.display = tab === 'submit' ? 'block' : 'none';
+            document.getElementById('panel-status').style.display = tab === 'status' ? 'block' : 'none';
+            
+            if (tab === 'status') {
+                renderMySubmissions();
+            }
+        };
+
+        // 添加加载动画样式
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // 根据攻略类型更新媒体输入框
+        window.updateMediaInputByType = function() {
+            const mediaType = document.getElementById('user-guide-media-type').value;
+            const container = document.getElementById('media-input-container');
+            const label = document.getElementById('media-input-label');
+            const textarea = document.getElementById('user-guide-media-urls');
+            const contentImagesSection = document.getElementById('content-images-section');
+            
+            const config = {
+                video: {
+                    show: true,
+                    label: '<i class="fas fa-link"></i> 视频链接 <span style="color:var(--lc-text-muted);font-weight:400;">(每行一个)</span>',
+                    placeholder: '粘贴B站、YouTube等视频链接...'
+                },
+                image: {
+                    show: true,
+                    label: '🖼️ 图片链接 <span style="color:var(--lc-text-muted);font-weight:400;">(每行一个)</span>',
+                    placeholder: '粘贴图片地址链接...'
+                },
+                text: {
+                    show: false,
+                    label: '',
+                    placeholder: ''
+                },
+                mixed: {
+                    show: true,
+                    label: '<i class="fas fa-link"></i> 视频/图片链接 <span style="color:var(--lc-text-muted);font-weight:400;">(每行一个)</span>',
+                    placeholder: '粘贴视频或图片链接...'
+                }
+            };
+            
+            const cfg = config[mediaType];
+            if (cfg.show) {
+                container.style.display = 'block';
+                label.innerHTML = cfg.label;
+                textarea.placeholder = cfg.placeholder;
+            } else {
+                container.style.display = 'none';
+                textarea.value = ''; // 清空输入
+            }
+            
+            // 控制正文图片区域的显示/隐藏 - 只在图文攻略类型时显示
+            if (contentImagesSection) {
+                contentImagesSection.style.display = (mediaType === 'image') ? 'block' : 'none';
+            }
+        };
+
+        // 渲染我的投稿列表
+        async function renderMySubmissions() {
+            const container = document.getElementById('my-submissions-list');
+            
+            // 先显示加载中
+            container.innerHTML = `
+                <div style="text-align:center;padding:40px 20px;color:var(--lc-text-muted);">
+                    <div style="font-size:2rem;animation:spin 1s linear infinite;display:inline-block;">⟳</div>
+                    <p style="margin-top:12px;">正在加载投稿记录...</p>
+                </div>
+            `;
+            
+            // 直接获取最新数据（getUserSubmissions会自动从服务器获取）
+            const submissions = await getUserSubmissions();
+            console.log('[renderMySubmissions] 获取到投稿记录:', submissions.length, '条');
+            
+            if (submissions.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center;padding:40px 20px;color:var(--lc-text-muted);">
+                    <i class="fas fa-inbox" style="font-size:2rem;opacity:0.5;"></i><br>
+                        <p style="margin-top:16px;">暂无投稿记录</p>
+                        <p style="font-size:0.85rem;margin-top:8px;">提交攻略后可在此查看审核状态</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // 添加清空记录和刷新按钮
+            const headerHtml = `
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--lc-border);">
+                    <span style="color:var(--lc-text-muted);font-size:0.85rem;">共 ${submissions.length} 条投稿记录</span>
+                    <div style="display:flex;gap:8px;">
+                        <button onclick="refreshMySubmissions()" style="padding:6px 12px;background:transparent;border:1px solid var(--lc-gold);border-radius:6px;color:var(--lc-gold);font-size:0.8rem;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all 0.2s;">
+                            <i class="fas fa-sync-alt"></i> 刷新状态
+                        </button>
+                        <button onclick="clearUserSubmissions()" style="padding:6px 12px;background:transparent;border:1px solid var(--lc-red);border-radius:6px;color:var(--lc-red);font-size:0.8rem;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all 0.2s;">
+                            <i class="fas fa-trash-alt"></i> 清空记录
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = headerHtml + submissions.map((s, idx) => {
+                const statusMap = {
+                    pending: { text: '待审核', color: 'var(--lc-gold)', icon: '<i class="fas fa-clock"></i>' },
+                    approved: { text: '已通过', color: '#22c55e', icon: '<i class="fas fa-check"></i>' },
+                    rejected: { text: '已拒绝', color: 'var(--lc-red)', icon: '<i class="fas fa-times"></i>' }
+                };
+                const status = statusMap[s.status] || statusMap.pending;
+                
+                // 日期格式化 - 带容错处理
+                let dateStr = '未知时间';
+                if (s.submittedAt) {
+                    try {
+                        const date = new Date(s.submittedAt);
+                        if (!isNaN(date.getTime())) {
+                            dateStr = date.toLocaleString('zh-CN');
+                        }
+                    } catch (e) {
+                        console.warn('[日期解析失败]', s.submittedAt);
+                    }
+                }
+                
+                // 层数显示 - 带容错处理
+                const floorLevel = s.floorLevel || 0;
+                
+                return `
+                    <div style="background:var(--lc-bg-secondary);border:1px solid var(--lc-border);border-radius:8px;padding:16px;margin-bottom:12px;">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+                            <div style="flex:1;">
+                                <h4 style="color:var(--lc-text);font-size:1rem;margin:0 0 6px;">${s.title || '无标题'}</h4>
+                                <div style="font-size:0.8rem;color:var(--lc-text-muted);">
+                                    ${s.sinner || '未知罪人'} · ${s.persona || '未知人格'} · ${floorLevel}层
+                                </div>
+                            </div>
+                            <span style="background:rgba(${status.color === 'var(--lc-gold)' ? '201,169,97' : status.color === '#22c55e' ? '34,197,94' : '201,79,79'},0.15);color:${status.color};padding:4px 10px;border-radius:4px;font-size:0.75rem;font-weight:600;white-space:nowrap;">
+                                ${status.icon} ${status.text}
+                            </span>
+                        </div>
+                        <div style="font-size:0.75rem;color:var(--lc-text-muted);">
+                            <i class="fas fa-calendar-alt"></i> 提交时间: ${dateStr}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 更新人格下拉框
+        window.updatePersonaSelect = function() {
+            const sinnerSelect = document.getElementById('user-guide-sinner');
+            const personaSelect = document.getElementById('user-guide-persona');
+            const selectedSinner = sinnerSelect.value;
+            
+            if (!selectedSinner) {
+                personaSelect.innerHTML = '<option value="">-- 请先选择罪人 --</option>';
+                return;
+            }
+            
+            personaSelect.innerHTML = '<option value="">-- 请选择人格 --</option>' + generatePersonaOptions(selectedSinner);
+        };
+
+        window.closeUserSubmitModal = function() {
+            const modal = document.getElementById('user-submit-modal');
+            if (modal) modal.remove();
+        };
+        
+        // Quill图片上传处理
+        async function handleQuillImageUpload() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            
+            input.onchange = async () => {
+                const file = input.files[0];
+                if (!file) return;
+                
+                // 检查文件大小（限制5MB）
+                if (file.size > 5 * 1024 * 1024) {
+                    showMessage('图片大小不能超过5MB', 'warning');
+                    return;
+                }
+                
+                // 获取编辑器当前光标位置
+                const range = window.guideEditor.getSelection(true);
+                
+                // 显示上传中提示
+                window.guideEditor.insertText(range.index, '📤 上传中...', 'user');
+                window.guideEditor.setSelection(range.index + 8);
+                
+                try {
+                    // 上传图片
+                    const formData = new FormData();
+                    formData.append('image', file);
+                    
+                    const response = await fetch(`${API_BASE}/upload/image`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.code === 200 && result.data.url) {
+                        // 删除"上传中..."文字
+                        window.guideEditor.deleteText(range.index, 8);
+                        
+                        // 插入图片
+                        window.guideEditor.insertEmbed(range.index, 'image', result.data.url);
+                        
+                        // 移动光标到图片后面
+                        window.guideEditor.setSelection(range.index + 1);
+                        
+                        console.log('[Quill] 图片上传成功:', result.data.url);
+                    } else {
+                        throw new Error(result.message || '上传失败');
+                    }
+                } catch (error) {
+                    console.error('[Quill] 图片上传失败:', error);
+                    
+                    // 删除"上传中..."文字
+                    window.guideEditor.deleteText(range.index, 8);
+                    
+                    showMessage('图片上传失败: ' + error.message, 'error');
+                }
+            };
+            
+            input.click();
+        }
+
+        window.submitUserGuide = async function() {
+            // 再次检查登录状态（双重保障）
+            if (!currentUser || !currentUser.token) {
+                showMessage('登录状态已失效，请重新登录', 'warning');
+                setTimeout(() => openAuthModal(), 500);
+                return;
+            }
+            
+            const titleEl = document.getElementById('user-guide-title');
+            const sinnerEl = document.getElementById('user-guide-sinner');
+            const personaEl = document.getElementById('user-guide-persona');
+            const floorEl = document.getElementById('user-guide-floor');
+            const mediaTypeEl = document.getElementById('user-guide-media-type');
+            const mediaUrlsEl = document.getElementById('user-guide-media-urls');
+            const tagsEl = document.getElementById('user-guide-tags');
+
+            const title = titleEl ? titleEl.value.trim() : '';
+            const sinner = sinnerEl ? sinnerEl.value : '';
+            const persona = personaEl ? personaEl.value : '';
+            const floorLevel = floorEl ? floorEl.value : '5-2';
+            const mediaType = mediaTypeEl ? mediaTypeEl.value : 'video';
+            
+            // 从富文本编辑器获取内容
+            let content = '';
+            let contentType = 'richtext'; // 标记为富文本类型
+            
+            if (window.guideEditor) {
+                // 检查编辑器是否有内容
+                const text = window.guideEditor.getText().trim();
+                if (text.length === 0) {
+                    showMessage('请填写攻略内容', 'warning');
+                    return;
+                }
+                
+                // 获取HTML格式的内容
+                content = window.guideEditor.root.innerHTML;
+                console.log('[Submit] 富文本内容长度:', content.length);
+            } else {
+                showMessage('编辑器未初始化，请稍后重试', 'error');
+                return;
+            }
+            
+            const mediaUrlsRaw = mediaUrlsEl ? mediaUrlsEl.value : '';
+            const tagsRaw = tagsEl ? tagsEl.value : '';
+            
+            const mediaUrls = mediaUrlsRaw.split('\n').map(u => u.trim()).filter(u => u);
+            const tags = tagsRaw.split(/[,，]/).map(t => t.trim()).filter(t => t);
+            
+            // 获取封面图片（优先使用上传的，如果没有则使用手动输入的）
+            const coverEl = document.getElementById('user-guide-cover');
+            const coverUrlEl = document.getElementById('user-guide-cover-url');
+            const coverUrl = coverEl?.value.trim() || coverUrlEl?.value.trim() || null;
+            
+            // 获取正文图片
+            const contentImages = window.contentImageManager ? 
+                window.contentImageManager.getValidImages() : [];
+
+            // 验证必填字段
+            let errors = [];
+            if (!title) errors.push('攻略标题');
+            if (!sinner) errors.push('罪人');
+            if (!persona) errors.push('人格');
+            if (!content) errors.push('攻略内容');
+            
+            if (errors.length > 0) {
+                showMessage('请填写以下必填项：' + errors.join('、'), 'warning');
+                return;
+            }
+
+            showLoading(true);
+
+            const guideData = {
+                title,
+                sinner,
+                persona,
+                floorLevel,
+                mediaType,
+                content,
+                contentType, // 添加内容类型标识
+                mediaUrls,
+                coverUrl,
+                contentImages,
+                tags,
+                author: currentUser.username, // 添加作者信息
+                userToken: currentUser?.token || null
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/guides/user-submit`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentUser.token}`
+                    },
+                    body: JSON.stringify(guideData)
+                });
+
+                const result = await response.json();
+
+                showLoading(false);
+
+                if (result.code === 200 || result.success) {
+                    // 保存到本地记录（使用后端返回的 ID）
+                    saveUserSubmission(guideData, result.data?.id);
+                    showMessage('攻略提交成功！\n\n审核通过后将显示在列表中。\n您可以在"我的投稿"标签页查看审核状态。', 'success');
+                    // 切换到我的投稿标签
+                    switchSubmitTab('status');
+                } else {
+                    showMessage('提交失败: ' + (result.message || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showLoading(false);
+                showMessage('提交失败: ' + error.message, 'error');
+            }
+        };
+        
+        // ==================== 用户认证系统 ====================
+        
+        // 当前验证码ID
+        let currentCaptchaId = null;
+        
+        // 打开登录/注册模态框
+        window.openAuthModal = function() {
+            if (currentUser) {
+                // 已登录，显示登出确认
+                if (confirm(`当前登录: ${currentUser.username}\n\n是否登出？`)) {
+                    currentUser = null;
+                    localStorage.removeItem('limbus_user');
+                    updateUserUI();
+                    showMessage('已登出', 'success');
+                }
+                return;
+            }
+            
+            const modal = document.createElement('div');
+            modal.id = 'auth-modal';
+            modal.className = 'custom-modal-overlay';
+            modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:10000;display:flex;align-items:center;justify-content:center;';
+            modal.innerHTML = `
+                <div style="background:var(--lc-bg-card);border:1px solid var(--lc-border);border-radius:16px;padding:32px;max-width:420px;width:90%;box-shadow:0 25px 80px rgba(0,0,0,0.6);">
+                    <div style="display:flex;align-items:center;margin-bottom:24px;">
+                        <i class="fas fa-lock" style="font-size:2rem;margin-right:12px;color:var(--lc-gold);"></i>
+                        <h2 style="color:var(--lc-gold);margin:0;font-size:1.4rem;">用户登录/注册</h2>
+                    </div>
+                    
+                    <div style="background:rgba(201,169,97,0.1);border:1px solid rgba(201,169,97,0.3);border-radius:8px;padding:12px;margin-bottom:20px;">
+                        <p style="margin:0;color:var(--lc-text-secondary);font-size:0.85rem;line-height:1.5;">
+                            <i class="fas fa-exclamation-triangle" style="color:var(--lc-gold);"></i> <strong>重要提示</strong><br>
+                            密码仅用于查看您的投稿记录，请务必记住！<br>
+                            用户名只能使用英文字母和数字，密码需包含字母和数字组合。
+                        </p>
+                    </div>
+                    
+                    <form id="auth-form" style="margin-bottom:20px;">
+                        <div style="margin-bottom:16px;">
+                            <label style="display:block;margin-bottom:6px;color:var(--lc-gold);font-size:0.9rem;">用户名 <span style="color:var(--lc-text-muted);">(3-20位英文数字)</span></label>
+                            <input type="text" id="auth-username" pattern="[a-zA-Z0-9]+" minlength="3" maxlength="20" required
+                                   style="width:100%;padding:12px 14px;background:var(--lc-bg-secondary);border:1px solid var(--lc-border);border-radius:8px;color:var(--lc-text);box-sizing:border-box;font-size:1rem;"
+                                   placeholder="例如: Player123">
+                            <div id="username-status" style="margin-top:4px;font-size:0.8rem;color:var(--lc-text-muted);"></div>
+                        </div>
+                        
+                        <div style="margin-bottom:16px;">
+                            <label style="display:block;margin-bottom:6px;color:var(--lc-gold);font-size:0.9rem;">密码 <span style="color:var(--lc-text-muted);">(8-20位字母数字组合)</span></label>
+                            <input type="password" id="auth-password" minlength="8" maxlength="20" required
+                                   style="width:100%;padding:12px 14px;background:var(--lc-bg-secondary);border:1px solid var(--lc-border);border-radius:8px;color:var(--lc-text);box-sizing:border-box;font-size:1rem;"
+                                   placeholder="例如: Pass1234">
+                        </div>
+                        
+                        <div style="margin-bottom:20px;">
+                            <label style="display:block;margin-bottom:6px;color:var(--lc-gold);font-size:0.9rem;">验证码</label>
+                            <div style="display:flex;gap:10px;">
+                                <input type="text" id="auth-captcha" required
+                                       style="flex:1;padding:12px 14px;background:var(--lc-bg-secondary);border:1px solid var(--lc-border);border-radius:8px;color:var(--lc-text);box-sizing:border-box;font-size:1rem;"
+                                       placeholder="输入验证码">
+                                <div id="captcha-svg" style="width:120px;height:40px;background:var(--lc-bg-secondary);border:1px solid var(--lc-border);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;"
+                                     onclick="refreshCaptcha()" title="点击刷新">
+                                    点击获取
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="display:flex;gap:12px;">
+                            <button type="submit" id="login-btn" style="flex:1;padding:14px;background:linear-gradient(135deg,var(--lc-gold),#b8942d);border:none;border-radius:8px;color:#000;font-weight:600;cursor:pointer;font-size:1rem;">
+                                登录
+                            </button>
+                            <button type="button" id="register-btn" style="flex:1;padding:14px;background:transparent;border:1px solid var(--lc-gold);border-radius:8px;color:var(--lc-gold);font-weight:600;cursor:pointer;font-size:1rem;"
+                                    onclick="handleRegister()">
+                                注册
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <button onclick="closeAuthModal()" style="width:100%;padding:12px;background:transparent;border:1px solid var(--lc-border);border-radius:8px;color:var(--lc-text-muted);cursor:pointer;">
+                        取消
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // 获取验证码
+            refreshCaptcha();
+            
+            // 表单提交事件
+            document.getElementById('auth-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                handleLogin();
+            });
+            
+            // 用户名检查
+            const usernameInput = document.getElementById('auth-username');
+            let checkTimeout = null;
+            usernameInput.addEventListener('input', () => {
+                clearTimeout(checkTimeout);
+                const username = usernameInput.value;
+                if (username.length >= 3 && /^[a-zA-Z0-9]+$/.test(username)) {
+                    checkTimeout = setTimeout(() => checkUsername(username), 500);
+                }
+            });
+        };
+        
+        // 关闭认证模态框
+        window.closeAuthModal = function() {
+            const modal = document.getElementById('auth-modal');
+            if (modal) modal.remove();
+            currentCaptchaId = null;
+        };
+        
+        // 刷新验证码
+        window.refreshCaptcha = async function() {
+            try {
+                const response = await fetch(`${API_BASE}/captcha`);
+                const result = await response.json();
+                if (result.code === 200) {
+                    currentCaptchaId = result.data.captchaId;
+                    const captchaImage = result.data.captchaImage || result.data.svg;
+                    const captchaSvgEl = document.getElementById('captcha-svg');
+                    const captchaImgEl = document.getElementById('captcha-image');
+                    
+                    if (captchaSvgEl && captchaImage) {
+                        captchaSvgEl.innerHTML = captchaImage;
+                    }
+                    
+                    if (captchaImgEl && captchaImage) {
+                        captchaImgEl.src = captchaImage;
+                    }
+                }
+            } catch (error) {
+                console.error('获取验证码失败:', error);
+            }
+        };
+        
+        // 检查用户名是否可用
+        async function checkUsername(username) {
+            const statusEl = document.getElementById('username-status');
+            try {
+                const response = await fetch(`${API_BASE}/auth/check-username/${username}`);
+                const result = await response.json();
+                if (result.available) {
+                    statusEl.innerHTML = '<i class="fas fa-check-circle" style="color:#22c55e;"></i> 用户名可用';
+                    statusEl.style.color = '#22c55e';
+                } else {
+                    statusEl.textContent = result.message || '用户名已被注册';
+                    statusEl.style.color = 'var(--lc-red)';
+                }
+            } catch (error) {
+                console.error('检查用户名失败:', error);
+            }
+        }
+        
+        // 登录处理
+        async function handleLogin() {
+            const username = document.getElementById('auth-username').value.trim();
+            const password = document.getElementById('auth-password').value;
+            const captchaText = document.getElementById('auth-captcha').value.trim();
+            
+            if (!username || !password || !captchaText) {
+                showMessage('请填写所有字段', 'warning');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, captchaId: currentCaptchaId, captchaText })
+                });
+                
+                const result = await response.json();
+                
+                if (result.code === 200 && result.success) {
+                    currentUser = {
+                        username: result.data.username,
+                        token: result.data.token
+                    };
+                    localStorage.setItem('limbus_user', JSON.stringify(currentUser));
+                    updateUserUI();
+                    closeAuthModal();
+                    showMessage('登录成功！', 'success');
+                } else {
+                    showMessage(result.message || '登录失败', 'error');
+                    refreshCaptcha();
+                }
+            } catch (error) {
+                console.error('登录错误:', error);
+                showMessage('登录失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 注册处理
+        window.handleRegister = async function() {
+            const username = document.getElementById('auth-username').value.trim();
+            const password = document.getElementById('auth-password').value;
+            const captchaText = document.getElementById('auth-captcha').value.trim();
+            
+            if (!username || !password || !captchaText) {
+                showMessage('请填写所有字段', 'warning');
+                return;
+            }
+            
+            // 验证用户名格式
+            if (!/^[a-zA-Z0-9]{3,20}$/.test(username)) {
+                showMessage('用户名只能包含3-20位英文字母和数字', 'warning');
+                return;
+            }
+            
+            // 验证密码格式（8-20位，包含字母和数字）
+            if (password.length < 8 || password.length > 20) {
+                showMessage('密码长度必须是8-20位', 'warning');
+                return;
+            }
+            if (!/[a-zA-Z]/.test(password) || !/\d/.test(password)) {
+                showMessage('密码必须同时包含字母和数字', 'warning');
+                return;
+            }
+            if (!/^[a-zA-Z0-9]+$/.test(password)) {
+                showMessage('密码只能包含英文字母和数字', 'warning');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, captchaId: currentCaptchaId, captchaText })
+                });
+                
+                const result = await response.json();
+                
+                if (result.code === 200 && result.success) {
+                    showMessage('注册成功！请使用该账号登录', 'success');
+                    // 清空验证码输入
+                    document.getElementById('auth-captcha').value = '';
+                    refreshCaptcha();
+                } else {
+                    showMessage(result.message || '注册失败', 'error');
+                    refreshCaptcha();
+                }
+            } catch (error) {
+                console.error('注册错误:', error);
+                showMessage('注册失败: ' + error.message, 'error');
+            }
+        };
+        
+        // 刷新投稿状态（保留此函数用于向后兼容，但实际逻辑已移到 getUserSubmissions）
+        async function refreshSubmissionStatus() {
+            // 此函数现在主要用于兼容旧代码调用
+            // 实际数据获取已在 getUserSubmissions 中处理
+            console.log('[refreshSubmissionStatus] 调用（新版本使用 getUserSubmissions 直接从服务器获取）');
+            
+            if (!currentUser || !currentUser.token) {
+                console.log('[refreshSubmissionStatus] 未登录，跳过刷新');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/guides/my-submissions`, {
+                    headers: { 'Authorization': `Bearer ${currentUser.token}` }
+                });
+                const result = await response.json();
+                
+                if (result.code === 200 && result.data) {
+                    // 更新本地缓存
+                    localStorage.setItem('user_guide_submissions', JSON.stringify(result.data));
+                    console.log('[refreshSubmissionStatus] 已更新本地缓存，共', result.data.length, '条记录');
+                }
+            } catch (error) {
+                console.error('[refreshSubmissionStatus] 刷新失败:', error);
+            }
+        }
+    </script>
+    
+    <!-- Quill富文本编辑器 -->
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+</body>
+</html>

@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理员后台 - 数据统计</title>
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/module/admin-dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="admin-container">
+    <aside class="admin-sidebar">
+      <div class="sidebar-header">
+        <h2>管理后台</h2>
+        <p class="sidebar-subtitle">数据统计中心</p>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-tab="dashboard">
+          <i class="fas fa-chart-line"></i>
+          <span>数据统计</span>
+        </a>
+        <a href="#" class="nav-item" data-tab="guides">
+          <i class="fas fa-book"></i>
+          <span>攻略审核</span>
+        </a>
+        <a href="#" class="nav-item" data-tab="users">
+          <i class="fas fa-users"></i>
+          <span>用户管理</span>
+        </a>
+        <a href="#" class="nav-item" data-tab="settings">
+          <i class="fas fa-cog"></i>
+          <span>系统配置</span>
+        </a>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div class="header-left">
+          <h1>数据统计仪表盘</h1>
+          <p class="header-subtitle">实时监控平台用户数据</p>
+        </div>
+        <div class="header-right">
+          <div class="time-range-selector">
+            <button class="range-btn active" data-range="day">日</button>
+            <button class="range-btn" data-range="week">周</button>
+            <button class="range-btn" data-range="month">月</button>
+          </div>
+          <div class="refresh-info">
+            <i class="fas fa-sync-alt"></i>
+            <span id="last-update-time">更新于 --:--</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="dashboard-content">
+        <div class="stats-cards">
+          <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+              <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-info">
+              <h3>总注册用户</h3>
+              <p class="stat-value" id="total-users">0</p>
+              <p class="stat-label">Total Users</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
+              <i class="fas fa-user-check"></i>
+            </div>
+            <div class="stat-info">
+              <h3>今日活跃用户</h3>
+              <p class="stat-value" id="today-active">0</p>
+              <p class="stat-label">DAU</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">
+              <i class="fas fa-history"></i>
+            </div>
+            <div class="stat-info">
+              <h3>昨日活跃用户</h3>
+              <p class="stat-value" id="yesterday-active">0</p>
+              <p class="stat-label">Yesterday</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b, #38f9d7);">
+              <i class="fas fa-calendar-week"></i>
+            </div>
+            <div class="stat-info">
+              <h3>7日活跃用户</h3>
+              <p class="stat-value" id="week-active">0</p>
+              <p class="stat-label">7-Day Active</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a, #fee140);">
+              <i class="fas fa-user-plus"></i>
+            </div>
+            <div class="stat-info">
+              <h3>今日新增用户</h3>
+              <p class="stat-value" id="today-new">0</p>
+              <p class="stat-label">New Today</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-section">
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3>用户增长趋势</h3>
+              <div class="chart-legend">
+                <span class="legend-item">
+                  <span class="legend-color" style="background: #667eea;"></span>
+                  新增用户
+                </span>
+              </div>
+            </div>
+            <div class="chart-container">
+              <canvas id="growthChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="data-table-section">
+          <div class="table-card">
+            <div class="table-header">
+              <h3>详细数据</h3>
+            </div>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>日期</th>
+                    <th>新增用户</th>
+                    <th>累计用户</th>
+                  </tr>
+                </thead>
+                <tbody id="trend-table-body">
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const API_BASE = '/api';
+    let growthChart = null;
+    let currentRange = 'day';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initDashboard();
+      setupEventListeners();
+      startAutoRefresh();
+    });
+
+    function initDashboard() {
+      loadStats(currentRange);
+      initChart();
+    }
+
+    function setupEventListeners() {
+      document.querySelectorAll('.range-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentRange = btn.dataset.range;
+          loadStats(currentRange);
+          updateChart(currentRange);
+        });
+      });
+
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.preventDefault();
+          const tab = item.dataset.tab;
+          if (tab === 'dashboard') {
+            window.location.href = 'admin-dashboard.html';
+          } else if (tab === 'guides') {
+            window.location.href = 'admin-guides.html';
+          } else if (tab === 'users') {
+            window.location.href = 'admin-users.html';
+          } else if (tab === 'settings') {
+            window.location.href = 'admin-settings.html';
+          }
+        });
+      });
+    }
+
+    async function loadStats(range) {
+      try {
+        const token = localStorage.getItem('admin_token');
+        if (!token) {
+          alert('请先登录管理员账号');
+          window.location.href = '/login.html';
+          return;
+        }
+
+        const response = await fetch(`${API_BASE}/stats?range=${range}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const result = await response.json();
+
+        if (result.code === 200) {
+          updateStatsCards(result.data);
+          updateTrendTable(result.data.trend);
+          updateLastUpdateTime();
+        } else {
+          console.error('获取统计数据失败:', result.message);
+        }
+      } catch (error) {
+        console.error('加载统计数据出错:', error);
+      }
+    }
+
+    function updateStatsCards(data) {
+      document.getElementById('total-users').textContent = data.totalUsers.toLocaleString();
+      document.getElementById('today-active').textContent = data.todayActiveUsers.toLocaleString();
+      document.getElementById('yesterday-active').textContent = data.yesterdayActiveUsers.toLocaleString();
+      document.getElementById('week-active').textContent = data.weekActiveUsers.toLocaleString();
+      document.getElementById('today-new').textContent = data.todayNewUsers.toLocaleString();
+    }
+
+    function updateTrendTable(trend) {
+      const tbody = document.getElementById('trend-table-body');
+      tbody.innerHTML = trend.map(row => `
+        <tr>
+          <td>${row.date}</td>
+          <td><span class="trend-value positive">+${row.count}</span></td>
+          <td>-</td>
+        </tr>
+      `).join('');
+    }
+
+    function initChart() {
+      const ctx = document.getElementById('growthChart').getContext('2d');
+      
+      growthChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            label: '新增用户',
+            data: [],
+            borderColor: '#667eea',
+            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: '#667eea',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              titleColor: '#fff',
+              bodyColor: '#fff',
+              borderColor: 'rgba(255, 255, 255, 0.2)',
+              borderWidth: 1,
+              padding: 12,
+              displayColors: false,
+              callbacks: {
+                label: function(context) {
+                  return `${context.dataset.label}: ${context.parsed.y} 人`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)',
+                drawBorder: false
+              },
+              ticks: {
+                color: 'rgba(255, 255, 255, 0.5)',
+                font: {
+                  size: 11
+                }
+              }
+            },
+            y: {
+              beginAtZero: true,
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)',
+                drawBorder: false
+              },
+              ticks: {
+                color: 'rgba(255, 255, 255, 0.5)',
+                font: {
+                  size: 11
+                },
+                callback: function(value) {
+                  return value >= 0 ? value : '';
+                }
+              }
+            }
+          },
+          interaction: {
+            intersect: false,
+            mode: 'index',
+            axis: 'x'
+          }
+        }
+      });
+    }
+
+    function updateChart(range) {
+      if (!growthChart) return;
+
+      const response = fetch(`${API_BASE}/stats?range=${range}`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+      }).then(res => res.json())
+        .then(result => {
+          if (result.code === 200) {
+            const trend = result.data.trend;
+            growthChart.data.labels = trend.map(row => row.date);
+            growthChart.data.datasets[0].data = trend.map(row => row.count);
+            growthChart.update();
+          }
+        });
+    }
+
+    function updateLastUpdateTime() {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+      document.getElementById('last-update-time').textContent = `更新于 ${timeStr}`;
+    }
+
+    function startAutoRefresh() {
+      setInterval(() => {
+        loadStats(currentRange);
+        updateChart(currentRange);
+      }, 10 * 60 * 1000); // 每10分钟刷新一次
+    }
+  </script>
+</body>
+</html>
