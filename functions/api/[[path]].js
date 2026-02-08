@@ -1705,6 +1705,17 @@ async function handleAdminGuides(request, env, headers, path) {
       'SELECT COUNT(*) as count FROM guides WHERE status = ?'
     ).bind(status).first();
     
+    // 获取所有状态的统计数量
+    const pendingCount = await env.DB.prepare(
+      "SELECT COUNT(*) as count FROM guides WHERE status = 'pending'"
+    ).first();
+    const approvedCount = await env.DB.prepare(
+      "SELECT COUNT(*) as count FROM guides WHERE status = 'approved'"
+    ).first();
+    const rejectedCount = await env.DB.prepare(
+      "SELECT COUNT(*) as count FROM guides WHERE status = 'rejected'"
+    ).first();
+    
     return jsonResponse({
       code: 200,
       message: '获取成功',
@@ -1715,6 +1726,11 @@ async function handleAdminGuides(request, env, headers, path) {
           pageSize,
           total: total.count,
           totalPages: Math.ceil(total.count / pageSize)
+        },
+        counts: {
+          pending: pendingCount?.count || 0,
+          approved: approvedCount?.count || 0,
+          rejected: rejectedCount?.count || 0
         }
       }
     }, 200, headers);
