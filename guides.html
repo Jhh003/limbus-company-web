@@ -1537,6 +1537,31 @@
         window.closeGuideModal = function() {
             document.getElementById('guide-modal').classList.remove('active');
             document.body.style.overflow = '';
+            
+            // 停止所有视频播放
+            const videos = document.querySelectorAll('.guide-video iframe');
+            videos.forEach(iframe => {
+                const src = iframe.src;
+                iframe.src = '';
+                iframe.src = src; // 重置 src 可以停止播放但保留视频，或者直接移除
+                // 更好的方式是完全清空容器内容，恢复初始状态
+                const container = iframe.closest('.guide-video');
+                if (container) {
+                    const embedUrl = src;
+                    // 恢复为封面图状态
+                    // 注意：这里我们可能丢失了原始的 onclick 事件参数，
+                    // 所以简单起见，我们直接清空 iframe，让用户下次点击重新加载
+                    iframe.remove();
+                    
+                    // 恢复加载提示或错误提示为初始状态（如果有的话）
+                    // 实际上最简单的方法是清空 guide-detail 内容，因为下次打开会重新渲染
+                }
+            });
+            
+            // 清空详情内容，防止下次打开时闪烁旧内容，同时彻底停止视频
+            setTimeout(() => {
+                document.getElementById('guide-detail').innerHTML = '';
+            }, 300); // 等待关闭动画完成
         };
 
         // 用户今日点赞列表
