@@ -808,7 +808,7 @@ async function handleGuides(request, env, headers, path) {
         const offset = (page - 1) * pageSize;
         
         const { results } = await env.DB.prepare(
-          'SELECT * FROM guides ORDER BY created_at DESC LIMIT ? OFFSET ?'
+          "SELECT * FROM guides WHERE status = 'approved' ORDER BY created_at DESC LIMIT ? OFFSET ?"
         ).bind(pageSize, offset).all();
         
         // 解析 JSON 字段
@@ -842,18 +842,26 @@ async function handleGuides(request, env, headers, path) {
     if (request.method === 'GET') {
       try {
         const id = path.split('/').pop();
+        const url = new URL(request.url);
+        const includeAll = url.searchParams.get('all') === 'true'; // 管理员查看所有状态
+        
+        // 普通用户只能查看已审核的攻略
         const guide = await env.DB.prepare(
-          'SELECT * FROM guides WHERE id = ?'
+          includeAll 
+            ? 'SELECT * FROM guides WHERE id = ?'
+            : "SELECT * FROM guides WHERE id = ? AND status = 'approved'"
         ).bind(id).first();
         
         if (!guide) {
-          return jsonResponse({ code: 404, message: '攻略不存在' }, 404, headers);
+          return jsonResponse({ code: 404, message: '攻略不存在或正在审核中' }, 404, headers);
         }
         
-        // 增加浏览量
-        await env.DB.prepare(
-          'UPDATE guides SET views = views + 1 WHERE id = ?'
-        ).bind(id).run();
+        // 增加浏览量（只增加已审核攻略的浏览量）
+        if (guide.status === 'approved') {
+          await env.DB.prepare(
+            'UPDATE guides SET views = views + 1 WHERE id = ?'
+          ).bind(id).run();
+        }
         
         // 解析 JSON 字段
         const guideData = {
