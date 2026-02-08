@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>用户管理 - 管理后台</title>
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/limbus-theme-v2.css">
+  <link rel="stylesheet" href="/css/module/admin-common.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="admin-container">
+    <aside class="admin-sidebar">
+      <div class="sidebar-header">
+        <h2>管理后台</h2>
+        <p class="sidebar-subtitle">用户管理中心</p>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="admin-dashboard.html" class="nav-item" data-tab="dashboard">
+          <i class="fas fa-chart-line"></i>
+          <span>数据统计</span>
+        </a>
+        <a href="admin-guides.html" class="nav-item" data-tab="guides">
+          <i class="fas fa-book"></i>
+          <span>攻略审核</span>
+        </a>
+        <a href="admin-users.html" class="nav-item active" data-tab="users">
+          <i class="fas fa-users"></i>
+          <span>用户管理</span>
+        </a>
+        <a href="admin-settings.html" class="nav-item" data-tab="settings">
+          <i class="fas fa-cog"></i>
+          <span>系统配置</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="admin-user">
+          <i class="fas fa-user-shield"></i>
+          <span class="username" id="currentUser">管理员</span>
+          <i class="fas fa-sign-out-alt logout-btn" onclick="logout()"></i>
+        </div>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div class="header-left">
+          <h1>用户管理</h1>
+          <p class="header-subtitle">管理用户账号、权限和状态</p>
+        </div>
+        <div class="header-right">
+          <button class="btn btn-primary" onclick="refreshUserList()">
+            <i class="fas fa-sync-alt"></i> 刷新列表
+          </button>
+        </div>
+      </header>
+
+      <!-- 用户统计 -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="icon"><i class="fas fa-users"></i></div>
+          <div class="label">总用户数</div>
+          <div class="value" id="totalUsers">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="icon"><i class="fas fa-user-check"></i></div>
+          <div class="label">正常用户</div>
+          <div class="value" id="activeUsers">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="icon"><i class="fas fa-user-clock"></i></div>
+          <div class="label">今日新增</div>
+          <div class="value" id="newUsersToday">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="icon"><i class="fas fa-user-slash"></i></div>
+          <div class="label">已禁用</div>
+          <div class="value" id="bannedUsers">-</div>
+        </div>
+      </div>
+
+      <!-- 搜索和筛选 -->
+      <div class="content-card">
+        <div class="card-header">
+          <h3><i class="fas fa-search"></i> 搜索用户</h3>
+        </div>
+        <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+          <div class="form-group" style="flex: 1; min-width: 200px;">
+            <label>用户名/ID</label>
+            <input type="text" id="searchQuery" placeholder="输入用户名或用户ID">
+          </div>
+          <div class="form-group" style="min-width: 150px;">
+            <label>状态</label>
+            <select id="statusFilter">
+              <option value="">全部</option>
+              <option value="active">正常</option>
+              <option value="banned">已禁用</option>
+            </select>
+          </div>
+          <div class="form-group" style="min-width: 150px;">
+            <label>角色</label>
+            <select id="roleFilter">
+              <option value="">全部</option>
+              <option value="user">普通用户</option>
+              <option value="admin">管理员</option>
+            </select>
+          </div>
+          <div style="display: flex; align-items: flex-end;">
+            <button class="btn btn-primary" onclick="searchUsers()">
+              <i class="fas fa-search"></i> 搜索
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 用户列表 -->
+      <div class="content-card">
+        <div class="card-header">
+          <h3><i class="fas fa-list"></i> 用户列表</h3>
+          <div>
+            <span id="userCount" style="color: var(--lc-text-muted); margin-right: 16px;">共 0 位用户</span>
+          </div>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>用户ID</th>
+              <th>用户名</th>
+              <th>角色</th>
+              <th>状态</th>
+              <th>注册时间</th>
+              <th>最后登录</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="userTableBody">
+            <tr>
+              <td colspan="7" style="text-align: center; color: var(--lc-text-muted);">加载中...</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <!-- 分页 -->
+        <div style="display: flex; justify-content: center; gap: 8px; margin-top: 20px;">
+          <button class="btn btn-secondary" onclick="prevPage()" id="prevBtn" disabled>上一页</button>
+          <span id="pageInfo" style="display: flex; align-items: center; color: var(--lc-text-muted);">第 1 页</span>
+          <button class="btn btn-secondary" onclick="nextPage()" id="nextBtn" disabled>下一页</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 用户详情弹窗 -->
+  <div id="userModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
+    <div style="background: var(--lc-bg-card); border: 1px solid var(--lc-border); border-radius: 8px; padding: 30px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="color: var(--lc-gold);">用户详情</h3>
+        <button onclick="closeUserModal()" style="background: none; border: none; color: var(--lc-text-muted); cursor: pointer; font-size: 1.2rem;">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div id="userModalContent">
+        <!-- 动态内容 -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 检查登录状态
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+      window.location.href = 'admin-login.html';
+    }
+
+    // 显示当前用户名
+    const username = localStorage.getItem('adminUsername') || '管理员';
+    document.getElementById('currentUser').textContent = username;
+
+    // 分页状态
+    let currentPage = 1;
+    const pageSize = 10;
+    let totalPages = 1;
+
+    // 加载用户统计
+    async function loadUserStats() {
+      try {
+        const response = await fetch('/api/admin/users/stats', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+          const stats = await response.json();
+          document.getElementById('totalUsers').textContent = stats.total || 0;
+          document.getElementById('activeUsers').textContent = stats.active || 0;
+          document.getElementById('newUsersToday').textContent = stats.newToday || 0;
+          document.getElementById('bannedUsers').textContent = stats.banned || 0;
+        }
+      } catch (error) {
+        console.error('加载统计失败:', error);
+      }
+    }
+
+    // 加载用户列表
+    async function loadUserList() {
+      try {
+        const query = document.getElementById('searchQuery').value;
+        const status = document.getElementById('statusFilter').value;
+        const role = document.getElementById('roleFilter').value;
+        
+        const params = new URLSearchParams({
+          page: currentPage,
+          pageSize: pageSize,
+          ...(query && { query }),
+          ...(status && { status }),
+          ...(role && { role })
+        });
+        
+        const response = await fetch(`/api/admin/users?${params}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          renderUserList(data.users || []);
+          totalPages = data.totalPages || 1;
+          document.getElementById('userCount').textContent = `共 ${data.total || 0} 位用户`;
+          updatePagination();
+        } else {
+          document.getElementById('userTableBody').innerHTML = `
+            <tr>
+              <td colspan="7" style="text-align: center; color: var(--lc-text-muted);">
+                暂无用户数据
+              </td>
+            </tr>
+          `;
+        }
+      } catch (error) {
+        console.error('加载用户列表失败:', error);
+        document.getElementById('userTableBody').innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--lc-text-muted);">
+              加载失败，请稍后重试
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    // 渲染用户列表
+    function renderUserList(users) {
+      if (users.length === 0) {
+        document.getElementById('userTableBody').innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--lc-text-muted);">
+              暂无用户数据
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      const html = users.map(user => `
+        <tr>
+          <td>${user.id}</td>
+          <td>${user.username}</td>
+          <td>
+            <span class="badge ${user.role === 'admin' ? 'badge-info' : 'badge-success'}">
+              ${user.role === 'admin' ? '管理员' : '普通用户'}
+            </span>
+          </td>
+          <td>
+            <span class="badge ${user.status === 'active' ? 'badge-success' : 'badge-danger'}">
+              ${user.status === 'active' ? '正常' : '已禁用'}
+            </span>
+          </td>
+          <td>${formatDate(user.createdAt)}</td>
+          <td>${user.lastLogin ? formatDate(user.lastLogin) : '从未登录'}</td>
+          <td>
+            <button class="btn btn-secondary" onclick="viewUser('${user.id}')" style="padding: 6px 12px; font-size: 0.8rem;">
+              <i class="fas fa-eye"></i> 查看
+            </button>
+            ${user.status === 'active' ? `
+              <button class="btn btn-danger" onclick="banUser('${user.id}')" style="padding: 6px 12px; font-size: 0.8rem;">
+                <i class="fas fa-ban"></i> 禁用
+              </button>
+            ` : `
+              <button class="btn btn-primary" onclick="unbanUser('${user.id}')" style="padding: 6px 12px; font-size: 0.8rem;">
+                <i class="fas fa-check"></i> 解禁
+              </button>
+            `}
+          </td>
+        </tr>
+      `).join('');
+      
+      document.getElementById('userTableBody').innerHTML = html;
+    }
+
+    // 格式化日期
+    function formatDate(dateString) {
+      if (!dateString) return '-';
+      const date = new Date(dateString);
+      return date.toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    // 更新分页按钮
+    function updatePagination() {
+      document.getElementById('pageInfo').textContent = `第 ${currentPage} / ${totalPages} 页`;
+      document.getElementById('prevBtn').disabled = currentPage <= 1;
+      document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+    }
+
+    // 上一页
+    function prevPage() {
+      if (currentPage > 1) {
+        currentPage--;
+        loadUserList();
+      }
+    }
+
+    // 下一页
+    function nextPage() {
+      if (currentPage < totalPages) {
+        currentPage++;
+        loadUserList();
+      }
+    }
+
+    // 搜索用户
+    function searchUsers() {
+      currentPage = 1;
+      loadUserList();
+    }
+
+    // 刷新列表
+    function refreshUserList() {
+      loadUserStats();
+      loadUserList();
+    }
+
+    // 查看用户详情
+    async function viewUser(userId) {
+      try {
+        const response = await fetch(`/api/admin/users/${userId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+          const user = await response.json();
+          showUserModal(user);
+        } else {
+          alert('获取用户详情失败');
+        }
+      } catch (error) {
+        console.error('获取用户详情失败:', error);
+        alert('获取用户详情失败');
+      }
+    }
+
+    // 显示用户详情弹窗
+    function showUserModal(user) {
+      const content = `
+        <div style="margin-bottom: 16px;">
+          <label style="color: var(--lc-text-muted); font-size: 0.85rem;">用户ID</label>
+          <div style="color: var(--lc-text); font-size: 1rem;">${user.id}</div>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <label style="color: var(--lc-text-muted); font-size: 0.85rem;">用户名</label>
+          <div style="color: var(--lc-text); font-size: 1rem;">${user.username}</div>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <label style="color: var(--lc-text-muted); font-size: 0.85rem;">角色</label>
+          <div>
+            <span class="badge ${user.role === 'admin' ? 'badge-info' : 'badge-success'}">
+              ${user.role === 'admin' ? '管理员' : '普通用户'}
+            </span>
+          </div>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <label style="color: var(--lc-text-muted); font-size: 0.85rem;">状态</label>
+          <div>
+            <span class="badge ${user.status === 'active' ? 'badge-success' : 'badge-danger'}">
+              ${user.status === 'active' ? '正常' : '已禁用'}
+            </span>
+          </div>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <label style="color: var(--lc-text-muted); font-size: 0.85rem;">注册时间</label>
+          <div style="color: var(--lc-text); font-size: 1rem;">${formatDate(user.createdAt)}</div>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <label style="color: var(--lc-text-muted); font-size: 0.85rem;">最后登录</label>
+          <div style="color: var(--lc-text); font-size: 1rem;">${user.lastLogin ? formatDate(user.lastLogin) : '从未登录'}</div>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <label style="color: var(--lc-text-muted); font-size: 0.85rem;">注册IP</label>
+          <div style="color: var(--lc-text); font-size: 1rem;">${user.registerIp || '-'}</div>
+        </div>
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+          ${user.status === 'active' ? `
+            <button class="btn btn-danger" onclick="banUser('${user.id}'); closeUserModal();" style="flex: 1;">
+              <i class="fas fa-ban"></i> 禁用账号
+            </button>
+          ` : `
+            <button class="btn btn-primary" onclick="unbanUser('${user.id}'); closeUserModal();" style="flex: 1;">
+              <i class="fas fa-check"></i> 解禁账号
+            </button>
+          `}
+          <button class="btn btn-secondary" onclick="closeUserModal()" style="flex: 1;">关闭</button>
+        </div>
+      `;
+      
+      document.getElementById('userModalContent').innerHTML = content;
+      document.getElementById('userModal').style.display = 'flex';
+    }
+
+    // 关闭用户详情弹窗
+    function closeUserModal() {
+      document.getElementById('userModal').style.display = 'none';
+    }
+
+    // 禁用用户
+    async function banUser(userId) {
+      if (!confirm('确定要禁用该用户吗？')) return;
+      
+      try {
+        const response = await fetch(`/api/admin/users/${userId}/ban`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+          alert('用户已禁用');
+          loadUserList();
+          loadUserStats();
+        } else {
+          alert('操作失败');
+        }
+      } catch (error) {
+        console.error('禁用用户失败:', error);
+        alert('操作失败');
+      }
+    }
+
+    // 解禁用户
+    async function unbanUser(userId) {
+      if (!confirm('确定要解禁该用户吗？')) return;
+      
+      try {
+        const response = await fetch(`/api/admin/users/${userId}/unban`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+          alert('用户已解禁');
+          loadUserList();
+          loadUserStats();
+        } else {
+          alert('操作失败');
+        }
+      } catch (error) {
+        console.error('解禁用户失败:', error);
+        alert('操作失败');
+      }
+    }
+
+    // 退出登录
+    function logout() {
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUsername');
+      window.location.href = 'admin-login.html';
+    }
+
+    // 页面加载时初始化
+    loadUserStats();
+    loadUserList();
+  </script>
+</body>
+</html>
