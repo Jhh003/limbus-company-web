@@ -63,10 +63,15 @@ export async function initDatabase(env) {
       }
     }
     
-    // 创建攻略表
+    // 检查并创建/修复攻略表 - 总是删除重建以确保结构正确
     try {
+      // 先删除旧表
+      await env.DB.prepare('DROP TABLE IF EXISTS guides').run();
+      console.log('[DB Init] guides 旧表已删除');
+      
+      // 创建新表
       await env.DB.prepare(`
-        CREATE TABLE IF NOT EXISTS guides (
+        CREATE TABLE guides (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           title TEXT NOT NULL,
           author TEXT,
@@ -86,36 +91,9 @@ export async function initDatabase(env) {
         )
       `).run();
       results.guides = true;
-      console.log('[DB Init] guides 表创建/检查成功');
+      console.log('[DB Init] guides 表创建成功');
     } catch (e) {
       console.error('[DB Init] guides 表创建失败:', e.message);
-      try {
-        await env.DB.prepare('DROP TABLE IF EXISTS guides').run();
-        await env.DB.prepare(`
-          CREATE TABLE guides (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            author TEXT,
-            sinner TEXT NOT NULL,
-            persona TEXT NOT NULL,
-            floorLevel TEXT NOT NULL,
-            mediaType TEXT DEFAULT 'video',
-            content TEXT NOT NULL,
-            media_urls TEXT,
-            coverUrl TEXT,
-            content_images TEXT,
-            tags TEXT,
-            linkedRankingId INTEGER,
-            status TEXT DEFAULT 'pending',
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-          )
-        `).run();
-        results.guides = true;
-        console.log('[DB Init] guides 表重建成功');
-      } catch (e2) {
-        console.error('[DB Init] guides 表重建失败:', e2.message);
-      }
     }
     
     // 创建管理员表
