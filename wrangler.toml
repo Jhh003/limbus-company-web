@@ -1,5 +1,6 @@
 name = "limbus-72b"
 compatibility_date = "2024-01-01"
+# 构建输出目录为当前目录（根目录）
 pages_build_output_dir = "."
 
 [[d1_databases]]
