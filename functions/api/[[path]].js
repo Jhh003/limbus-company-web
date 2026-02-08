@@ -825,6 +825,14 @@ async function handleGuides(request, env, headers, path) {
           contentImages: guide.content_images ? JSON.parse(guide.content_images) : []
         }));
         
+        // 获取总数
+        const totalResult = await env.DB.prepare(
+          "SELECT COUNT(*) as count FROM guides WHERE status = 'approved'"
+        ).first();
+        const total = totalResult?.count || 0;
+        
+        console.log(`[handleGuides] 总数: ${total}, 当前页: ${guides.length}`);
+        
         return jsonResponse({
           code: 200,
           message: '获取成功',
@@ -833,7 +841,7 @@ async function handleGuides(request, env, headers, path) {
             pagination: {
               page,
               pageSize,
-              total: guides.length
+              total
             }
           }
         }, 200, headers);
