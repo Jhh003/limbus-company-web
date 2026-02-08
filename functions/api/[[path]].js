@@ -293,6 +293,8 @@ async function handleAdminVerify(request, env, headers) {
 
 // 排行榜相关
 async function handleRankings(request, env, headers, path) {
+  const url = new URL(request.url);
+  
   // 获取待审核列表
   if (path === '/api/rankings/pending' || path === '/api/rankings/pending/') {
     if (request.method === 'GET') {
@@ -513,14 +515,67 @@ async function handleRankings(request, env, headers, path) {
         const body = await request.json();
         const { username, sinner, persona, floor_level, time, screenshot_url, video_url } = body;
         
-        if (!username || !sinner || !persona || !floor_level || !time) {
-          return jsonResponse({ code: 400, message: '缺少必要字段' }, 400, headers);
+        // 详细日志记录
+        console.log('[Rankings Submit] 收到提交请求:', JSON.stringify({
+          username,
+          sinner,
+          persona,
+          floor_level,
+          time,
+          hasScreenshot: !!screenshot_url,
+          hasVideo: !!video_url
+        }));
+        
+        // 输入验证
+        if (!username || typeof username !== 'string' || username.trim().length === 0) {
+          return jsonResponse({ code: 400, message: '用户名不能为空' }, 400, headers);
         }
+        
+        if (!sinner || typeof sinner !== 'string') {
+          return jsonResponse({ code: 400, message: '罪人信息不能为空' }, 400, headers);
+        }
+        
+        if (!persona || typeof persona !== 'string') {
+          return jsonResponse({ code: 400, message: '人格信息不能为空' }, 400, headers);
+        }
+        
+        if (!floor_level || typeof floor_level !== 'string') {
+          return jsonResponse({ code: 400, message: '楼层等级不能为空' }, 400, headers);
+        }
+        
+        if (!time || typeof time !== 'number' || time <= 0) {
+          return jsonResponse({ code: 400, message: '通关时间必须是正整数' }, 400, headers);
+        }
+        
+        // 安全检查：防止SQL注入（使用参数化查询已防护，这里做额外检查）
+        const sanitizedUsername = username.trim().slice(0, 50);
+        const sanitizedSinner = sinner.trim().slice(0, 100);
+        const sanitizedPersona = persona.trim().slice(0, 100);
+        const sanitizedFloorLevel = floor_level.trim().slice(0, 50);
+        
+        // 检查数据库连接
+        if (!env.DB) {
+          console.error('[Rankings Submit] 数据库未配置');
+          return jsonResponse({ code: 500, message: '数据库服务不可用' }, 500, headers);
+        }
+        
+        console.log('[Rankings Submit] 开始执行数据库插入');
         
         const result = await env.DB.prepare(
           `INSERT INTO rankings (username, sinner, persona, floor_level, time, screenshot_url, video_url, status, created_at, updated_at) 
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
-        ).bind(username, sinner, persona, floor_level, time, screenshot_url || '', video_url || '', 'pending').run();
+        ).bind(
+          sanitizedUsername, 
+          sanitizedSinner, 
+          sanitizedPersona, 
+          sanitizedFloorLevel, 
+          time, 
+          screenshot_url || null, 
+          video_url || null, 
+          'pending'
+        ).run();
+        
+        console.log('[Rankings Submit] 插入成功, ID:', result.meta?.last_row_id);
         
         return jsonResponse({
           code: 200,
@@ -529,7 +584,13 @@ async function handleRankings(request, env, headers, path) {
         }, 200, headers);
         
       } catch (error) {
-        return jsonResponse({ code: 500, message: '提交失败', error: error.message }, 500, headers);
+        console.error('[Rankings Submit] 提交失败:', error);
+        return jsonResponse({ 
+          code: 500, 
+          message: '提交失败', 
+          error: error.message,
+          stack: error.stack 
+        }, 500, headers);
       }
     }
   }
@@ -1510,27 +1571,78 @@ async function handleGuideSubmit(request, env, headers) {
     const body = await request.json();
     const { title, sinner, persona, floorLevel, mediaType, content, mediaUrls, coverUrl, tags, author } = body;
     
-    // 验证必填字段
-    if (!title || !sinner || !persona || !floorLevel || !content) {
-      return jsonResponse({ code: 400, message: '缺少必要字段' }, 400, headers);
+    // 详细日志
+    console.log('[Guide Submit] 收到攻略提交:', JSON.stringify({
+      title: title?.substring(0, 50),
+      sinner,
+      persona,
+      floorLevel,
+      mediaType,
+      contentLength: content?.length,
+      hasMedia: !!(mediaUrls && mediaUrls.length > 0),
+      hasCover: !!coverUrl,
+      author
+    }));
+    
+    // 详细输入验证
+    if (!title || typeof title !== 'string' || title.trim().length === 0) {
+      return jsonResponse({ code: 400, message: '标题不能为空' }, 400, headers);
     }
+    
+    if (title.trim().length > 200) {
+      return jsonResponse({ code: 400, message: '标题长度不能超过200字符' }, 400, headers);
+    }
+    
+    if (!sinner || typeof sinner !== 'string') {
+      return jsonResponse({ code: 400, message: '罪人信息不能为空' }, 400, headers);
+    }
+    
+    if (!persona || typeof persona !== 'string') {
+      return jsonResponse({ code: 400, message: '人格信息不能为空' }, 400, headers);
+    }
+    
+    if (!floorLevel || typeof floorLevel !== 'string') {
+      return jsonResponse({ code: 400, message: '楼层等级不能为空' }, 400, headers);
+    }
+    
+    if (!content || typeof content !== 'string' || content.trim().length === 0) {
+      return jsonResponse({ code: 400, message: '内容不能为空' }, 400, headers);
+    }
+    
+    // 检查数据库连接
+    if (!env.DB) {
+      console.error('[Guide Submit] 数据库未配置');
+      return jsonResponse({ code: 500, message: '数据库服务不可用' }, 500, headers);
+    }
+    
+    // 数据清理
+    const sanitizedTitle = title.trim().slice(0, 200);
+    const sanitizedSinner = sinner.trim().slice(0, 100);
+    const sanitizedPersona = persona.trim().slice(0, 100);
+    const sanitizedFloorLevel = floorLevel.trim().slice(0, 50);
+    const sanitizedContent = content.trim();
+    const sanitizedAuthor = (author || '匿名用户').trim().slice(0, 50);
+    
+    console.log('[Guide Submit] 开始执行数据库插入');
     
     const result = await env.DB.prepare(
       `INSERT INTO guides (title, sinner, persona, floorLevel, mediaType, content, media_urls, coverUrl, tags, author, status, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
     ).bind(
-      title,
-      sinner,
-      persona,
-      floorLevel,
+      sanitizedTitle,
+      sanitizedSinner,
+      sanitizedPersona,
+      sanitizedFloorLevel,
       mediaType || 'video',
-      content,
+      sanitizedContent,
       JSON.stringify(mediaUrls || []),
-      coverUrl || '',
+      coverUrl || null,
       JSON.stringify(tags || []),
-      author || 'admin',
+      sanitizedAuthor,
       'pending'
     ).run();
+    
+    console.log('[Guide Submit] 攻略插入成功, ID:', result.meta?.last_row_id);
     
     return jsonResponse({
       code: 200,
@@ -1539,8 +1651,13 @@ async function handleGuideSubmit(request, env, headers) {
     }, 200, headers);
     
   } catch (error) {
-    console.error('[攻略提交失败]', error);
-    return jsonResponse({ code: 500, message: '提交失败', error: error.message }, 500, headers);
+    console.error('[Guide Submit] 攻略提交失败:', error);
+    return jsonResponse({ 
+      code: 500, 
+      message: '提交失败', 
+      error: error.message,
+      stack: error.stack 
+    }, 500, headers);
   }
 }
 
