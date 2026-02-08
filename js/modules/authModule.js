@@ -14,7 +14,9 @@ const AuthModule = {
     
     // Turnstile token
     turnstileToken: null,
-    const TURNSTILE_SITE_KEY: '0x4AAAAAACZSYpsYj5RndDNV',
+    
+    // Turnstile Site Key
+    TURNSTILE_SITE_KEY: '0x4AAAAAACZSYpsYj5RndDNV',
     
     // UI更新回调
     onUserChange: null,
