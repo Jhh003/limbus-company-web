@@ -1850,17 +1850,28 @@ async function handleAdminUsers(request, env, headers, path) {
   }
   
   try {
+    // 检查数据库连接
+    if (!env.DB) {
+      console.error('[Admin Users] 数据库未配置');
+      return jsonResponse({ code: 500, message: '数据库服务不可用' }, 500, headers);
+    }
+    
     // 验证管理员权限
     const token = authHeader.replace('Bearer ', '');
     const user = JSON.parse(atob(token));
+    
+    console.log('[Admin Users] 验证管理员:', user.username);
     
     const adminUser = await env.DB.prepare(
       'SELECT role FROM admins WHERE username = ?'
     ).bind(user.username).first();
     
     if (!adminUser) {
+      console.log('[Admin Users] 权限不足:', user.username);
       return jsonResponse({ code: 403, message: '权限不足' }, 403, headers);
     }
+    
+    console.log('[Admin Users] 管理员验证通过:', user.username, '角色:', adminUser.role);
     
     const url = new URL(request.url);
     
@@ -1870,41 +1881,54 @@ async function handleAdminUsers(request, env, headers, path) {
         return jsonResponse({ code: 405, message: '方法不允许' }, 405, headers);
       }
       
-      // 获取总用户数
-      const { results: totalResult } = await env.DB.prepare(
-        'SELECT COUNT(*) as count FROM users'
-      ).all();
-      const total = totalResult[0]?.count || 0;
-      
-      // 获取正常用户（假设所有用户都是正常的，除非有status字段）
-      const { results: activeResult } = await env.DB.prepare(
-        "SELECT COUNT(*) as count FROM users WHERE status = 'active' OR status IS NULL"
-      ).all();
-      const active = activeResult[0]?.count || 0;
-      
-      // 获取今日新增用户
-      const today = new Date().toISOString().split('T')[0];
-      const { results: newTodayResult } = await env.DB.prepare(
-        "SELECT COUNT(*) as count FROM users WHERE date(created_at) = date('now')"
-      ).all();
-      const newToday = newTodayResult[0]?.count || 0;
-      
-      // 获取已禁用用户
-      const { results: bannedResult } = await env.DB.prepare(
-        "SELECT COUNT(*) as count FROM users WHERE status = 'banned'"
-      ).all();
-      const banned = bannedResult[0]?.count || 0;
-      
-      return jsonResponse({
-        code: 200,
-        message: '获取成功',
-        data: {
-          total,
-          active,
-          newToday,
-          banned
-        }
-      }, 200, headers);
+      try {
+        console.log('[Admin Users Stats] 开始获取用户统计');
+        
+        // 获取总用户数
+        const { results: totalResult } = await env.DB.prepare(
+          'SELECT COUNT(*) as count FROM users'
+        ).all();
+        const total = totalResult[0]?.count || 0;
+        
+        // 获取正常用户（假设所有用户都是正常的，除非有status字段）
+        const { results: activeResult } = await env.DB.prepare(
+          "SELECT COUNT(*) as count FROM users WHERE status = 'active' OR status IS NULL"
+        ).all();
+        const active = activeResult[0]?.count || 0;
+        
+        // 获取今日新增用户
+        const { results: newTodayResult } = await env.DB.prepare(
+          "SELECT COUNT(*) as count FROM users WHERE date(created_at) = date('now')"
+        ).all();
+        const newToday = newTodayResult[0]?.count || 0;
+        
+        // 获取已禁用用户
+        const { results: bannedResult } = await env.DB.prepare(
+          "SELECT COUNT(*) as count FROM users WHERE status = 'banned'"
+        ).all();
+        const banned = bannedResult[0]?.count || 0;
+        
+        console.log('[Admin Users Stats] 统计结果:', { total, active, newToday, banned });
+        
+        return jsonResponse({
+          code: 200,
+          message: '获取成功',
+          data: {
+            total,
+            active,
+            newToday,
+            banned
+          }
+        }, 200, headers);
+      } catch (error) {
+        console.error('[Admin Users Stats] 获取统计失败:', error);
+        return jsonResponse({ 
+          code: 500, 
+          message: '获取统计失败', 
+          error: error.message,
+          stack: error.stack 
+        }, 500, headers);
+      }
     }
     
     // GET /api/admin/users - 用户列表
@@ -1913,47 +1937,54 @@ async function handleAdminUsers(request, env, headers, path) {
         return jsonResponse({ code: 405, message: '方法不允许' }, 405, headers);
       }
       
-      const page = parseInt(url.searchParams.get('page')) || 1;
-      const pageSize = parseInt(url.searchParams.get('pageSize')) || 10;
-      const query = url.searchParams.get('query') || '';
-      const status = url.searchParams.get('status') || '';
-      const role = url.searchParams.get('role') || '';
-      const offset = (page - 1) * pageSize;
-      
-      // 构建查询条件
-      let whereClause = 'WHERE 1=1';
-      const params = [];
-      
-      if (query) {
-        whereClause += ' AND (username LIKE ? OR id LIKE ?)';
-        params.push(`%${query}%`, `%${query}%`);
-      }
-      
-      if (status) {
-        whereClause += ' AND status = ?';
-        params.push(status);
-      }
-      
-      if (role) {
-        whereClause += ' AND role = ?';
-        params.push(role);
-      }
-      
-      // 获取总数
-      const countSql = `SELECT COUNT(*) as count FROM users ${whereClause}`;
-      const { results: countResult } = await env.DB.prepare(countSql).bind(...params).all();
-      const total = countResult[0]?.count || 0;
-      const totalPages = Math.ceil(total / pageSize);
-      
-      // 获取用户列表
-      const listSql = `
-        SELECT id, username, role, status, created_at as createdAt, last_login as lastLogin, register_ip as registerIp
-        FROM users 
-        ${whereClause}
-        ORDER BY created_at DESC
-        LIMIT ? OFFSET ?
-      `;
-      const { results: users } = await env.DB.prepare(listSql).bind(...params, pageSize, offset).all();
+      try {
+        console.log('[Admin Users List] 开始获取用户列表');
+        
+        const page = parseInt(url.searchParams.get('page')) || 1;
+        const pageSize = parseInt(url.searchParams.get('pageSize')) || 10;
+        const query = url.searchParams.get('query') || '';
+        const status = url.searchParams.get('status') || '';
+        const role = url.searchParams.get('role') || '';
+        const offset = (page - 1) * pageSize;
+        
+        // 构建查询条件
+        let whereClause = 'WHERE 1=1';
+        const params = [];
+        
+        if (query) {
+          whereClause += ' AND (username LIKE ? OR id LIKE ?)';
+          params.push(`%${query}%`, `%${query}%`);
+        }
+        
+        if (status) {
+          whereClause += ' AND status = ?';
+          params.push(status);
+        }
+        
+        if (role) {
+          whereClause += ' AND role = ?';
+          params.push(role);
+        }
+        
+        // 获取总数
+        const countSql = `SELECT COUNT(*) as count FROM users ${whereClause}`;
+        console.log('[Admin Users List] 计数SQL:', countSql, '参数:', params);
+        const { results: countResult } = await env.DB.prepare(countSql).bind(...params).all();
+        const total = countResult[0]?.count || 0;
+        const totalPages = Math.ceil(total / pageSize);
+        
+        // 获取用户列表 - 修正字段名与数据库一致
+        const listSql = `
+          SELECT id, username, role, status, created_at as createdAt, last_login_at as lastLogin, register_ip as registerIp
+          FROM users 
+          ${whereClause}
+          ORDER BY created_at DESC
+          LIMIT ? OFFSET ?
+        `;
+        console.log('[Admin Users List] 列表SQL:', listSql, '参数:', [...params, pageSize, offset]);
+        const { results: users } = await env.DB.prepare(listSql).bind(...params, pageSize, offset).all();
+        
+        console.log('[Admin Users List] 查询成功:', { total, count: users?.length });
       
       return jsonResponse({
         code: 200,
@@ -1965,28 +1996,46 @@ async function handleAdminUsers(request, env, headers, path) {
           page,
           pageSize
         }
-      }, 200, headers);
+        }, 200, headers);
+      } catch (error) {
+        console.error('[Admin Users List] 获取列表失败:', error);
+        return jsonResponse({ 
+          code: 500, 
+          message: '获取列表失败', 
+          error: error.message,
+          stack: error.stack 
+        }, 500, headers);
+      }
     }
     
     // GET /api/admin/users/:id - 用户详情
     const userDetailMatch = path.match(/^\/api\/admin\/users\/([^/]+)$/);
     if (userDetailMatch && request.method === 'GET') {
-      const userId = userDetailMatch[1];
-      
-      const user = await env.DB.prepare(
-        `SELECT id, username, role, status, created_at as createdAt, last_login as lastLogin, register_ip as registerIp
-         FROM users WHERE id = ?`
-      ).bind(userId).first();
-      
-      if (!user) {
-        return jsonResponse({ code: 404, message: '用户不存在' }, 404, headers);
+      try {
+        const userId = userDetailMatch[1];
+        
+        const user = await env.DB.prepare(
+          `SELECT id, username, role, status, created_at as createdAt, last_login_at as lastLogin, register_ip as registerIp
+           FROM users WHERE id = ?`
+        ).bind(userId).first();
+        
+        if (!user) {
+          return jsonResponse({ code: 404, message: '用户不存在' }, 404, headers);
+        }
+        
+        return jsonResponse({
+          code: 200,
+          message: '获取成功',
+          data: user
+        }, 200, headers);
+      } catch (error) {
+        console.error('[Admin Users Detail] 获取用户详情失败:', error);
+        return jsonResponse({ 
+          code: 500, 
+          message: '获取用户详情失败', 
+          error: error.message 
+        }, 500, headers);
       }
-      
-      return jsonResponse({
-        code: 200,
-        message: '获取成功',
-        data: user
-      }, 200, headers);
     }
     
     // POST /api/admin/users/:id/ban - 禁用用户
