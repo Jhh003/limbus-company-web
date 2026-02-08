@@ -103,6 +103,10 @@ export async function onRequest(context) {
       return handleAdminGuide(request, env, headers, path);
     }
     
+    if (path === '/api/guides/submit' || path === '/api/guides/submit/') {
+      return handleGuideSubmit(request, env, headers);
+    }
+    
     if (path === '/api/captcha' || path === '/api/captcha/') {
       return handleCaptcha(request, env, headers);
     }
@@ -1298,9 +1302,9 @@ async function handleAdminGuides(request, env, headers, path) {
     
     const guides = await env.DB.prepare(
       `SELECT 
-         id, title, sinner, persona, floor_level, author, 
-         status, created_at, updated_at, cover_url,
-         content_type, media_urls
+         id, title, sinner, persona, floorLevel, author, 
+         status, created_at, updated_at, coverUrl,
+         mediaType, media_urls
        FROM guides 
        WHERE status = ?
        ORDER BY created_at DESC
@@ -1355,9 +1359,9 @@ async function handleAdminGuide(request, env, headers, path) {
     if (request.method === 'GET') {
       const guide = await env.DB.prepare(
         `SELECT 
-           id, title, sinner, persona, floor_level, author, 
-           content, status, created_at, updated_at, cover_url,
-           content_type, media_urls, content_images, tags
+           id, title, sinner, persona, floorLevel, author, 
+           content, status, created_at, updated_at, coverUrl,
+           mediaType, media_urls, content_images, tags
          FROM guides 
          WHERE id = ?`
       ).bind(guideId).first();
@@ -1400,10 +1404,65 @@ async function handleAdminGuide(request, env, headers, path) {
       }, 200, headers);
     }
     
+    // 删除攻略
+    if (request.method === 'DELETE') {
+      await env.DB.prepare('DELETE FROM guides WHERE id = ?').bind(guideId).run();
+      
+      return jsonResponse({
+        code: 200,
+        message: '攻略已删除',
+        data: { id: guideId }
+      }, 200, headers);
+    }
+    
     return jsonResponse({ code: 405, message: '方法不允许' }, 405, headers);
     
   } catch (error) {
     return jsonResponse({ code: 500, message: '审核失败', error: error.message }, 500, headers);
+  }
+}
+
+// 提交攻略
+async function handleGuideSubmit(request, env, headers) {
+  if (request.method !== 'POST') {
+    return jsonResponse({ code: 405, message: '方法不允许' }, 405, headers);
+  }
+  
+  try {
+    const body = await request.json();
+    const { title, sinner, persona, floorLevel, mediaType, content, mediaUrls, coverUrl, tags, author } = body;
+    
+    // 验证必填字段
+    if (!title || !sinner || !persona || !floorLevel || !content) {
+      return jsonResponse({ code: 400, message: '缺少必要字段' }, 400, headers);
+    }
+    
+    const result = await env.DB.prepare(
+      `INSERT INTO guides (title, sinner, persona, floorLevel, mediaType, content, media_urls, coverUrl, tags, author, status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+    ).bind(
+      title,
+      sinner,
+      persona,
+      floorLevel,
+      mediaType || 'video',
+      content,
+      JSON.stringify(mediaUrls || []),
+      coverUrl || '',
+      JSON.stringify(tags || []),
+      author || 'admin',
+      'pending'
+    ).run();
+    
+    return jsonResponse({
+      code: 200,
+      message: '攻略提交成功，等待审核',
+      data: { id: result.meta?.last_row_id }
+    }, 200, headers);
+    
+  } catch (error) {
+    console.error('[攻略提交失败]', error);
+    return jsonResponse({ code: 500, message: '提交失败', error: error.message }, 500, headers);
   }
 }
 

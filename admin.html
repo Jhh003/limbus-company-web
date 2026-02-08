@@ -1587,19 +1587,20 @@
             contentEl.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>';
 
             try {
-                const pendingRes = await fetchWithAuth(`${API_BASE}/guides/pending`);
+                // 使用统一的 /api/admin/guides API
+                const pendingRes = await fetchWithAuth(`${API_BASE}/admin/guides?status=pending&page=1&pageSize=1000`);
                 const pendingData = await pendingRes.json();
                 
                 // 获取已通过列表
-                const listRes = await fetch(`${API_BASE}/guides/list?page=1&pageSize=1000`);
-                const listData = await listRes.json();
+                const approvedRes = await fetchWithAuth(`${API_BASE}/admin/guides?status=approved&page=1&pageSize=1000`);
+                const approvedData = await approvedRes.json();
 
                 console.log('[Admin] 攻略待审核数据:', pendingData);
-                console.log('[Admin] 攻略已通过数据:', listData);
+                console.log('[Admin] 攻略已通过数据:', approvedData);
 
                 // 验证数据格式
-                const pending = Array.isArray(pendingData.data) ? pendingData.data : [];
-                const approved = Array.isArray(listData.data?.guides) ? listData.data.guides : [];
+                const pending = pendingData.data?.guides || [];
+                const approved = approvedData.data?.guides || [];
 
                 allGuides = {
                     pending: pending,
@@ -1781,10 +1782,11 @@
             const loading = showLoading('处理中...');
             
             try {
-                const response = await fetchWithAuth(`${API_BASE}/guides/approve/${id}`, {
+                // 使用统一的 /api/admin/guide/:id API
+                const response = await fetchWithAuth(`${API_BASE}/admin/guide/${id}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ approved: isApprove })
+                    body: JSON.stringify({ action: isApprove ? 'approve' : 'reject' })
                 });
                 
                 const result = await response.json();
@@ -1817,7 +1819,8 @@
             const loading = showLoading('删除中...');
             
             try {
-                const response = await fetchWithAuth(`${API_BASE}/guides/${id}`, {
+                // 使用统一的 /api/admin/guide/:id API
+                const response = await fetchWithAuth(`${API_BASE}/admin/guide/${id}`, {
                     method: 'DELETE'
                 });
                 
