@@ -1,14 +1,23 @@
+# Cloudflare Pages Headers Configuration
+# 为所有 JS 文件设置正确的 MIME 类型
+
 /*.js
-  Content-Type: application/javascript
+  Content-Type: application/javascript; charset=utf-8
 
 /js/*.js
-  Content-Type: application/javascript
+  Content-Type: application/javascript; charset=utf-8
 
-/js/**/*.js
-  Content-Type: application/javascript
+/js/core/*.js
+  Content-Type: application/javascript; charset=utf-8
+
+/js/controllers/*.js
+  Content-Type: application/javascript; charset=utf-8
+
+/js/modules/*.js
+  Content-Type: application/javascript; charset=utf-8
 
 /data/*.js
-  Content-Type: application/javascript
+  Content-Type: application/javascript; charset=utf-8
 
-/data/**/*.js
-  Content-Type: application/javascript
+/data/utils/*.js
+  Content-Type: application/javascript; charset=utf-8
