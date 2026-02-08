@@ -728,47 +728,86 @@ async function handleGuides(request, env, headers, path) {
         const { 
           title, 
           content, 
-          category, 
-          cover_image,
+          coverUrl,
           author,
           sinner,
           persona,
           mediaType,
           mediaUrls,
           contentImages,
-          contentType,
           floorLevel,
           tags
         } = body;
         
-        if (!title || !content) {
-          return jsonResponse({ code: 400, message: '标题和内容不能为空' }, 400, headers);
+        // 详细日志
+        console.log('[Guide User Submit] 收到提交:', JSON.stringify({
+          title: title?.substring(0, 50),
+          author,
+          sinner,
+          persona,
+          floorLevel,
+          hasContent: !!content,
+          contentLength: content?.length
+        }));
+        
+        // 输入验证
+        if (!title || typeof title !== 'string' || title.trim().length === 0) {
+          return jsonResponse({ code: 400, message: '标题不能为空' }, 400, headers);
         }
+        
+        if (!content || typeof content !== 'string' || content.trim().length === 0) {
+          return jsonResponse({ code: 400, message: '内容不能为空' }, 400, headers);
+        }
+        
+        if (!sinner || typeof sinner !== 'string') {
+          return jsonResponse({ code: 400, message: '罪人信息不能为空' }, 400, headers);
+        }
+        
+        if (!persona || typeof persona !== 'string') {
+          return jsonResponse({ code: 400, message: '人格信息不能为空' }, 400, headers);
+        }
+        
+        if (!floorLevel || typeof floorLevel !== 'string') {
+          return jsonResponse({ code: 400, message: '楼层等级不能为空' }, 400, headers);
+        }
+        
+        // 检查数据库连接
+        if (!env.DB) {
+          console.error('[Guide User Submit] 数据库未配置');
+          return jsonResponse({ code: 500, message: '数据库服务不可用' }, 500, headers);
+        }
+        
+        console.log('[Guide User Submit] 开始执行数据库插入');
         
         const result = await env.DB.prepare(
           `INSERT INTO guides (
-            title, content, category, cover_image, author, sinner, persona,
-            media_type, media_urls, content_images, content_type, floor_level, tags,
+            title, content, coverUrl, author, sinner, persona,
+            mediaType, media_urls, content_images, floorLevel, tags, status,
             created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
         ).bind(
-          title,
-          content,
-          category || '',
-          cover_image || '',
-          author || '',
-          sinner || '',
-          persona || '',
-          mediaType || 'text',
-          mediaUrls ? JSON.stringify(mediaUrls) : '[]',
-          contentImages ? JSON.stringify(contentImages) : '[]',
-          contentType || 'richtext',
-          floorLevel || 0,
-          tags ? JSON.stringify(tags) : '[]'
+          title.trim().slice(0, 200),
+          content.trim(),
+          coverUrl || null,
+          author || '匿名用户',
+          sinner.trim(),
+          persona.trim(),
+          mediaType || 'video',
+          mediaUrls ? JSON.stringify(mediaUrls) : null,
+          contentImages ? JSON.stringify(contentImages) : null,
+          floorLevel,
+          tags ? JSON.stringify(tags) : null,
+          'pending'
         ).run();
         
+        console.log('[Guide User Submit] 插入成功, ID:', result.meta?.last_row_id);
+        
         // 记录投稿活跃
-        await recordUserActivity(env, userId, author, 'submit_guide');
+        try {
+          await recordUserActivity(env, userId, author, 'submit_guide');
+        } catch (activityError) {
+          console.log('[Guide User Submit] 记录活动失败(非致命):', activityError.message);
+        }
         
         return jsonResponse({
           code: 200,
@@ -778,7 +817,13 @@ async function handleGuides(request, env, headers, path) {
         }, 200, headers);
         
       } catch (error) {
-        return jsonResponse({ code: 500, message: '创建失败', error: error.message }, 500, headers);
+        console.error('[Guide User Submit] 创建失败:', error);
+        return jsonResponse({ 
+          code: 500, 
+          message: '创建失败', 
+          error: error.message,
+          stack: error.stack 
+        }, 500, headers);
       }
     }
   }
