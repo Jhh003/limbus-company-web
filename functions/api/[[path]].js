@@ -82,7 +82,7 @@ async function hashPassword(password) {
 
 // Turnstile验证函数
 async function verifyTurnstileToken(token, env) {
-  const secretKey = env.TURNSTILE_SECRET_KEY || '0x4AAAAAAAxxxxxxxxxxxxxxxxxxxxxxxx'; // 替换为你的Secret Key
+  const secretKey = env.TURNSTILE_SECRET_KEY || '0x4AAAAAACZSYoh9xpG5XVkiTES5pYNugd4'; // Cloudflare Turnstile Secret Key
   
   try {
     const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
