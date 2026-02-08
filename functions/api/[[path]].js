@@ -798,6 +798,8 @@ async function handleRankings(request, env, headers, path) {
 
 // 攻略相关
 async function handleGuides(request, env, headers, path) {
+  console.log(`[handleGuides] 开始处理请求: ${request.method} ${path}`);
+  
   // 获取攻略列表
   if (path === '/api/guides' || path === '/api/guides/' || path === '/api/guides/list') {
     if (request.method === 'GET') {
@@ -807,9 +809,13 @@ async function handleGuides(request, env, headers, path) {
         const pageSize = parseInt(url.searchParams.get('pageSize') || '12');
         const offset = (page - 1) * pageSize;
         
+        console.log(`[handleGuides] 获取攻略列表: page=${page}, pageSize=${pageSize}`);
+        
         const { results } = await env.DB.prepare(
           "SELECT * FROM guides WHERE status = 'approved' ORDER BY created_at DESC LIMIT ? OFFSET ?"
         ).bind(pageSize, offset).all();
+        
+        console.log(`[handleGuides] 查询到 ${results.length} 条已审核攻略`);
         
         // 解析 JSON 字段
         const guides = results.map(guide => ({
@@ -1667,20 +1673,25 @@ function validatePasswordComplexity(password) {
 
 // 管理员获取攻略列表
 async function handleAdminGuides(request, env, headers, path) {
+  console.log(`[handleAdminGuides] 开始处理请求: ${request.method} ${path}`);
+  
   const authHeader = request.headers.get('Authorization');
   if (!authHeader) {
+    console.log('[handleAdminGuides] 错误: 未提供认证头');
     return jsonResponse({ code: 401, message: '未登录' }, 401, headers);
   }
   
   try {
     const token = authHeader.replace('Bearer ', '');
     const user = JSON.parse(base64Decode(token));
+    console.log(`[handleAdminGuides] 管理员: ${user.username}`);
 
     const adminUser = await env.DB.prepare(
       'SELECT role FROM admins WHERE username = ?'
     ).bind(user.username).first();
 
     if (!adminUser) {
+      console.log(`[handleAdminGuides] 错误: ${user.username} 不是管理员`);
       return jsonResponse({ code: 403, message: '权限不足' }, 403, headers);
     }
     
@@ -1689,6 +1700,8 @@ async function handleAdminGuides(request, env, headers, path) {
     const page = parseInt(url.searchParams.get('page')) || 1;
     const pageSize = parseInt(url.searchParams.get('pageSize')) || 20;
     const offset = (page - 1) * pageSize;
+    
+    console.log(`[handleAdminGuides] 查询条件: status=${status}, page=${page}, pageSize=${pageSize}`);
     
     const guides = await env.DB.prepare(
       `SELECT 
@@ -1701,11 +1714,14 @@ async function handleAdminGuides(request, env, headers, path) {
        LIMIT ? OFFSET ?`
     ).bind(status, pageSize, offset).all();
     
+    console.log(`[handleAdminGuides] 查询到 ${guides.results.length} 条${status}状态攻略`);
+    
     const total = await env.DB.prepare(
       'SELECT COUNT(*) as count FROM guides WHERE status = ?'
     ).bind(status).first();
     
     // 获取所有状态的统计数量
+    console.log('[handleAdminGuides] 获取各状态统计数量...');
     const pendingCount = await env.DB.prepare(
       "SELECT COUNT(*) as count FROM guides WHERE status = 'pending'"
     ).first();
@@ -1715,6 +1731,8 @@ async function handleAdminGuides(request, env, headers, path) {
     const rejectedCount = await env.DB.prepare(
       "SELECT COUNT(*) as count FROM guides WHERE status = 'rejected'"
     ).first();
+    
+    console.log(`[handleAdminGuides] 统计结果: pending=${pendingCount?.count}, approved=${approvedCount?.count}, rejected=${rejectedCount?.count}`);
     
     return jsonResponse({
       code: 200,
