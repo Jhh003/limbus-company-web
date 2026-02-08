@@ -92,6 +92,7 @@ export async function initDatabase(env) {
           sinner TEXT NOT NULL,
           persona TEXT NOT NULL,
           floorLevel TEXT NOT NULL,
+          guide_type TEXT DEFAULT 'strategy',
           mediaType TEXT DEFAULT 'video',
           content TEXT NOT NULL,
           media_urls TEXT,
@@ -100,6 +101,7 @@ export async function initDatabase(env) {
           tags TEXT,
           linkedRankingId INTEGER,
           status TEXT DEFAULT 'pending',
+          reject_reason TEXT,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )

@@ -1559,19 +1559,32 @@ async function handleAdminGuide(request, env, headers, path) {
   }
   
   try {
+    // 检查数据库连接
+    if (!env.DB) {
+      console.error('[Admin Guide] 数据库未配置');
+      return jsonResponse({ code: 500, message: '数据库服务不可用' }, 500, headers);
+    }
+    
     const token = authHeader.replace('Bearer ', '');
     const user = JSON.parse(atob(token));
+    
+    console.log('[Admin Guide] 验证管理员:', user.username);
     
     const adminUser = await env.DB.prepare(
       'SELECT role FROM admins WHERE username = ?'
     ).bind(user.username).first();
 
     if (!adminUser) {
+      console.log('[Admin Guide] 权限不足:', user.username);
       return jsonResponse({ code: 403, message: '权限不足' }, 403, headers);
     }
 
+    console.log('[Admin Guide] 管理员验证通过:', user.username);
+
     const url = new URL(request.url);
     const guideId = url.pathname.split('/').pop();
+    
+    console.log('[Admin Guide] 操作攻略ID:', guideId, '方法:', request.method);
     
     if (request.method === 'GET') {
       const guide = await env.DB.prepare(
@@ -1595,30 +1608,57 @@ async function handleAdminGuide(request, env, headers, path) {
     }
     
     if (request.method === 'POST') {
-      const { action, rejectReason } = await request.json();
-      
-      if (!action || !['approve', 'reject'].includes(action)) {
-        return jsonResponse({ code: 400, message: '无效的操作' }, 400, headers);
+      try {
+        const body = await request.json();
+        const { action, rejectReason } = body;
+        
+        console.log('[Admin Guide] 审核操作:', { guideId, action, rejectReason });
+        
+        if (!action || !['approve', 'reject'].includes(action)) {
+          return jsonResponse({ code: 400, message: '无效的操作' }, 400, headers);
+        }
+        
+        const newStatus = action === 'approve' ? 'approved' : 'rejected';
+        const updated_at = new Date().toISOString();
+        
+        // 先检查攻略是否存在
+        const existingGuide = await env.DB.prepare(
+          'SELECT id, status FROM guides WHERE id = ?'
+        ).bind(guideId).first();
+        
+        if (!existingGuide) {
+          console.log('[Admin Guide] 攻略不存在:', guideId);
+          return jsonResponse({ code: 404, message: '攻略不存在' }, 404, headers);
+        }
+        
+        console.log('[Admin Guide] 更新攻略状态:', { guideId, oldStatus: existingGuide.status, newStatus });
+        
+        await env.DB.prepare(
+          `UPDATE guides 
+           SET status = ?, updated_at = ?, reject_reason = ?
+           WHERE id = ?`
+        ).bind(newStatus, updated_at, rejectReason || null, guideId).run();
+        
+        const guide = await env.DB.prepare(
+          'SELECT * FROM guides WHERE id = ?'
+        ).bind(guideId).first();
+        
+        console.log('[Admin Guide] 审核完成:', { guideId, newStatus });
+        
+        return jsonResponse({
+          code: 200,
+          message: action === 'approve' ? '攻略已通过审核' : '攻略已驳回',
+          data: guide
+        }, 200, headers);
+      } catch (error) {
+        console.error('[Admin Guide] 审核操作失败:', error);
+        return jsonResponse({ 
+          code: 500, 
+          message: '审核操作失败', 
+          error: error.message,
+          stack: error.stack 
+        }, 500, headers);
       }
-      
-      const newStatus = action === 'approve' ? 'approved' : 'rejected';
-      const updated_at = new Date().toISOString();
-      
-      await env.DB.prepare(
-        `UPDATE guides 
-         SET status = ?, updated_at = ?, reject_reason = ?
-         WHERE id = ?`
-      ).bind(newStatus, updated_at, rejectReason || null, guideId).run();
-      
-      const guide = await env.DB.prepare(
-        'SELECT * FROM guides WHERE id = ?'
-      ).bind(guideId).first();
-      
-      return jsonResponse({
-        code: 200,
-        message: action === 'approve' ? '攻略已通过审核' : '攻略已驳回',
-        data: guide
-      }, 200, headers);
     }
     
     // 删除攻略
