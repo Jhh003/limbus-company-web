@@ -54,7 +54,12 @@ export async function onRequest(context) {
   try {
     // 路由分发
     if (path === '/api/health' || path === '/api/health/') {
-      return handleHealth(headers);
+      return handleHealth(headers, env);
+    }
+    
+    // 数据库初始化端点（仅用于首次设置）
+    if (path === '/api/db-init' || path === '/api/db-init/') {
+      return handleDbInit(request, env, headers);
     }
     
     if (path.startsWith('/api/admin/login')) {
@@ -119,12 +124,52 @@ export async function onRequest(context) {
 }
 
 // 健康检查
-function handleHealth(headers) {
-  return jsonResponse({
+async function handleHealth(headers, env) {
+  const health = {
     code: 200,
     message: 'Limbus Company API 运行正常',
-    timestamp: new Date().toISOString()
-  }, 200, headers);
+    timestamp: new Date().toISOString(),
+    services: {
+      db: !!env.DB,
+      kv: !!env.CAPTCHA_KV,
+      r2: !!env.IMAGES_BUCKET
+    }
+  };
+  return jsonResponse(health, 200, headers);
+}
+
+// 数据库初始化
+async function handleDbInit(request, env, headers) {
+  // 只允许 POST 请求
+  if (request.method !== 'POST') {
+    return jsonResponse({ code: 405, message: '方法不允许' }, 405, headers);
+  }
+  
+  try {
+    const { initDatabase } = await import('./db-init.js');
+    const result = await initDatabase(env);
+    
+    if (result.success) {
+      return jsonResponse({
+        code: 200,
+        message: '数据库初始化成功',
+        data: result
+      }, 200, headers);
+    } else {
+      return jsonResponse({
+        code: 500,
+        message: '数据库初始化失败',
+        error: result.error
+      }, 500, headers);
+    }
+  } catch (error) {
+    console.error('[DB Init] 错误:', error);
+    return jsonResponse({
+      code: 500,
+      message: '数据库初始化失败',
+      error: error.message
+    }, 500, headers);
+  }
 }
 
 // 管理员登录
@@ -246,9 +291,19 @@ async function handleRankings(request, env, headers, path) {
           return jsonResponse({ code: 401, message: '未登录' }, 401, headers);
         }
         
+        // 检查 DB 是否配置
+        if (!env.DB) {
+          console.error('[API] DB 未配置');
+          return jsonResponse({ code: 500, message: '数据库未配置' }, 500, headers);
+        }
+        
+        console.log('[API] 查询待审核排行榜记录');
+        
         const { results } = await env.DB.prepare(
           'SELECT * FROM rankings WHERE status = ? ORDER BY created_at DESC'
         ).bind('pending').all();
+        
+        console.log('[API] 查询结果:', results);
         
         return jsonResponse({
           code: 200,
@@ -256,6 +311,7 @@ async function handleRankings(request, env, headers, path) {
           data: results || []
         }, 200, headers);
       } catch (error) {
+        console.error('[API] 获取待审核记录失败:', error);
         return jsonResponse({ code: 500, message: '获取失败', error: error.message }, 500, headers);
       }
     }
