@@ -821,6 +821,7 @@ async function handleRankings(request, env, headers, path) {
   
   // 删除记录
   if (path.match(/^\/api\/rankings\/\d+$/)) {
+    // 删除记录
     if (request.method === 'DELETE') {
       try {
         // 验证登录
@@ -833,11 +834,23 @@ async function handleRankings(request, env, headers, path) {
         const user = await verifyJwt(token, env.JWT_SECRET || 'default-secret');
         if (!user) return jsonResponse({ code: 401, message: '无效的 Token' }, 401, headers);
 
+        // 验证管理员权限
+        const adminUser = await env.DB.prepare(
+          'SELECT role FROM admins WHERE username = ?'
+        ).bind(user.username).first();
+        
+        if (!adminUser) {
+          return jsonResponse({ code: 403, message: '权限不足' }, 403, headers);
+        }
+
         const id = path.split('/').pop();
         
+        // 执行删除
         await env.DB.prepare(
           'DELETE FROM rankings WHERE id = ?'
         ).bind(id).run();
+        
+        console.log(`[Rankings] 管理员 ${user.username} 删除了记录 ${id}`);
         
         return jsonResponse({
           code: 200,

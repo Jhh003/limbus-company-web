@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/css/reset.css">
   <link rel="stylesheet" href="/css/limbus-theme-v2.css">
   <link rel="stylesheet" href="/css/module/admin-common.css">
+  <link rel="stylesheet" href="/css/custom-dialog.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     .status-tabs {
@@ -365,6 +366,8 @@
     </div>
   </div>
 
+  <script src="/js/custom-dialog.js"></script>
+  <script src="/js/admin-media.js"></script>
   <script>
     const token = localStorage.getItem('admin_token');
     if (!token) {
@@ -572,16 +575,65 @@
             <div class="content">${guide.content}</div>
           </div>
         `;
-      } else if (guide.content_type === 'image' && guide.content_images) {
-        const images = JSON.parse(guide.content_images);
-        contentHtml = `
-          <div class="guide-detail-content">
-            <h4><i class="fas fa-images"></i> 攻略图片</h4>
-            <div class="guide-detail-images">
-              ${images.map(img => `<img src="${img}" alt="攻略图片" onclick="window.open('${img}', '_blank')">`).join('')}
-            </div>
-          </div>
-        `;
+      } else if (guide.content_images || (guide.mediaUrls && guide.mediaUrls.length > 0)) {
+        // 合并图片和媒体链接
+        let images = [];
+        try {
+             if (typeof guide.content_images === 'string') {
+                 images = JSON.parse(guide.content_images);
+             } else if (Array.isArray(guide.content_images)) {
+                 images = guide.content_images;
+             }
+        } catch(e) {}
+
+        let mediaUrls = [];
+        try {
+            if (typeof guide.mediaUrls === 'string') {
+                mediaUrls = JSON.parse(guide.mediaUrls);
+            } else if (Array.isArray(guide.mediaUrls)) {
+                mediaUrls = guide.mediaUrls;
+            } else if (typeof guide.media_urls === 'string') {
+                mediaUrls = JSON.parse(guide.media_urls);
+            }
+        } catch(e) {}
+        
+        // 渲染图片
+        let imagesHtml = '';
+        if (images.length > 0) {
+            imagesHtml = `
+            <div class="guide-detail-content">
+                <h4><i class="fas fa-images"></i> 攻略图片</h4>
+                <div class="guide-detail-images">
+                ${images.map(img => `<img src="${img}" alt="攻略图片" onclick="previewMedia('${img}', 'image')" style="cursor:pointer; max-width:100px; margin:5px;">`).join('')}
+                </div>
+            </div>`;
+        }
+
+        // 渲染视频/媒体链接
+        let mediaHtml = '';
+        if (mediaUrls.length > 0) {
+             mediaHtml = `
+            <div class="guide-detail-content">
+                <h4><i class="fas fa-video"></i> 媒体资源</h4>
+                <div class="guide-detail-media">
+                ${mediaUrls.map(url => {
+                    const isVideo = url.match(/\.(mp4|webm|mov)$/i) || guide.mediaType === 'video';
+                    return `<button class="btn btn-secondary" onclick="previewMedia('${url}', '${isVideo ? 'video' : 'image'}')"><i class="fas fa-${isVideo ? 'play' : 'image'}"></i> 查看资源</button>`;
+                }).join(' ')}
+                </div>
+            </div>`;
+        }
+
+        contentHtml = imagesHtml + mediaHtml;
+        
+        // 如果有文本内容也显示
+        if (guide.content) {
+             contentHtml += `
+            <div class="guide-detail-content">
+                <h4><i class="fas fa-file-alt"></i> 攻略说明</h4>
+                <div class="content">${guide.content}</div>
+            </div>`;
+        }
       }
 
       modalBody.innerHTML = `
@@ -622,7 +674,14 @@
     }
 
     async function approveGuide() {
-      if (!confirm('确定要通过这个攻略吗？')) return;
+      if (!await showConfirm({
+        title: '通过审核',
+        message: '确定要通过这个攻略吗？',
+        icon: 'fa-check-circle',
+        confirmText: '通过'
+      })) return;
+
+      const loading = showLoading('正在提交...');
 
       try {
         const response = await fetch(`/api/admin/guide/${currentGuideId}`, {
@@ -637,43 +696,74 @@
         const data = await response.json();
 
         if (data.code === 200) {
-          alert('攻略已通过审核');
+          showSuccess('攻略已通过审核');
           closeModal();
           loadGuides(currentStatus, currentPage);
         } else {
-          alert(data.message || '操作失败');
+          showError(data.message || '操作失败');
         }
       } catch (error) {
-        alert('网络错误，请稍后重试');
+        showError('网络错误，请稍后重试');
+      } finally {
+        loading.close();
       }
     }
 
     async function rejectGuide() {
-      const reason = prompt('请输入驳回原因（可选）：');
-      if (reason === null) return;
+      // Create a custom dialog for rejection reason
+      const overlay = document.createElement('div');
+      overlay.className = 'custom-modal-overlay';
+      overlay.innerHTML = `
+        <div class="custom-modal">
+            <div class="custom-modal-header">
+                <i class="fas fa-times-circle custom-modal-icon" style="color:var(--lc-red)"></i>
+                <div class="custom-modal-title">驳回攻略</div>
+            </div>
+            <div class="custom-modal-body">
+                <p>请输入驳回原因（可选）：</p>
+                <textarea id="rejectReasonInput" class="reject-reason" placeholder="例如：内容不符合规范..."></textarea>
+            </div>
+            <div class="custom-modal-footer">
+                <button class="custom-modal-btn custom-modal-btn-cancel" onclick="this.closest('.custom-modal-overlay').remove()">取消</button>
+                <button class="custom-modal-btn custom-modal-btn-danger" id="confirmRejectBtn">驳回</button>
+            </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
 
-      try {
-        const response = await fetch(`/api/admin/guide/${currentGuideId}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ action: 'reject', rejectReason: reason })
-        });
+      return new Promise((resolve) => {
+          document.getElementById('confirmRejectBtn').onclick = async () => {
+              const reason = document.getElementById('rejectReasonInput').value;
+              overlay.remove();
+              
+              const loading = showLoading('正在提交...');
+              try {
+                const response = await fetch(`/api/admin/guide/${currentGuideId}`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  },
+                  body: JSON.stringify({ action: 'reject', rejectReason: reason })
+                });
 
-        const data = await response.json();
+                const data = await response.json();
 
-        if (data.code === 200) {
-          alert('攻略已驳回');
-          closeModal();
-          loadGuides(currentStatus, currentPage);
-        } else {
-          alert(data.message || '操作失败');
-        }
-      } catch (error) {
-        alert('网络错误，请稍后重试');
-      }
+                if (data.code === 200) {
+                  showSuccess('攻略已驳回');
+                  closeModal();
+                  loadGuides(currentStatus, currentPage);
+                } else {
+                  showError(data.message || '操作失败');
+                }
+              } catch (error) {
+                showError('网络错误，请稍后重试');
+              } finally {
+                loading.close();
+              }
+              resolve();
+          };
+      });
     }
 
     document.querySelectorAll('.status-tab').forEach(tab => {

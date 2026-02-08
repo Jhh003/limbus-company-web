@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/css/reset.css">
   <link rel="stylesheet" href="/css/limbus-theme-v2.css">
   <link rel="stylesheet" href="/css/module/admin-common.css">
+  <link rel="stylesheet" href="/css/custom-dialog.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -182,6 +183,7 @@
     </main>
   </div>
 
+  <script src="/js/custom-dialog.js"></script>
   <script>
     // 检查登录状态
     const token = localStorage.getItem('admin_token');
@@ -251,14 +253,14 @@
         });
 
         if (response.ok) {
-          alert('网站配置保存成功！');
+          showSuccess('网站配置保存成功！');
           addLog('网站配置已更新', 'success');
         } else {
-          alert('保存失败，请检查权限');
+          showError('保存失败，请检查权限');
         }
       } catch (error) {
         console.error('保存配置失败:', error);
-        alert('保存失败，请稍后重试');
+        showError('保存失败，请稍后重试');
       }
     }
 
@@ -274,10 +276,11 @@
           const result = await response.json();
           updateFeatureBadges({ [feature]: result.enabled });
           addLog(`功能"${feature}"已${result.enabled ? '开启' : '关闭'}`, 'info');
+          showToast(`功能状态已更新`, 'success');
         }
       } catch (error) {
         console.error('切换功能失败:', error);
-        alert('操作失败，请稍后重试');
+        showError('操作失败，请稍后重试');
       }
     }
 

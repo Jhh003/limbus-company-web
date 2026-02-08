@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/css/reset.css">
   <link rel="stylesheet" href="/css/limbus-theme-v2.css">
   <link rel="stylesheet" href="/css/module/admin-common.css">
+  <link rel="stylesheet" href="/css/custom-dialog.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -170,6 +171,8 @@
     </div>
   </div>
 
+  <script src="/js/config.js"></script>
+  <script src="/js/custom-dialog.js"></script>
   <script>
     // 检查登录状态
     const token = localStorage.getItem('admin_token');
@@ -431,7 +434,15 @@
 
     // 禁用用户
     async function banUser(userId) {
-      if (!confirm('确定要禁用该用户吗？')) return;
+      if (!await showConfirm({
+        title: '禁用账号',
+        message: '确定要禁用该用户吗？用户将无法登录。',
+        icon: 'fa-ban',
+        isDanger: true,
+        confirmText: '禁用'
+      })) return;
+      
+      const loading = showLoading('正在处理...');
       
       try {
         const response = await fetch(`/api/admin/users/${userId}/ban`, {
@@ -440,21 +451,30 @@
         });
         
         if (response.ok) {
-          alert('用户已禁用');
+          showSuccess('用户已禁用');
           loadUserList();
           loadUserStats();
         } else {
-          alert('操作失败');
+          showError('操作失败');
         }
       } catch (error) {
         console.error('禁用用户失败:', error);
-        alert('操作失败');
+        showError('操作失败');
+      } finally {
+        loading.close();
       }
     }
 
     // 解禁用户
     async function unbanUser(userId) {
-      if (!confirm('确定要解禁该用户吗？')) return;
+      if (!await showConfirm({
+        title: '解禁账号',
+        message: '确定要解禁该用户吗？',
+        icon: 'fa-check-circle',
+        confirmText: '解禁'
+      })) return;
+      
+      const loading = showLoading('正在处理...');
       
       try {
         const response = await fetch(`/api/admin/users/${userId}/unban`, {
@@ -463,24 +483,32 @@
         });
         
         if (response.ok) {
-          alert('用户已解禁');
+          showSuccess('用户已解禁');
           loadUserList();
           loadUserStats();
         } else {
-          alert('操作失败');
+          showError('操作失败');
         }
       } catch (error) {
         console.error('解禁用户失败:', error);
-        alert('操作失败');
+        showError('操作失败');
+      } finally {
+        loading.close();
       }
     }
 
     // 退出登录
-    function logout() {
-      localStorage.removeItem('admin_token');
-      localStorage.removeItem('admin_username');
-      localStorage.removeItem('admin_role');
-      window.location.href = 'admin-login.html';
+    async function logout() {
+      if (await showConfirm({
+        title: '退出登录',
+        message: '确定要退出登录吗？',
+        icon: 'fa-sign-out-alt'
+      })) {
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_username');
+        localStorage.removeItem('admin_role');
+        window.location.href = 'admin-login.html';
+      }
     }
 
     // 页面加载时初始化

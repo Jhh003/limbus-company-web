@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/css/reset.css">
   <link rel="stylesheet" href="/css/limbus-theme-v2.css">
   <link rel="stylesheet" href="/css/module/admin-common.css">
+  <link rel="stylesheet" href="/css/custom-dialog.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     /* 状态标签页 */
@@ -350,6 +351,8 @@
   </div>
 
   <script src="/js/config.js"></script>
+  <script src="/js/custom-dialog.js"></script>
+  <script src="/js/admin-media.js"></script>
   <script>
     // 检查登录状态
     const token = localStorage.getItem('admin_token');
@@ -464,8 +467,8 @@
               </div>
               
               <div class="ranking-media">
-                ${ranking.screenshot_url ? `<a href="${ranking.screenshot_url}" target="_blank"><i class="fas fa-image"></i> 截图</a>` : ''}
-                ${ranking.video_url ? `<a href="${ranking.video_url}" target="_blank"><i class="fas fa-video"></i> 视频</a>` : ''}
+                ${ranking.screenshot_url ? `<a href="javascript:void(0)" onclick="previewMedia('${ranking.screenshot_url}', 'image')"><i class="fas fa-image"></i> 截图</a>` : ''}
+                ${ranking.video_url ? `<a href="javascript:void(0)" onclick="previewMedia('${ranking.video_url}', 'video')"><i class="fas fa-video"></i> 视频</a>` : ''}
               </div>
               
               <div class="ranking-actions">
@@ -533,7 +536,14 @@
 
     // 通过排行榜
     async function approveRanking(id) {
-      if (!confirm('确定要通过这条排行榜记录吗？')) return;
+      if (!await showConfirm({
+        title: '通过审核',
+        message: '确定要通过这条排行榜记录吗？',
+        icon: 'fa-check-circle',
+        confirmText: '通过'
+      })) return;
+      
+      const loading = showLoading('正在提交...');
       
       try {
         const response = await fetch(`/api/rankings/approve/${id}`, {
@@ -548,19 +558,29 @@
         const result = await response.json();
         
         if (result.code === 200) {
-          alert('审核通过成功');
+          showSuccess('审核通过成功');
           loadRankings();
         } else {
-          alert('审核失败: ' + result.message);
+          showError('审核失败: ' + result.message);
         }
       } catch (error) {
-        alert('审核失败: ' + error.message);
+        showError('审核失败: ' + error.message);
+      } finally {
+        loading.close();
       }
     }
 
     // 驳回排行榜
     async function rejectRanking(id) {
-      if (!confirm('确定要驳回这条排行榜记录吗？')) return;
+      if (!await showConfirm({
+        title: '驳回申请',
+        message: '确定要驳回这条排行榜记录吗？',
+        icon: 'fa-times-circle',
+        isDanger: true,
+        confirmText: '驳回'
+      })) return;
+      
+      const loading = showLoading('正在提交...');
       
       try {
         const response = await fetch(`/api/rankings/approve/${id}`, {
@@ -575,19 +595,29 @@
         const result = await response.json();
         
         if (result.code === 200) {
-          alert('驳回成功');
+          showSuccess('驳回成功');
           loadRankings();
         } else {
-          alert('驳回失败: ' + result.message);
+          showError('驳回失败: ' + result.message);
         }
       } catch (error) {
-        alert('驳回失败: ' + error.message);
+        showError('驳回失败: ' + error.message);
+      } finally {
+        loading.close();
       }
     }
 
     // 删除排行榜
     async function deleteRanking(id) {
-      if (!confirm('确定要删除这条排行榜记录吗？此操作不可撤销！')) return;
+      if (!await showConfirm({
+        title: '删除记录',
+        message: '确定要删除这条排行榜记录吗？此操作不可撤销！',
+        icon: 'fa-trash-alt',
+        isDanger: true,
+        confirmText: '删除'
+      })) return;
+      
+      const loading = showLoading('正在删除...');
       
       try {
         const response = await fetch(`/api/rankings/${id}`, {
@@ -598,19 +628,25 @@
         const result = await response.json();
         
         if (result.code === 200) {
-          alert('删除成功');
+          showSuccess('删除成功');
           loadRankings();
         } else {
-          alert('删除失败: ' + result.message);
+          showError('删除失败: ' + result.message);
         }
       } catch (error) {
-        alert('删除失败: ' + error.message);
+        showError('删除失败: ' + error.message);
+      } finally {
+        loading.close();
       }
     }
 
     // 退出登录
-    function logout() {
-      if (confirm('确定要退出登录吗？')) {
+    async function logout() {
+      if (await showConfirm({
+        title: '退出登录',
+        message: '确定要退出登录吗？',
+        icon: 'fa-sign-out-alt'
+      })) {
         localStorage.removeItem('admin_token');
         localStorage.removeItem('admin_username');
         localStorage.removeItem('admin_role');
