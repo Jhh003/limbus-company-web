@@ -31,8 +31,11 @@ const AuthModule = {
      * @param {Function} options.showMessage 消息提示函数
      */
     init(options = {}) {
-        this.onUserChange = options.onUserChange || (() => {});
+        this.onUserChange = options.onUserChange || this.defaultUserUIUpdate.bind(this);
         this.showMessage = options.showMessage || ((msg, type) => alert(msg));
+        
+        // 注入下拉菜单样式
+        this.injectDropdownStyles();
         
         // 从localStorage读取用户信息
         this.currentUser = JSON.parse(localStorage.getItem('limbus_user') || 'null');
@@ -43,6 +46,170 @@ const AuthModule = {
         }, 0);
         
         return this;
+    },
+    
+    /**
+     * 注入下拉菜单CSS
+     */
+    injectDropdownStyles() {
+        if (document.getElementById('auth-dropdown-styles')) return;
+        
+        const style = document.createElement('style');
+        style.id = 'auth-dropdown-styles';
+        style.textContent = `
+            .nav-user-container {
+                position: relative;
+                display: inline-block;
+            }
+            
+            .user-dropdown-menu {
+                display: none;
+                position: absolute;
+                top: 100%;
+                right: 0;
+                background: rgba(20, 20, 20, 0.95);
+                border: 1px solid var(--lc-gold, #d4af37);
+                border-radius: 4px;
+                min-width: 160px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+                z-index: 1000;
+                margin-top: 5px;
+                overflow: hidden;
+            }
+            
+            .nav-user-container:hover .user-dropdown-menu {
+                display: block;
+            }
+            
+            .dropdown-item {
+                display: block;
+                padding: 10px 15px;
+                color: #ccc;
+                text-decoration: none;
+                transition: all 0.2s;
+                font-size: 14px;
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+                text-align: left;
+                cursor: pointer;
+            }
+            
+            .dropdown-item:last-child {
+                border-bottom: none;
+            }
+            
+            .dropdown-item:hover {
+                background: rgba(212, 175, 55, 0.1);
+                color: var(--lc-gold, #d4af37);
+                padding-left: 20px;
+            }
+            
+            .dropdown-item i {
+                width: 20px;
+                margin-right: 5px;
+                text-align: center;
+            }
+            
+            /* 移动端适配 */
+            @media (max-width: 768px) {
+                .user-dropdown-menu {
+                    position: fixed;
+                    top: auto;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    width: 100%;
+                    border-radius: 12px 12px 0 0;
+                    background: #1a1a1a;
+                    border: none;
+                    border-top: 2px solid var(--lc-gold, #d4af37);
+                    padding-bottom: 20px;
+                    transform: translateY(100%);
+                    transition: transform 0.3s;
+                    display: block;
+                }
+                
+                .nav-user-container.active .user-dropdown-menu {
+                    transform: translateY(0);
+                }
+                
+                .dropdown-item {
+                    padding: 15px 20px;
+                    font-size: 16px;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    },
+    
+    /**
+     * 默认的用户UI更新逻辑
+     */
+    defaultUserUIUpdate(user) {
+        const authBtn = document.getElementById('auth-btn');
+        const authText = document.getElementById('auth-text');
+        
+        if (!authBtn) return;
+        
+        // 查找或创建容器
+        let container = authBtn.parentElement;
+        if (!container.classList.contains('nav-user-container')) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'nav-user-container';
+            authBtn.parentNode.insertBefore(wrapper, authBtn);
+            wrapper.appendChild(authBtn);
+            container = wrapper;
+        }
+        
+        // 移除旧菜单
+        const oldMenu = container.querySelector('.user-dropdown-menu');
+        if (oldMenu) oldMenu.remove();
+        
+        if (user) {
+            if (authText) authText.textContent = user.username;
+            authBtn.classList.add('logged-in');
+            // 移除原本的 onclick，改为下拉菜单触发
+            authBtn.onclick = (e) => {
+                if (window.innerWidth <= 768) {
+                    container.classList.toggle('active');
+                    e.stopPropagation();
+                    
+                    // 点击外部关闭
+                    const closeHandler = (ev) => {
+                        if (!container.contains(ev.target)) {
+                            container.classList.remove('active');
+                            document.removeEventListener('click', closeHandler);
+                        }
+                    };
+                    document.addEventListener('click', closeHandler);
+                } else {
+                    // PC端 hover 即可，点击无动作或跳转个人中心
+                    // window.location.href = '/user/profile'; 
+                }
+            };
+            
+            // 创建下拉菜单
+            const menu = document.createElement('div');
+            menu.className = 'user-dropdown-menu';
+            menu.innerHTML = `
+                <a href="/user/contributions" target="_blank" class="dropdown-item">
+                    <i class="fas fa-list-alt"></i> 我的投稿
+                </a>
+                <div class="dropdown-item" id="logout-item">
+                    <i class="fas fa-sign-out-alt"></i> 退出登录
+                </div>
+            `;
+            container.appendChild(menu);
+            
+            // 绑定登出事件
+            menu.querySelector('#logout-item').onclick = () => {
+                this.logout();
+            };
+            
+        } else {
+            if (authText) authText.textContent = '登录/注册';
+            authBtn.classList.remove('logged-in');
+            authBtn.onclick = () => this.openAuthModal();
+        }
     },
     
     /**
