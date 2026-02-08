@@ -1,0 +1,423 @@
+/**
+ * 管理员后台通用样式
+ * 统一使用 limbus-theme-v2.css 变量
+ */
+
+/* ========================================
+   1. 基础布局
+   ======================================== */
+.admin-container {
+  display: flex;
+  min-height: 100vh;
+  background: var(--lc-bg);
+}
+
+.admin-sidebar {
+  width: 260px;
+  background: var(--lc-bg-card);
+  border-right: 1px solid var(--lc-border);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  height: 100vh;
+  left: 0;
+  top: 0;
+  overflow-y: auto;
+  box-shadow: var(--lc-shadow);
+}
+
+.sidebar-header {
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--lc-border);
+}
+
+.sidebar-header h2 {
+  color: var(--lc-gold);
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+  font-family: 'Cinzel', serif;
+}
+
+.sidebar-subtitle {
+  color: var(--lc-text-muted);
+  font-size: 0.85rem;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  color: var(--lc-text-secondary);
+  text-decoration: none;
+  border-radius: 6px;
+  transition: all 0.3s;
+  font-size: 0.9rem;
+  border: 1px solid transparent;
+}
+
+.nav-item:hover {
+  background: var(--lc-bg-hover);
+  color: var(--lc-gold);
+  border-color: var(--lc-border-light);
+}
+
+.nav-item.active {
+  background: var(--lc-gold);
+  color: #000;
+  border-color: var(--lc-gold);
+  font-weight: 600;
+}
+
+.nav-item i {
+  width: 20px;
+  text-align: center;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid var(--lc-border);
+}
+
+.admin-main {
+  flex: 1;
+  margin-left: 260px;
+  padding: 30px;
+  background: var(--lc-bg);
+  min-height: 100vh;
+}
+
+/* ========================================
+   2. 头部样式
+   ======================================== */
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--lc-border);
+}
+
+.admin-header h1 {
+  font-size: 1.8rem;
+  color: var(--lc-gold);
+  font-family: 'Cinzel', serif;
+}
+
+.header-subtitle {
+  color: var(--lc-text-muted);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+.admin-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--lc-bg-card);
+  border: 1px solid var(--lc-border);
+  border-radius: 8px;
+}
+
+.admin-user .username {
+  font-weight: 600;
+  color: var(--lc-gold);
+}
+
+.admin-user .logout-btn {
+  color: var(--lc-text-muted);
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.admin-user .logout-btn:hover {
+  color: var(--lc-gold);
+}
+
+/* ========================================
+   3. 统计卡片
+   ======================================== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  background: var(--lc-bg-card);
+  border: 1px solid var(--lc-border);
+  border-radius: 8px;
+  padding: 24px;
+  transition: all 0.3s;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--lc-border-light);
+  box-shadow: var(--lc-shadow);
+}
+
+.stat-card .icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-bottom: 16px;
+  background: rgba(201, 169, 97, 0.1);
+  color: var(--lc-gold);
+}
+
+.stat-card .label {
+  font-size: 0.85rem;
+  color: var(--lc-text-muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-card .value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--lc-gold);
+}
+
+/* ========================================
+   4. 内容卡片
+   ======================================== */
+.content-card {
+  background: var(--lc-bg-card);
+  border: 1px solid var(--lc-border);
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.card-header h3 {
+  font-size: 1.2rem;
+  color: var(--lc-gold);
+  font-family: 'Cinzel', serif;
+}
+
+/* ========================================
+   5. 按钮样式
+   ======================================== */
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-primary {
+  background: var(--lc-gold);
+  color: #000;
+}
+
+.btn-primary:hover {
+  background: var(--lc-gold-light);
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: var(--lc-bg-hover);
+  color: var(--lc-text);
+  border: 1px solid var(--lc-border);
+}
+
+.btn-secondary:hover {
+  border-color: var(--lc-gold);
+  color: var(--lc-gold);
+}
+
+.btn-danger {
+  background: var(--lc-red);
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #d64545;
+}
+
+/* ========================================
+   6. 表格样式
+   ======================================== */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--lc-border);
+}
+
+.data-table th {
+  background: var(--lc-bg-secondary);
+  color: var(--lc-gold);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.data-table td {
+  color: var(--lc-text);
+}
+
+.data-table tr:hover td {
+  background: var(--lc-bg-hover);
+}
+
+/* ========================================
+   7. 表单样式
+   ======================================== */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--lc-text-secondary);
+  font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--lc-bg-secondary);
+  border: 1px solid var(--lc-border);
+  border-radius: 6px;
+  color: var(--lc-text);
+  font-size: 0.95rem;
+  transition: all 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--lc-gold);
+}
+
+/* ========================================
+   8. 标签和徽章
+   ======================================== */
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge-success {
+  background: rgba(39, 174, 96, 0.2);
+  color: #27ae60;
+}
+
+.badge-warning {
+  background: rgba(230, 126, 34, 0.2);
+  color: #e67e22;
+}
+
+.badge-danger {
+  background: rgba(201, 79, 79, 0.2);
+  color: var(--lc-red);
+}
+
+.badge-info {
+  background: rgba(74, 158, 255, 0.2);
+  color: #4a9eff;
+}
+
+/* ========================================
+   9. 时间选择器
+   ======================================== */
+.time-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.time-selector button {
+  padding: 8px 16px;
+  border: 1px solid var(--lc-border);
+  background: var(--lc-bg-secondary);
+  color: var(--lc-text-secondary);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.time-selector button:hover {
+  border-color: var(--lc-gold);
+  color: var(--lc-gold);
+}
+
+.time-selector button.active {
+  background: var(--lc-gold);
+  color: #000;
+  border-color: var(--lc-gold);
+  font-weight: 600;
+}
+
+/* ========================================
+   10. 响应式设计
+   ======================================== */
+@media (max-width: 768px) {
+  .admin-sidebar {
+    width: 100%;
+    position: relative;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--lc-border);
+  }
+
+  .admin-main {
+    margin-left: 0;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+}
