@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{PAGE_TITLE}} - 管理后台</title>
+    
+    <!-- 基础样式 -->
+    <link rel="stylesheet" href="/css/reset.css">
+    <link rel="stylesheet" href="/css/admin-system.css">
+    <link rel="stylesheet" href="/css/custom-dialog.css">
+    
+    <!-- 字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- 页面特定样式 -->
+    <style>
+        /* 页面特定样式将在这里添加 */
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- 侧边栏 -->
+        <aside class="admin-sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-brand">
+                    <div class="brand-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <span class="brand-text">管理后台</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <!-- 主导航 -->
+                <div class="nav-section">
+                    <div class="nav-section-title">主要功能</div>
+                    <div class="nav-menu">
+                        <a href="admin-dashboard.html" class="nav-item" data-page="dashboard">
+                            <span class="nav-icon"><i class="fas fa-chart-line"></i></span>
+                            <span class="nav-text">数据统计</span>
+                        </a>
+                        <a href="admin.html" class="nav-item active" data-page="review">
+                            <span class="nav-icon"><i class="fas fa-clipboard-check"></i></span>
+                            <span class="nav-text">审核管理</span>
+                            <span class="nav-badge">主</span>
+                        </a>
+                        <a href="admin-users.html" class="nav-item" data-page="users">
+                            <span class="nav-icon"><i class="fas fa-users"></i></span>
+                            <span class="nav-text">用户管理</span>
+                        </a>
+                        <a href="admin-guides.html" class="nav-item" data-page="guides">
+                            <span class="nav-icon"><i class="fas fa-book"></i></span>
+                            <span class="nav-text">攻略管理</span>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- 系统设置 -->
+                <div class="nav-section">
+                    <div class="nav-section-title">系统设置</div>
+                    <div class="nav-menu">
+                        <a href="admin-settings.html" class="nav-item" data-page="settings">
+                            <span class="nav-icon"><i class="fas fa-cog"></i></span>
+                            <span class="nav-text">系统配置</span>
+                        </a>
+                        <a href="admin-change-password.html" class="nav-item" data-page="password">
+                            <span class="nav-icon"><i class="fas fa-key"></i></span>
+                            <span class="nav-text">修改密码</span>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name" id="userName">管理员</div>
+                        <div class="user-role">超级管理员</div>
+                    </div>
+                    <button class="logout-btn" onclick="logout()" title="退出登录">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- 主内容区 -->
+        <main class="admin-main">
+            <!-- 顶部头部 -->
+            <header class="admin-header">
+                <div class="header-left">
+                    <button class="sidebar-toggle" onclick="toggleSidebar()" title="切换侧边栏">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div>
+                        <h1 class="page-title">{{PAGE_TITLE}}</h1>
+                        <nav class="breadcrumb">
+                            <a href="admin-dashboard.html">首页</a>
+                            <span class="breadcrumb-separator">/</span>
+                            <span>{{PAGE_TITLE}}</span>
+                        </nav>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <a href="/" class="btn btn-secondary btn-sm" target="_blank">
+                        <i class="fas fa-external-link-alt"></i>
+                        <span>访问前台</span>
+                    </a>
+                </div>
+            </header>
+            
+            <!-- 内容区域 -->
+            <div class="admin-content">
+                <div class="content-wrapper">
+                    <!-- 页面内容将在这里插入 -->
+                    {{PAGE_CONTENT}}
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- 移动端遮罩 -->
+    <div class="mobile-overlay" id="mobileOverlay" onclick="toggleSidebar()"></div>
+    
+    <!-- 基础脚本 -->
+    <script src="/js/custom-dialog.js"></script>
+    <script>
+        // ==================== 认证检查 ====================
+        const token = localStorage.getItem('admin_token');
+        if (!token) {
+            window.location.href = 'admin-login.html';
+        }
+        
+        // ==================== 用户信息 ====================
+        const username = localStorage.getItem('admin_username') || '管理员';
+        document.getElementById('userName').textContent = username;
+        
+        // ==================== 侧边栏切换 ====================
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            
+            sidebar.classList.toggle('mobile-open');
+            overlay.classList.toggle('show');
+            
+            // 防止滚动穿透
+            if (sidebar.classList.contains('mobile-open')) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
+        }
+        
+        // ==================== 退出登录 ====================
+        function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                localStorage.removeItem('admin_token');
+                localStorage.removeItem('admin_username');
+                localStorage.removeItem('admin_role');
+                window.location.href = 'admin-login.html';
+            }
+        }
+        
+        // ==================== 当前页面高亮 ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPage = window.location.pathname.split('/').pop().replace('.html', '');
+            const navItems = document.querySelectorAll('.nav-item');
+            
+            navItems.forEach(item => {
+                const itemPage = item.getAttribute('data-page');
+                if (itemPage === currentPage || 
+                    (currentPage === 'admin' && itemPage === 'review')) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        });
+        
+        // ==================== 响应式处理 ====================
+        window.addEventListener('resize', function() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            
+            if (window.innerWidth > 768) {
+                sidebar.classList.remove('mobile-open');
+                overlay.classList.remove('show');
+                document.body.style.overflow = '';
+            }
+        });
+        
+        // ==================== 页面特定脚本 ====================
+        {{PAGE_SCRIPT}}
+    </script>
+    
+    <!-- 移动端遮罩样式 -->
+    <style>
+        .mobile-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 299;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 250ms ease;
+        }
+        
+        .mobile-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        @media (min-width: 769px) {
+            .mobile-overlay {
+                display: none;
+            }
+        }
+    </style>
+</body>
+</html>
