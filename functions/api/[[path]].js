@@ -80,6 +80,30 @@ async function hashPassword(password) {
   return hashHex;
 }
 
+// Turnstile验证函数
+async function verifyTurnstileToken(token, env) {
+  const secretKey = env.TURNSTILE_SECRET_KEY || '0x4AAAAAAAxxxxxxxxxxxxxxxxxxxxxxxx'; // 替换为你的Secret Key
+  
+  try {
+    const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        secret: secretKey,
+        response: token
+      })
+    });
+    
+    const data = await response.json();
+    console.log('[Turnstile验证] 响应:', data);
+    
+    return data.success === true;
+  } catch (error) {
+    console.error('[Turnstile验证] 错误:', error);
+    return false;
+  }
+}
+
 export async function onRequest(context) {
   const { request, env, params } = context;
   const url = new URL(request.url);
@@ -232,9 +256,10 @@ export async function onRequest(context) {
       return handleGuideSubmit(request, env, headers);
     }
     
-    if (path === '/api/captcha' || path === '/api/captcha/') {
-      return handleCaptcha(request, env, headers);
-    }
+    // 旧的验证码API已废弃，使用Turnstile替代
+    // if (path === '/api/captcha' || path === '/api/captcha/') {
+    //   return handleCaptcha(request, env, headers);
+    // }
     
     if (path.startsWith('/api/auth')) {
       return handleAuth(request, env, headers, path);
@@ -407,43 +432,27 @@ async function handleAdminLogin(request, env, headers) {
     const body = await request.json();
     console.log('[管理员登录] 请求体:', JSON.stringify(body));
     
-    const { username, password, captchaId, captchaText } = body;
+    const { username, password, turnstileToken } = body;
     
     if (!username || !password) {
       console.log('[管理员登录失败] 用户名或密码为空');
       return jsonResponse({ code: 400, message: '用户名和密码不能为空' }, 400, headers);
     }
     
-    // 检查 CAPTCHA_KV 是否配置
-    if (!env.CAPTCHA_KV) {
-      console.error('[管理员登录失败] CAPTCHA_KV 未配置');
-      return jsonResponse({ code: 500, message: '服务器配置错误' }, 500, headers);
+    // 验证Turnstile token
+    if (!turnstileToken) {
+      console.log('[管理员登录失败] Turnstile token缺失');
+      return jsonResponse({ code: 400, message: '请完成人机验证' }, 400, headers);
     }
     
-    // 检查验证码参数
-    if (!captchaId || !captchaText) {
-      console.log('[管理员登录失败] 验证码参数缺失:', { captchaId, captchaText });
-      return jsonResponse({ code: 400, message: '请输入验证码' }, 400, headers);
+    // 验证Turnstile token
+    const isValid = await verifyTurnstileToken(turnstileToken, env);
+    if (!isValid) {
+      console.log('[管理员登录失败] Turnstile验证失败');
+      return jsonResponse({ code: 400, message: '人机验证失败' }, 400, headers);
     }
     
-    // 验证验证码（不区分大小写）
-    const storedCode = await env.CAPTCHA_KV.get(captchaId);
-    console.log(`[验证码验证] ID: ${captchaId}, 存储值: ${storedCode}, 用户输入: ${captchaText}`);
-    
-    if (!storedCode) {
-      console.log('[验证码验证失败] 验证码不存在或已过期');
-      return jsonResponse({ code: 400, message: '验证码已过期，请重新获取' }, 400, headers);
-    }
-    
-    // 不区分大小写比较
-    if (storedCode.toUpperCase() !== captchaText.toUpperCase()) {
-      console.log('[验证码验证失败] 输入不匹配');
-      return jsonResponse({ code: 400, message: '验证码错误，请重新输入' }, 400, headers);
-    }
-    
-    // 验证成功后删除验证码
-    await env.CAPTCHA_KV.delete(captchaId);
-    console.log('[验证码验证] 验证成功');
+    console.log('[Turnstile验证] 验证成功');
     
     // 使用哈希密码验证
     const hashedPassword = await hashPassword(password);

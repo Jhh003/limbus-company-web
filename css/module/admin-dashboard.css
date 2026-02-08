@@ -177,6 +177,20 @@ body {
   text-transform: uppercase;
 }
 
+/* Turnstile容器样式 */
+.turnstile-container {
+  margin-bottom: 20px;
+  min-height: 65px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.turnstile-container iframe {
+  border-radius: 6px;
+  overflow: hidden;
+}
+
 .login-btn {
   width: 100%;
   padding: 12px 24px;

@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/css/module/admin-common.css">
   <link rel="stylesheet" href="/css/module/admin-dashboard.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="/js/captcha-client.js"></script>
+  <script src="/js/turnstile.js"></script>
 </head>
 <body>
   <div class="admin-login-container">
@@ -33,16 +33,8 @@
         </div>
 
         <div class="form-group">
-          <label for="captcha-text">验证码 <span class="captcha-hint">（不区分大小写）</span></label>
-          <div class="captcha-container">
-            <img id="captcha-image" src="" alt="验证码" onclick="refreshCaptcha()">
-            <button type="button" class="refresh-captcha-btn" onclick="refreshCaptcha()">
-              <i class="fas fa-sync-alt"></i>
-            </button>
-          </div>
-          <input type="text" id="captcha-text" name="captchaText" required 
-                 placeholder="请输入验证码（不区分大小写）" maxlength="4"
-                 autocomplete="off" autocapitalize="characters">
+          <label>人机验证</label>
+          <div id="turnstile-widget" class="turnstile-container"></div>
         </div>
 
         <button type="submit" class="login-btn">
@@ -62,55 +54,55 @@
 
   <script>
     const API_BASE = '/api';
-    let currentCaptchaId = null;
+    const TURNSTILE_SITE_KEY = '0x4AAAAAAAxxxxxxxxxxxxxxxxxxxxxxxx'; // 替换为你的Site Key
+    let turnstileToken = null;
 
     document.addEventListener('DOMContentLoaded', () => {
-      refreshCaptcha();
+      setupTurnstile();
       setupForm();
     });
 
+    function setupTurnstile() {
+      console.log('[Turnstile] 初始化...');
+      
+      if (typeof TurnstileWidget === 'undefined') {
+        console.error('[Turnstile] TurnstileWidget未加载');
+        alert('人机验证加载失败，请刷新页面');
+        return;
+      }
+      
+      TurnstileWidget.render('turnstile-widget', TURNSTILE_SITE_KEY, function(token) {
+        turnstileToken = token;
+        console.log('[Turnstile] 验证成功');
+      });
+    }
+
     function setupForm() {
       const form = document.getElementById('admin-login-form');
-      const captchaInput = document.getElementById('captcha-text');
-      
-      // 验证码输入自动转换为大写
-      if (captchaInput) {
-        captchaInput.addEventListener('input', (e) => {
-          e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-        });
-      }
       
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const username = document.getElementById('admin-username').value.trim();
         const password = document.getElementById('admin-password').value;
-        const captchaText = document.getElementById('captcha-text').value.trim();
         
-        if (!username || !password || !captchaText) {
+        if (!username || !password) {
           alert('请填写所有字段');
           return;
         }
         
-        // 验证码长度验证
-        if (captchaText.length !== 4) {
-          alert('验证码必须为4位字符');
+        if (!turnstileToken) {
+          alert('请完成人机验证');
           return;
         }
-
+        
         try {
-          console.log('[登录] 发送请求:', { username, captchaId: currentCaptchaId, captchaText });
-          
-          if (!currentCaptchaId) {
-            console.error('[登录] captchaId 为空');
-            alert('验证码未加载，请刷新页面');
-            return;
-          }
+          console.log('[登录] 发送请求:', { username, hasTurnstileToken: !!turnstileToken });
           
           const response = await fetch(`${API_BASE}/admin/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password, captchaId: currentCaptchaId, captchaText })
+            body: JSON.stringify({ username, password, turnstileToken })
           });
 
           console.log('[登录] 响应状态:', response.status);
@@ -127,79 +119,17 @@
             window.location.href = 'admin.html';
           } else {
             alert(result.message || '登录失败');
-            refreshCaptcha();
+            // 重置Turnstile
+            if (typeof TurnstileWidget !== 'undefined') {
+              TurnstileWidget.reset('turnstile-widget');
+              turnstileToken = null;
+            }
           }
         } catch (error) {
           console.error('登录错误:', error);
           alert('登录失败，请稍后重试');
         }
       });
-    }
-
-    async function refreshCaptcha() {
-      console.log('[验证码] 开始刷新验证码...');
-      const captchaImageEl = document.getElementById('captcha-image');
-      
-      if (!captchaImageEl) {
-        console.error('[验证码] 验证码图片元素不存在');
-        alert('验证码图片加载失败，请刷新页面重试');
-        return;
-      }
-      
-      // 显示加载状态
-      captchaImageEl.style.opacity = '0.5';
-      
-      try {
-        console.log(`[验证码] 请求地址: ${API_BASE}/captcha`);
-        
-        const response = await fetch(`${API_BASE}/captcha`);
-        
-        if (!response.ok) {
-          console.error(`[验证码] 请求失败: ${response.status} ${response.statusText}`);
-          captchaImageEl.style.opacity = '1';
-          captchaImageEl.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjQ0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InJnYmEoMCwwLDAsMC43KSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjZmY2YjZiIiBmb250LXNpemU9IjE0Ij7lm77niYflpLHotKU8L3RleHQ+PC9zdmc+';
-          alert(`验证码加载失败: ${response.status} ${response.statusText}`);
-          return;
-        }
-        
-        const result = await response.json();
-        console.log('[验证码] 响应数据:', result);
-        
-        if (result.code === 200 && result.data && result.data.captchaImage) {
-          currentCaptchaId = result.data.captchaId;
-          console.log(`[验证码] 验证码ID: ${currentCaptchaId}`);
-          console.log(`[验证码] 图片数据长度: ${result.data.captchaImage.length}`);
-          
-          captchaImageEl.src = result.data.captchaImage;
-          captchaImageEl.style.opacity = '1';
-          
-          captchaImageEl.onload = () => {
-            console.log('[验证码] 图片加载成功');
-          };
-          
-          captchaImageEl.onerror = (error) => {
-            console.error('[验证码] 图片加载失败:', error);
-            alert('验证码图片加载失败，请点击图片重试');
-          };
-          
-          // 清空验证码输入框
-          const captchaInput = document.getElementById('captcha-text');
-          if (captchaInput) {
-            captchaInput.value = '';
-          }
-        } else {
-          console.error(`[验证码] 响应错误: ${result.message || '未知错误'}`);
-          captchaImageEl.style.opacity = '1';
-          captchaImageEl.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjQ0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InJnYmEoMCwwLDAsMC43KSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjZmY2YjZiIiBmb250LXNpemU9IjE0Ij7lm77niYflpLHotKU8L3RleHQ+PC9zdmc+';
-          alert(`验证码生成失败: ${result.message || '请刷新页面重试'}`);
-        }
-      } catch (error) {
-        console.error('[验证码] 获取验证码失败:', error);
-        console.error('[验证码] 错误堆栈:', error.stack);
-        captchaImageEl.style.opacity = '1';
-        captchaImageEl.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjQ0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InJnYmEoMCwwLDAsMC43KSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjZmY2YjZiIiBmb250LXNpemU9IjE0Ij7lm77niYflpLHotKU8L3RleHQ+PC9zdmc+';
-        alert('验证码加载失败，请检查网络连接后重试');
-      }
     }
   </script>
 </body>
