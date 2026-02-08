@@ -799,7 +799,7 @@ async function handleRankings(request, env, headers, path) {
 // 攻略相关
 async function handleGuides(request, env, headers, path) {
   // 获取攻略列表
-  if (path === '/api/guides/list' || path === '/api/guides/') {
+  if (path === '/api/guides' || path === '/api/guides/' || path === '/api/guides/list') {
     if (request.method === 'GET') {
       try {
         const url = new URL(request.url);
