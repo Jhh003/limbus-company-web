@@ -12,8 +12,9 @@ const AuthModule = {
     // 当前用户信息
     currentUser: null,
     
-    // 当前验证码ID
-    currentCaptchaId: null,
+    // Turnstile token
+    turnstileToken: null,
+    const TURNSTILE_SITE_KEY: '0x4AAAAAACZSYpsYj5RndDNV',
     
     // UI更新回调
     onUserChange: null,
@@ -107,13 +108,8 @@ const AuthModule = {
                     </div>
                     
                     <div class="auth-form-group">
-                        <label>验证码</label>
-                        <div class="auth-captcha-row">
-                            <input type="text" id="auth-captcha" required placeholder="输入验证码">
-                            <div id="captcha-svg" class="auth-captcha-box" title="点击刷新">
-                                点击获取
-                            </div>
-                        </div>
+                        <label>人机验证</label>
+                        <div id="auth-turnstile" class="turnstile-container"></div>
                     </div>
                     
                     <div class="auth-btn-row">
@@ -134,11 +130,16 @@ const AuthModule = {
         
         document.body.appendChild(modal);
         
+        // 初始化Turnstile
+        if (typeof TurnstileWidget !== 'undefined') {
+            TurnstileWidget.render('auth-turnstile', this.TURNSTILE_SITE_KEY, (token) => {
+                this.turnstileToken = token;
+                console.log('[AuthModule] Turnstile验证成功');
+            });
+        }
+        
         // 绑定事件
         this._bindModalEvents(modal);
-        
-        // 获取验证码
-        this.refreshCaptcha();
     },
     
     /**
@@ -177,22 +178,6 @@ const AuthModule = {
         document.getElementById('register-btn').addEventListener('click', () => {
             self.handleRegister();
         });
-        
-        // 验证码点击刷新
-        document.getElementById('captcha-svg').addEventListener('click', () => {
-            self.refreshCaptcha();
-        });
-        
-        // 用户名实时检查
-        const usernameInput = document.getElementById('auth-username');
-        let checkTimeout = null;
-        usernameInput.addEventListener('input', () => {
-            clearTimeout(checkTimeout);
-            const username = usernameInput.value;
-            if (username.length >= 3 && /^[a-zA-Z0-9]+$/.test(username)) {
-                checkTimeout = setTimeout(() => self.checkUsername(username), 500);
-            }
-        });
     },
     
     /**
@@ -201,88 +186,7 @@ const AuthModule = {
     closeAuthModal() {
         const modal = document.getElementById('auth-modal');
         if (modal) modal.remove();
-        this.currentCaptchaId = null;
-    },
-    
-    /**
-     * 刷新验证码
-     */
-    async refreshCaptcha() {
-        const captchaEl = document.getElementById('captcha-svg');
-        
-        try {
-            console.log('[AuthModule] 开始获取验证码...');
-            
-            if (captchaEl) {
-                captchaEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 加载中...';
-            }
-            
-            const response = await fetch(`${this.API_BASE}/captcha`);
-            
-            if (!response.ok) {
-                console.error(`[AuthModule] 验证码请求失败: ${response.status} ${response.statusText}`);
-                if (captchaEl) {
-                    captchaEl.innerHTML = '<span style="color: #ff6b6b;">加载失败，点击重试</span>';
-                }
-                this.showMessage('验证码加载失败，请刷新页面重试', 'error');
-                return;
-            }
-            
-            const result = await response.json();
-            console.log('[AuthModule] 验证码响应:', result);
-            
-            if (result.code === 200 && result.data) {
-                this.currentCaptchaId = result.data.captchaId;
-                const captchaImage = result.data.captchaImage;
-                
-                if (captchaEl && captchaImage) {
-                    // 使用 img 标签显示验证码图片
-                    captchaEl.innerHTML = `<img src="${captchaImage}" alt="验证码" style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;">`;
-                    
-                    // 绑定图片点击事件
-                    const img = captchaEl.querySelector('img');
-                    if (img) {
-                        img.onclick = () => this.refreshCaptcha();
-                    }
-                    
-                    console.log('[AuthModule] 验证码加载成功');
-                }
-            } else {
-                console.error('[AuthModule] 验证码响应错误:', result.message);
-                if (captchaEl) {
-                    captchaEl.innerHTML = '<span style="color: #ff6b6b;">加载失败，点击重试</span>';
-                }
-                this.showMessage(result.message || '验证码加载失败', 'error');
-            }
-        } catch (error) {
-            console.error('[AuthModule] 获取验证码失败:', error);
-            if (captchaEl) {
-                captchaEl.innerHTML = '<span style="color: #ff6b6b;">加载失败，点击重试</span>';
-            }
-            this.showMessage('验证码加载失败，请检查网络连接', 'error');
-        }
-    },
-    
-    /**
-     * 检查用户名是否可用
-     */
-    async checkUsername(username) {
-        const statusEl = document.getElementById('username-status');
-        if (!statusEl) return;
-        
-        try {
-            const response = await fetch(`${this.API_BASE}/auth/check-username/${username}`);
-            const result = await response.json();
-            if (result.available) {
-                statusEl.innerHTML = '<i class="fas fa-check-circle"></i> 用户名可用';
-                statusEl.className = 'auth-status auth-status-success';
-            } else {
-                statusEl.textContent = result.message || '用户名已被注册';
-                statusEl.className = 'auth-status auth-status-error';
-            }
-        } catch (error) {
-            console.error('检查用户名失败:', error);
-        }
+        this.turnstileToken = null;
     },
     
     /**
@@ -291,10 +195,14 @@ const AuthModule = {
     async handleLogin() {
         const username = document.getElementById('auth-username').value.trim();
         const password = document.getElementById('auth-password').value;
-        const captchaText = document.getElementById('auth-captcha').value.trim();
         
-        if (!username || !password || !captchaText) {
+        if (!username || !password) {
             this.showMessage('请填写所有字段', 'warning');
+            return;
+        }
+        
+        if (!this.turnstileToken) {
+            this.showMessage('请完成人机验证', 'warning');
             return;
         }
         
@@ -302,12 +210,7 @@ const AuthModule = {
             const response = await fetch(`${this.API_BASE}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    username, 
-                    password, 
-                    captchaId: this.currentCaptchaId, 
-                    captchaText 
-                })
+                body: JSON.stringify({ username, password, turnstileToken: this.turnstileToken })
             });
             
             const result = await response.json();
@@ -323,10 +226,14 @@ const AuthModule = {
                 this.showMessage('登录成功！', 'success');
             } else {
                 this.showMessage(result.message || '登录失败', 'error');
-                this.refreshCaptcha();
+                // 重置Turnstile
+                if (typeof TurnstileWidget !== 'undefined') {
+                    TurnstileWidget.reset('auth-turnstile');
+                    this.turnstileToken = null;
+                }
             }
         } catch (error) {
-            console.error('登录错误:', error);
+            console.error('[AuthModule] 登录错误:', error);
             this.showMessage('登录失败: ' + error.message, 'error');
         }
     },
@@ -337,30 +244,14 @@ const AuthModule = {
     async handleRegister() {
         const username = document.getElementById('auth-username').value.trim();
         const password = document.getElementById('auth-password').value;
-        const captchaText = document.getElementById('auth-captcha').value.trim();
         
-        if (!username || !password || !captchaText) {
+        if (!username || !password) {
             this.showMessage('请填写所有字段', 'warning');
             return;
         }
         
-        // 验证用户名格式
-        if (!/^[a-zA-Z0-9]{3,20}$/.test(username)) {
-            this.showMessage('用户名只能包含3-20位英文字母和数字', 'warning');
-            return;
-        }
-        
-        // 验证密码格式
-        if (password.length < 8 || password.length > 20) {
-            this.showMessage('密码长度必须是8-20位', 'warning');
-            return;
-        }
-        if (!/[a-zA-Z]/.test(password) || !/\d/.test(password)) {
-            this.showMessage('密码必须同时包含字母和数字', 'warning');
-            return;
-        }
-        if (!/^[a-zA-Z0-9]+$/.test(password)) {
-            this.showMessage('密码只能包含英文字母和数字', 'warning');
+        if (!this.turnstileToken) {
+            this.showMessage('请完成人机验证', 'warning');
             return;
         }
         
@@ -368,28 +259,23 @@ const AuthModule = {
             const response = await fetch(`${this.API_BASE}/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    username, 
-                    password, 
-                    captchaId: this.currentCaptchaId, 
-                    captchaText 
-                })
+                body: JSON.stringify({ username, password, turnstileToken: this.turnstileToken })
             });
             
             const result = await response.json();
             
             if (result.code === 200 && result.success) {
                 this.showMessage('注册成功！请使用该账号登录', 'success');
-                // 清空验证码输入
-                const captchaInput = document.getElementById('auth-captcha');
-                if (captchaInput) captchaInput.value = '';
-                this.refreshCaptcha();
             } else {
                 this.showMessage(result.message || '注册失败', 'error');
-                this.refreshCaptcha();
+                // 重置Turnstile
+                if (typeof TurnstileWidget !== 'undefined') {
+                    TurnstileWidget.reset('auth-turnstile');
+                    this.turnstileToken = null;
+                }
             }
         } catch (error) {
-            console.error('注册错误:', error);
+            console.error('[AuthModule] 注册错误:', error);
             this.showMessage('注册失败: ' + error.message, 'error');
         }
     },
