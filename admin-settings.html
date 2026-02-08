@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>系统配置 - 管理后台</title>
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/limbus-theme-v2.css">
+  <link rel="stylesheet" href="/css/module/admin-common.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="admin-container">
+    <aside class="admin-sidebar">
+      <div class="sidebar-header">
+        <h2>管理后台</h2>
+        <p class="sidebar-subtitle">系统配置中心</p>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="admin-dashboard.html" class="nav-item" data-tab="dashboard">
+          <i class="fas fa-chart-line"></i>
+          <span>数据统计</span>
+        </a>
+        <a href="admin-guides.html" class="nav-item" data-tab="guides">
+          <i class="fas fa-book"></i>
+          <span>攻略审核</span>
+        </a>
+        <a href="admin.html" class="nav-item" data-tab="users">
+          <i class="fas fa-users"></i>
+          <span>用户管理</span>
+        </a>
+        <a href="admin-settings.html" class="nav-item active" data-tab="settings">
+          <i class="fas fa-cog"></i>
+          <span>系统配置</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="admin-user">
+          <i class="fas fa-user-shield"></i>
+          <span class="username" id="currentUser">管理员</span>
+          <i class="fas fa-sign-out-alt logout-btn" onclick="logout()"></i>
+        </div>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div class="header-left">
+          <h1>系统配置</h1>
+          <p class="header-subtitle">管理系统参数和全局设置</p>
+        </div>
+      </header>
+
+      <!-- 网站基础配置 -->
+      <div class="content-card">
+        <div class="card-header">
+          <h3><i class="fas fa-globe"></i> 网站基础配置</h3>
+          <button class="btn btn-primary" onclick="saveSiteConfig()">
+            <i class="fas fa-save"></i> 保存配置
+          </button>
+        </div>
+        <div class="form-group">
+          <label>网站名称</label>
+          <input type="text" id="siteName" value="今天蛋筒什么" placeholder="输入网站名称">
+        </div>
+        <div class="form-group">
+          <label>网站描述</label>
+          <input type="text" id="siteDescription" value="Limbus Company 随机选择器" placeholder="输入网站描述">
+        </div>
+        <div class="form-group">
+          <label>ICP备案号</label>
+          <input type="text" id="icpNumber" placeholder="输入ICP备案号（可选）">
+        </div>
+      </div>
+
+      <!-- 功能开关配置 -->
+      <div class="content-card">
+        <div class="card-header">
+          <h3><i class="fas fa-toggle-on"></i> 功能开关</h3>
+          <button class="btn btn-primary" onclick="saveFeatureConfig()">
+            <i class="fas fa-save"></i> 保存配置
+          </button>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>功能名称</th>
+              <th>功能描述</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>用户注册</td>
+              <td>允许新用户注册账号</td>
+              <td><span class="badge badge-success" id="badge-register">开启</span></td>
+              <td>
+                <button class="btn btn-secondary" onclick="toggleFeature('register')">
+                  <i class="fas fa-toggle-on"></i> 切换
+                </button>
+              </td>
+            </tr>
+            <tr>
+              <td>排行榜提交</td>
+              <td>允许用户提交排行榜数据</td>
+              <td><span class="badge badge-success" id="badge-ranking">开启</span></td>
+              <td>
+                <button class="btn btn-secondary" onclick="toggleFeature('ranking')">
+                  <i class="fas fa-toggle-on"></i> 切换
+                </button>
+              </td>
+            </tr>
+            <tr>
+              <td>攻略发布</td>
+              <td>允许用户发布攻略内容</td>
+              <td><span class="badge badge-success" id="badge-guides">开启</span></td>
+              <td>
+                <button class="btn btn-secondary" onclick="toggleFeature('guides')">
+                  <i class="fas fa-toggle-on"></i> 切换
+                </button>
+              </td>
+            </tr>
+            <tr>
+              <td>验证码</td>
+              <td>登录和注册时启用验证码</td>
+              <td><span class="badge badge-success" id="badge-captcha">开启</span></td>
+              <td>
+                <button class="btn btn-secondary" onclick="toggleFeature('captcha')">
+                  <i class="fas fa-toggle-on"></i> 切换
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 管理员账号 -->
+      <div class="content-card">
+        <div class="card-header">
+          <h3><i class="fas fa-user-shield"></i> 管理员账号</h3>
+          <a href="admin-change-password.html" class="btn btn-primary">
+            <i class="fas fa-key"></i> 修改密码
+          </a>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>用户名</th>
+              <th>角色</th>
+              <th>最后登录</th>
+              <th>状态</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td id="adminUsername">admin</td>
+              <td><span class="badge badge-info">超级管理员</span></td>
+              <td id="lastLogin">-</td>
+              <td><span class="badge badge-success">正常</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 系统日志 -->
+      <div class="content-card">
+        <div class="card-header">
+          <h3><i class="fas fa-file-alt"></i> 系统日志</h3>
+          <button class="btn btn-secondary" onclick="clearLogs()">
+            <i class="fas fa-trash"></i> 清空日志
+          </button>
+        </div>
+        <div id="systemLogs" style="background: var(--lc-bg-secondary); padding: 16px; border-radius: 6px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 0.85rem; line-height: 1.6;">
+          <div style="color: var(--lc-text-muted);">暂无日志记录</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // 检查登录状态
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+      window.location.href = 'admin-login.html';
+    }
+
+    // 显示当前用户名
+    const username = localStorage.getItem('adminUsername') || '管理员';
+    document.getElementById('currentUser').textContent = username;
+    document.getElementById('adminUsername').textContent = username;
+
+    // 加载配置
+    async function loadConfig() {
+      try {
+        const response = await fetch('/api/admin/config', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+          const config = await response.json();
+          document.getElementById('siteName').value = config.siteName || '今天蛋筒什么';
+          document.getElementById('siteDescription').value = config.siteDescription || '';
+          document.getElementById('icpNumber').value = config.icpNumber || '';
+          
+          // 更新功能开关状态
+          updateFeatureBadges(config.features || {});
+        }
+      } catch (error) {
+        console.error('加载配置失败:', error);
+      }
+    }
+
+    // 更新功能开关徽章
+    function updateFeatureBadges(features) {
+      const featureMap = {
+        'register': 'badge-register',
+        'ranking': 'badge-ranking',
+        'guides': 'badge-guides',
+        'captcha': 'badge-captcha'
+      };
+
+      for (const [key, badgeId] of Object.entries(featureMap)) {
+        const badge = document.getElementById(badgeId);
+        const isEnabled = features[key] !== false;
+        badge.className = isEnabled ? 'badge badge-success' : 'badge badge-danger';
+        badge.textContent = isEnabled ? '开启' : '关闭';
+      }
+    }
+
+    // 保存网站配置
+    async function saveSiteConfig() {
+      const config = {
+        siteName: document.getElementById('siteName').value,
+        siteDescription: document.getElementById('siteDescription').value,
+        icpNumber: document.getElementById('icpNumber').value
+      };
+
+      try {
+        const response = await fetch('/api/admin/config/site', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(config)
+        });
+
+        if (response.ok) {
+          alert('网站配置保存成功！');
+          addLog('网站配置已更新', 'success');
+        } else {
+          alert('保存失败，请检查权限');
+        }
+      } catch (error) {
+        console.error('保存配置失败:', error);
+        alert('保存失败，请稍后重试');
+      }
+    }
+
+    // 切换功能开关
+    async function toggleFeature(feature) {
+      try {
+        const response = await fetch(`/api/admin/config/feature/${feature}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          updateFeatureBadges({ [feature]: result.enabled });
+          addLog(`功能"${feature}"已${result.enabled ? '开启' : '关闭'}`, 'info');
+        }
+      } catch (error) {
+        console.error('切换功能失败:', error);
+        alert('操作失败，请稍后重试');
+      }
+    }
+
+    // 添加日志
+    function addLog(message, type = 'info') {
+      const logsContainer = document.getElementById('systemLogs');
+      const timestamp = new Date().toLocaleString('zh-CN');
+      const colors = {
+        'success': '#27ae60',
+        'error': '#c94f4f',
+        'info': '#4a9eff',
+        'warning': '#e67e22'
+      };
+      
+      const logEntry = document.createElement('div');
+      logEntry.style.color = colors[type] || colors.info;
+      logEntry.innerHTML = `<span style="color: var(--lc-text-muted);">[${timestamp}]</span> ${message}`;
+      
+      if (logsContainer.children[0]?.textContent === '暂无日志记录') {
+        logsContainer.innerHTML = '';
+      }
+      
+      logsContainer.insertBefore(logEntry, logsContainer.firstChild);
+    }
+
+    // 清空日志
+    function clearLogs() {
+      document.getElementById('systemLogs').innerHTML = '<div style="color: var(--lc-text-muted);">暂无日志记录</div>';
+    }
+
+    // 退出登录
+    function logout() {
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUsername');
+      window.location.href = 'admin-login.html';
+    }
+
+    // 页面加载时初始化
+    loadConfig();
+    addLog('系统配置页面已加载', 'info');
+  </script>
+</body>
+</html>
