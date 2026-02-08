@@ -300,6 +300,11 @@ export async function onRequest(context) {
       return handleRankings(request, env, headers, path);
     }
     
+    // Add compatibility for /api/rankings/list
+    if (path === '/api/rankings/list' || path === '/api/rankings/list/') {
+      return handleRankings(request, env, headers, path);
+    }
+    
     if (path.startsWith('/api/guides')) {
       return handleGuides(request, env, headers, path);
     }
@@ -442,6 +447,24 @@ async function handleDbFix(request, env, headers) {
         await env.DB.prepare("ALTER TABLE guides ADD COLUMN guide_type TEXT DEFAULT 'strategy'").run();
         results.guides.guide_type = '已添加';
       }
+      
+      // 检查并添加 views 字段
+      try {
+        await env.DB.prepare('SELECT views FROM guides LIMIT 1').all();
+        results.guides.views = '已存在';
+      } catch (e) {
+        await env.DB.prepare("ALTER TABLE guides ADD COLUMN views INTEGER DEFAULT 0").run();
+        results.guides.views = '已添加';
+      }
+      
+      // 检查并添加 likes 字段
+      try {
+        await env.DB.prepare('SELECT likes FROM guides LIMIT 1').all();
+        results.guides.likes = '已存在';
+      } catch (e) {
+        await env.DB.prepare("ALTER TABLE guides ADD COLUMN likes INTEGER DEFAULT 0").run();
+        results.guides.likes = '已添加';
+      }
     } catch (e) {
       results.guides.error = e.message;
     }
@@ -489,6 +512,7 @@ async function handleDbFix(request, env, headers) {
     
     return jsonResponse({
       code: 200,
+      success: true,
       message: '数据库修复完成',
       data: results
     }, 200, headers);
@@ -827,7 +851,7 @@ async function handleRankings(request, env, headers, path) {
   }
   
   // 获取所有排行榜记录（公开接口）
-  if (path === '/api/rankings' || path === '/api/rankings/') {
+  if (path === '/api/rankings' || path === '/api/rankings/' || path === '/api/rankings/list' || path === '/api/rankings/list/') {
     if (request.method === 'GET') {
       try {
         // 缓存键
@@ -842,6 +866,7 @@ async function handleRankings(request, env, headers, path) {
               const data = JSON.parse(cached);
               return jsonResponse({
                 code: 200,
+                success: true,
                 message: '获取成功（缓存）',
                 data: data
               }, 200, headers);
@@ -868,6 +893,7 @@ async function handleRankings(request, env, headers, path) {
         
         return jsonResponse({
           code: 200,
+          success: true,
           message: '获取成功',
           data: results || []
         }, 200, headers);
@@ -1011,6 +1037,7 @@ async function handleGuides(request, env, headers, path) {
         
         return jsonResponse({
           code: 200,
+          success: true,
           message: '获取成功',
           data: {
             guides,
@@ -1063,6 +1090,7 @@ async function handleGuides(request, env, headers, path) {
         
         return jsonResponse({
           code: 200,
+          success: true,
           message: '获取成功',
           data: guideData
         }, 200, headers);
@@ -1287,14 +1315,19 @@ async function handleGuides(request, env, headers, path) {
         if (!user) return jsonResponse({ code: 401, message: '无效的 Token' }, 401, headers);
 
         const id = path.split('/')[3];
-        // 简单实现：增加点赞数（实际应该用单独的 likes 表）
+        // 增加点赞数
         await env.DB.prepare(
-          'UPDATE guides SET views = views + 1 WHERE id = ?'
+          'UPDATE guides SET likes = likes + 1 WHERE id = ?'
         ).bind(id).run();
+        
+        // 获取最新点赞数
+        const guide = await env.DB.prepare('SELECT likes FROM guides WHERE id = ?').bind(id).first();
         
         return jsonResponse({
           code: 200,
-          message: '点赞成功'
+          success: true,
+          message: '点赞成功',
+          data: { likes: guide?.likes || 1 }
         }, 200, headers);
       } catch (error) {
         return jsonResponse({ code: 500, message: '点赞失败', error: error.message }, 500, headers);

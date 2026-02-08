@@ -100,6 +100,8 @@ export async function initDatabase(env) {
           content_images TEXT,
           tags TEXT,
           linkedRankingId INTEGER,
+          views INTEGER DEFAULT 0,
+          likes INTEGER DEFAULT 0,
           status TEXT DEFAULT 'pending',
           reject_reason TEXT,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
