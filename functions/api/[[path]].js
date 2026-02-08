@@ -236,50 +236,163 @@ async function handleAdminVerify(request, env, headers) {
 
 // 排行榜相关
 async function handleRankings(request, env, headers, path) {
-  if (request.method === 'GET') {
-    try {
-      const { results } = await env.DB.prepare(
-        'SELECT * FROM rankings ORDER BY created_at DESC'
-      ).all();
-      
-      return jsonResponse({
-        code: 200,
-        message: '获取成功',
-        data: results || []
-      }, 200, headers);
-    } catch (error) {
-      return jsonResponse({ code: 500, message: '获取失败', error: error.message }, 500, headers);
+  // 获取待审核列表
+  if (path === '/api/rankings/pending' || path === '/api/rankings/pending/') {
+    if (request.method === 'GET') {
+      try {
+        // 验证登录
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          return jsonResponse({ code: 401, message: '未登录' }, 401, headers);
+        }
+        
+        const { results } = await env.DB.prepare(
+          'SELECT * FROM rankings WHERE status = ? ORDER BY created_at DESC'
+        ).bind('pending').all();
+        
+        return jsonResponse({
+          code: 200,
+          message: '获取成功',
+          data: results || []
+        }, 200, headers);
+      } catch (error) {
+        return jsonResponse({ code: 500, message: '获取失败', error: error.message }, 500, headers);
+      }
     }
   }
   
-  if (request.method === 'POST') {
-    // 验证登录
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader) {
-      return jsonResponse({ code: 401, message: '未登录' }, 401, headers);
+  // 获取已审核列表（已批准和已拒绝）
+  if (path === '/api/rankings/reviewed' || path === '/api/rankings/reviewed/') {
+    if (request.method === 'GET') {
+      try {
+        // 验证登录
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          return jsonResponse({ code: 401, message: '未登录' }, 401, headers);
+        }
+        
+        const { results: approved } = await env.DB.prepare(
+          'SELECT * FROM rankings WHERE status = ? ORDER BY updated_at DESC'
+        ).bind('approved').all();
+        
+        const { results: rejected } = await env.DB.prepare(
+          'SELECT * FROM rankings WHERE status = ? ORDER BY updated_at DESC'
+        ).bind('rejected').all();
+        
+        return jsonResponse({
+          code: 200,
+          message: '获取成功',
+          data: {
+            approved: approved || [],
+            rejected: rejected || []
+          }
+        }, 200, headers);
+      } catch (error) {
+        return jsonResponse({ code: 500, message: '获取失败', error: error.message }, 500, headers);
+      }
+    }
+  }
+  
+  // 审核记录（通过/拒绝）
+  if (path.match(/^\/api\/rankings\/approve\/\d+$/)) {
+    if (request.method === 'POST') {
+      try {
+        // 验证登录
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          return jsonResponse({ code: 401, message: '未登录' }, 401, headers);
+        }
+        
+        const id = path.split('/').pop();
+        const body = await request.json();
+        const { approved } = body;
+        
+        const status = approved ? 'approved' : 'rejected';
+        
+        await env.DB.prepare(
+          'UPDATE rankings SET status = ?, updated_at = datetime("now") WHERE id = ?'
+        ).bind(status, id).run();
+        
+        return jsonResponse({
+          code: 200,
+          message: approved ? '审核通过' : '已拒绝',
+          data: { id, status }
+        }, 200, headers);
+      } catch (error) {
+        return jsonResponse({ code: 500, message: '审核失败', error: error.message }, 500, headers);
+      }
+    }
+  }
+  
+  // 删除记录
+  if (path.match(/^\/api\/rankings\/\d+$/)) {
+    if (request.method === 'DELETE') {
+      try {
+        // 验证登录
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          return jsonResponse({ code: 401, message: '未登录' }, 401, headers);
+        }
+        
+        const id = path.split('/').pop();
+        
+        await env.DB.prepare(
+          'DELETE FROM rankings WHERE id = ?'
+        ).bind(id).run();
+        
+        return jsonResponse({
+          code: 200,
+          message: '删除成功',
+          data: { id }
+        }, 200, headers);
+      } catch (error) {
+        return jsonResponse({ code: 500, message: '删除失败', error: error.message }, 500, headers);
+      }
+    }
+  }
+  
+  // 获取所有排行榜记录（公开接口）
+  if (path === '/api/rankings' || path === '/api/rankings/') {
+    if (request.method === 'GET') {
+      try {
+        const { results } = await env.DB.prepare(
+          'SELECT * FROM rankings WHERE status = ? ORDER BY created_at DESC'
+        ).bind('approved').all();
+        
+        return jsonResponse({
+          code: 200,
+          message: '获取成功',
+          data: results || []
+        }, 200, headers);
+      } catch (error) {
+        return jsonResponse({ code: 500, message: '获取失败', error: error.message }, 500, headers);
+      }
     }
     
-    try {
-      const body = await request.json();
-      const { sinner_name, tier, role, tags, analysis } = body;
-      
-      if (!sinner_name || !tier) {
-        return jsonResponse({ code: 400, message: '缺少必要字段' }, 400, headers);
+    // 提交新记录
+    if (request.method === 'POST') {
+      try {
+        const body = await request.json();
+        const { username, sinner, persona, floor_level, time, screenshot_url, video_url } = body;
+        
+        if (!username || !sinner || !persona || !floor_level || !time) {
+          return jsonResponse({ code: 400, message: '缺少必要字段' }, 400, headers);
+        }
+        
+        const result = await env.DB.prepare(
+          `INSERT INTO rankings (username, sinner, persona, floor_level, time, screenshot_url, video_url, status, created_at, updated_at) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+        ).bind(username, sinner, persona, floor_level, time, screenshot_url || '', video_url || '', 'pending').run();
+        
+        return jsonResponse({
+          code: 200,
+          message: '提交成功，等待审核',
+          data: { id: result.meta?.last_row_id }
+        }, 200, headers);
+        
+      } catch (error) {
+        return jsonResponse({ code: 500, message: '提交失败', error: error.message }, 500, headers);
       }
-      
-      const result = await env.DB.prepare(
-        `INSERT INTO rankings (sinner_name, tier, role, tags, analysis, created_at, updated_at) 
-         VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
-      ).bind(sinner_name, tier, role || '', JSON.stringify(tags || []), analysis || '').run();
-      
-      return jsonResponse({
-        code: 200,
-        message: '创建成功',
-        data: { id: result.meta?.last_row_id }
-      }, 200, headers);
-      
-    } catch (error) {
-      return jsonResponse({ code: 500, message: '创建失败', error: error.message }, 500, headers);
     }
   }
   
