@@ -495,9 +495,41 @@ async function handleRankings(request, env, headers, path) {
   if (path === '/api/rankings' || path === '/api/rankings/') {
     if (request.method === 'GET') {
       try {
+        // 缓存键
+        const cacheKey = 'rankings:public:approved';
+        
+        // 尝试从 KV 缓存获取（如果 KV 可用）
+        if (env.CAPTCHA_KV) {
+          try {
+            const cached = await env.CAPTCHA_KV.get(cacheKey);
+            if (cached) {
+              console.log('[Rankings Cache] 命中缓存');
+              const data = JSON.parse(cached);
+              return jsonResponse({
+                code: 200,
+                message: '获取成功（缓存）',
+                data: data
+              }, 200, headers);
+            }
+          } catch (cacheError) {
+            console.log('[Rankings Cache] 缓存读取失败:', cacheError.message);
+          }
+        }
+        
+        // 从数据库查询（限制返回数量，避免大数据量）
         const { results } = await env.DB.prepare(
-          'SELECT * FROM rankings WHERE status = ? ORDER BY created_at DESC'
+          'SELECT * FROM rankings WHERE status = ? ORDER BY created_at DESC LIMIT 100'
         ).bind('approved').all();
+        
+        // 写入缓存（5分钟过期）
+        if (env.CAPTCHA_KV) {
+          try {
+            await env.CAPTCHA_KV.put(cacheKey, JSON.stringify(results || []), { expirationTtl: 300 });
+            console.log('[Rankings Cache] 缓存已更新');
+          } catch (cacheError) {
+            console.log('[Rankings Cache] 缓存写入失败:', cacheError.message);
+          }
+        }
         
         return jsonResponse({
           code: 200,
@@ -505,6 +537,7 @@ async function handleRankings(request, env, headers, path) {
           data: results || []
         }, 200, headers);
       } catch (error) {
+        console.error('[Rankings] 获取失败:', error);
         return jsonResponse({ code: 500, message: '获取失败', error: error.message }, 500, headers);
       }
     }

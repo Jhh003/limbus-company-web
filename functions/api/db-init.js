@@ -34,8 +34,15 @@ export async function initDatabase(env) {
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `).run();
+      
+      // 创建索引优化查询性能
+      await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_rankings_status ON rankings(status)`).run();
+      await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_rankings_created_at ON rankings(created_at DESC)`).run();
+      await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_rankings_sinner ON rankings(sinner)`).run();
+      await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_rankings_status_created ON rankings(status, created_at DESC)`).run();
+      
       results.rankings = true;
-      console.log('[DB Init] rankings 表创建/检查成功');
+      console.log('[DB Init] rankings 表和索引创建/检查成功');
     } catch (e) {
       console.error('[DB Init] rankings 表创建失败:', e.message);
       // 如果表已存在但结构不对，尝试删除重建
@@ -56,8 +63,15 @@ export async function initDatabase(env) {
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
           )
         `).run();
+        
+        // 创建索引
+        await env.DB.prepare(`CREATE INDEX idx_rankings_status ON rankings(status)`).run();
+        await env.DB.prepare(`CREATE INDEX idx_rankings_created_at ON rankings(created_at DESC)`).run();
+        await env.DB.prepare(`CREATE INDEX idx_rankings_sinner ON rankings(sinner)`).run();
+        await env.DB.prepare(`CREATE INDEX idx_rankings_status_created ON rankings(status, created_at DESC)`).run();
+        
         results.rankings = true;
-        console.log('[DB Init] rankings 表重建成功');
+        console.log('[DB Init] rankings 表和索引重建成功');
       } catch (e2) {
         console.error('[DB Init] rankings 表重建失败:', e2.message);
       }
@@ -90,8 +104,15 @@ export async function initDatabase(env) {
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `).run();
+      
+      // 创建索引优化查询性能
+      await env.DB.prepare(`CREATE INDEX idx_guides_status ON guides(status)`).run();
+      await env.DB.prepare(`CREATE INDEX idx_guides_created_at ON guides(created_at DESC)`).run();
+      await env.DB.prepare(`CREATE INDEX idx_guides_sinner_persona ON guides(sinner, persona)`).run();
+      await env.DB.prepare(`CREATE INDEX idx_guides_status_created ON guides(status, created_at DESC)`).run();
+      
       results.guides = true;
-      console.log('[DB Init] guides 表创建成功');
+      console.log('[DB Init] guides 表和索引创建成功');
     } catch (e) {
       console.error('[DB Init] guides 表创建失败:', e.message);
     }
@@ -110,8 +131,14 @@ export async function initDatabase(env) {
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `).run();
+      
+      // 创建索引优化查询性能
+      await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)`).run();
+      await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_users_status ON users(status)`).run();
+      await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at DESC)`).run();
+      
       results.users = true;
-      console.log('[DB Init] users 表创建/检查成功');
+      console.log('[DB Init] users 表和索引创建/检查成功');
     } catch (e) {
       console.error('[DB Init] users 表创建失败:', e.message);
       try {
@@ -128,8 +155,14 @@ export async function initDatabase(env) {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
           )
         `).run();
+        
+        // 创建索引
+        await env.DB.prepare(`CREATE INDEX idx_users_username ON users(username)`).run();
+        await env.DB.prepare(`CREATE INDEX idx_users_status ON users(status)`).run();
+        await env.DB.prepare(`CREATE INDEX idx_users_created_at ON users(created_at DESC)`).run();
+        
         results.users = true;
-        console.log('[DB Init] users 表重建成功');
+        console.log('[DB Init] users 表和索引重建成功');
       } catch (e2) {
         console.error('[DB Init] users 表重建失败:', e2.message);
       }

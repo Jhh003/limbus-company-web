@@ -1,8 +1,41 @@
+# 静态资源长期缓存
 /*.js
   Content-Type: application/javascript
+  Cache-Control: public, max-age=31536000, immutable
 
 /css/*.css
   Content-Type: text/css
+  Cache-Control: public, max-age=31536000, immutable
 
 /css/**/*.css
   Content-Type: text/css
+  Cache-Control: public, max-age=31536000, immutable
+
+# 图片资源缓存30天
+/assets/images/*
+  Cache-Control: public, max-age=2592000, immutable
+
+/assets/images/**/*
+  Cache-Control: public, max-age=2592000, immutable
+
+# 视频资源缓存30天
+/assets/videos/*
+  Cache-Control: public, max-age=2592000, immutable
+
+# 字体资源长期缓存
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# API端点短时间缓存
+/api/rankings
+  Cache-Control: public, max-age=60
+
+/api/guides
+  Cache-Control: public, max-age=60
+
+# 安全头配置
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()

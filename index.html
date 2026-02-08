@@ -4,19 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>今天蛋筒什么 - Limbus Company 随机选择器</title>
+    
+    <!-- 预连接第三方域名 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    
+    <!-- 预加载关键资源 -->
+    <link rel="preload" href="/css/limbus-theme-v2.css" as="style">
+    <link rel="preload" href="/js/main.js" as="module">
+    
+    <!-- 关键CSS同步加载 -->
     <link rel="stylesheet" href="/css/reset.css">
     <link rel="stylesheet" href="/css/common.css">
-    <link rel="stylesheet" href="/css/season.css">
-    <link rel="stylesheet" href="/css/module/dynamic-styles.css">
-    <link rel="stylesheet" href="/css/module/personality-tabs.css">
-    <!-- 边狱巴士主题 -->
     <link rel="stylesheet" href="/css/limbus-theme-v2.css">
-    <link rel="stylesheet" href="/css/help-modal.css">
-    <link rel="stylesheet" href="/css/auth-module.css">
-    <!-- 字体 -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- 非关键CSS异步加载 -->
+    <link rel="stylesheet" href="/css/season.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/css/module/dynamic-styles.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/css/module/personality-tabs.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/css/help-modal.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/css/auth-module.css" media="print" onload="this.media='all'">
+    
+    <!-- 字体异步加载 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet"></noscript>
+    
     <!-- Font Awesome 图标 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
 </head>
 <body>
     <!-- 顶部导航栏 -->
@@ -347,7 +363,7 @@
     <!-- 通用彩蛋视频播放框架 -->
     <div id="universal-easter-egg-modal" class="easter-egg-modal">
         <button id="universal-easter-egg-close-btn" class="easter-egg-close-btn">X</button>
-        <video id="universal-easter-egg-video" preload="auto">
+        <video id="universal-easter-egg-video" preload="none" playsinline>
             您的浏览器不支持视频播放。
         </video>
     </div>
