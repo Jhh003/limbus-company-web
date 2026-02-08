@@ -476,29 +476,74 @@
     </style>
 </head>
 <body>
-    <nav class="top-nav">
-        <div class="nav-brand">
-            <div class="logo-icon logo-icon-admin">
-                <i class="fas fa-shield-alt"></i>
+    <!-- 统一侧边栏导航 -->
+    <aside class="admin-sidebar">
+        <div class="sidebar-header">
+            <div class="logo-icon" style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--lc-gold), #b8942d); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                <i class="fas fa-shield-alt" style="font-size: 24px; color: #000;"></i>
             </div>
-            <div class="logo-text">
-                <h1>管理后台</h1>
-                <span class="logo-subtitle">Limbus Company · 审核系统</span>
-            </div>
+            <h2 style="color: var(--lc-gold); font-size: 1.3rem; margin-bottom: 4px;">管理后台</h2>
+            <p style="color: var(--lc-text-muted); font-size: 0.8rem;">Limbus Company</p>
         </div>
-        <div class="nav-meta">
-            <a href="/" class="nav-btn nav-btn-primary" style="text-decoration:none;">
-                <i class="fas fa-dice"></i>
-                <span>返回主页</span>
+        
+        <nav class="sidebar-nav">
+            <a href="admin-dashboard.html" class="nav-item" data-page="dashboard">
+                <i class="fas fa-chart-line"></i>
+                <span>数据统计</span>
             </a>
-            <button onclick="logout()" class="nav-btn" style="border-color: rgba(201, 79, 79, 0.4); color: var(--lc-red);">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>退出登录</span>
-            </button>
+            <a href="admin.html" class="nav-item active" data-page="review">
+                <i class="fas fa-clipboard-check"></i>
+                <span>审核管理</span>
+                <span style="margin-left: auto; background: var(--lc-gold); color: #000; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600;">主</span>
+            </a>
+            <a href="admin-users.html" class="nav-item" data-page="users">
+                <i class="fas fa-users"></i>
+                <span>用户管理</span>
+            </a>
+            <a href="admin-guides.html" class="nav-item" data-page="guides">
+                <i class="fas fa-book"></i>
+                <span>攻略管理</span>
+            </a>
+            <a href="admin-settings.html" class="nav-item" data-page="settings">
+                <i class="fas fa-cog"></i>
+                <span>系统配置</span>
+            </a>
+            <div style="height: 1px; background: var(--lc-border); margin: 16px 0;"></div>
+            <a href="admin-change-password.html" class="nav-item" data-page="password">
+                <i class="fas fa-key"></i>
+                <span>修改密码</span>
+            </a>
+            <a href="/" class="nav-item" data-page="home">
+                <i class="fas fa-home"></i>
+                <span>返回首页</span>
+            </a>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px;">
+                <div style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--lc-gold), #b8942d); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-user" style="color: #000; font-size: 14px;"></i>
+                </div>
+                <div style="flex: 1;">
+                    <div style="color: var(--lc-text); font-size: 0.9rem; font-weight: 600;" id="sidebar-username">管理员</div>
+                    <div style="color: var(--lc-text-muted); font-size: 0.75rem;">超级管理员</div>
+                </div>
+                <button onclick="logout()" style="background: none; border: none; color: var(--lc-red); cursor: pointer; padding: 8px; border-radius: 6px; transition: all 0.3s;" onmouseover="this.style.background='rgba(201,79,79,0.1)'" onmouseout="this.style.background='none'">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
         </div>
-    </nav>
+    </aside>
 
-    <div class="admin-container">
+    <!-- 移动端菜单按钮 -->
+    <button class="mobile-menu-btn" onclick="toggleSidebar()" style="display: none; position: fixed; top: 20px; left: 20px; z-index: 1000; width: 44px; height: 44px; background: var(--lc-bg-card); border: 1px solid var(--lc-border); border-radius: 8px; color: var(--lc-gold); font-size: 1.2rem; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- 遮罩层 -->
+    <div class="sidebar-overlay" onclick="toggleSidebar()" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 998;"></div>
+
+    <div class="admin-container" style="margin-left: 280px; padding: 30px; max-width: calc(100% - 280px);">
         <!-- 模块切换 -->
         <div class="module-tabs">
             <button class="module-tab active" onclick="switchModule('ranking')" id="mod-ranking">
@@ -2160,7 +2205,130 @@
             }
         }
 
+        // ==================== 移动端侧边栏切换 ====================
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.admin-sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+            const isOpen = sidebar.classList.contains('open');
+            
+            if (isOpen) {
+                sidebar.classList.remove('open');
+                overlay.style.display = 'none';
+                document.body.style.overflow = '';
+            } else {
+                sidebar.classList.add('open');
+                overlay.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            }
+        }
+        
+        // 暴露到全局
+        window.toggleSidebar = toggleSidebar;
+        
+        // 页面加载时设置用户名
+        document.addEventListener('DOMContentLoaded', () => {
+            const username = localStorage.getItem('admin_username');
+            if (username) {
+                const usernameEl = document.getElementById('sidebar-username');
+                if (usernameEl) usernameEl.textContent = username;
+            }
+        });
+
     </script>
     <script src="/js/custom-dialog.js"></script>
+    
+    <!-- 响应式样式 -->
+    <style>
+        /* 移动端适配 */
+        @media (max-width: 1024px) {
+            .admin-sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 999;
+            }
+            
+            .admin-sidebar.open {
+                transform: translateX(0);
+            }
+            
+            .admin-container {
+                margin-left: 0 !important;
+                max-width: 100% !important;
+                padding: 20px !important;
+                padding-top: 80px !important;
+            }
+            
+            .mobile-menu-btn {
+                display: flex !important;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            /* 统计卡片改为2列 */
+            .stats-cards {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            /* 统计卡片改为1列 */
+            .stats-cards {
+                grid-template-columns: 1fr !important;
+            }
+            
+            /* 标签按钮换行 */
+            .tab-container {
+                flex-wrap: wrap;
+            }
+            
+            .tab-btn {
+                flex: 1;
+                min-width: 100px;
+                text-align: center;
+            }
+            
+            /* 记录项改为垂直布局 */
+            .record-main {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .record-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+        
+        /* 平板适配 */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .admin-sidebar {
+                width: 240px;
+            }
+        }
+        
+        /* 侧边栏滚动优化 */
+        .admin-sidebar {
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--lc-border) transparent;
+        }
+        
+        .admin-sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .admin-sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .admin-sidebar::-webkit-scrollbar-thumb {
+            background: var(--lc-border);
+            border-radius: 3px;
+        }
+        
+        .admin-sidebar::-webkit-scrollbar-thumb:hover {
+            background: var(--lc-gold);
+        }
+    </style>
 </body>
 </html>
