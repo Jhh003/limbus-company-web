@@ -238,6 +238,33 @@ async function handleDbFix(request, env, headers) {
         await env.DB.prepare('ALTER TABLE users ADD COLUMN last_login_at DATETIME').run();
         results.users.last_login_at = '已添加';
       }
+      
+      // 检查并添加 register_ip 字段
+      try {
+        await env.DB.prepare('SELECT register_ip FROM users LIMIT 1').all();
+        results.users.register_ip = '已存在';
+      } catch (e) {
+        await env.DB.prepare('ALTER TABLE users ADD COLUMN register_ip TEXT').run();
+        results.users.register_ip = '已添加';
+      }
+      
+      // 检查并添加 role 字段
+      try {
+        await env.DB.prepare('SELECT role FROM users LIMIT 1').all();
+        results.users.role = '已存在';
+      } catch (e) {
+        await env.DB.prepare("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'").run();
+        results.users.role = '已添加';
+      }
+      
+      // 检查并添加 status 字段
+      try {
+        await env.DB.prepare('SELECT status FROM users LIMIT 1').all();
+        results.users.status = '已存在';
+      } catch (e) {
+        await env.DB.prepare("ALTER TABLE users ADD COLUMN status TEXT DEFAULT 'active'").run();
+        results.users.status = '已添加';
+      }
     } catch (e) {
       results.users.error = e.message;
     }
