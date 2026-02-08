@@ -121,59 +121,64 @@ export async function onRequest(context) {
   }
   
   // 优化的速率限制（使用Worker内存缓存）
-  const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
-  const rateLimitKey = `ratelimit:${clientIP}`;
-  const CACHE_TTL = 300000; // 5分钟缓存时间
-  
-  // 尝试从Worker内存缓存获取
-  const cached = global.rateLimitCache && global.rateLimitCache.get(clientIP);
-  const now = Date.now();
-  
-  if (cached && (now - cached.timestamp < CACHE_TTL)) {
-    // 缓存有效，使用缓存
-    if (cached.count >= 100) {
-      console.log(`[Rate Limit] 使用缓存拒绝: ${clientIP}`);
-      return jsonResponse({ code: 429, message: '请求过于频繁，请稍后再试' }, 429, headers);
-    }
+  try {
+    const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const rateLimitKey = `ratelimit:${clientIP}`;
+    const CACHE_TTL = 300000; // 5分钟缓存时间
     
-    // 更新缓存计数
-    global.rateLimitCache.set(clientIP, {
-      count: cached.count + 1,
-      timestamp: now
-    });
+    // 尝试从Worker内存缓存获取
+    const cached = global.rateLimitCache && global.rateLimitCache.get(clientIP);
+    const now = Date.now();
     
-    console.log(`[Rate Limit] 缓存命中: ${clientIP}, count: ${cached.count + 1}`);
-  } else {
-    // 缓存失效或不存在，从KV读取
-    const rateLimitData = await env.CAPTCHA_KV.get(rateLimitKey);
-    
-    if (rateLimitData) {
-      const { count, timestamp } = JSON.parse(rateLimitData);
-      const windowStart = now - 300000; // 5分钟窗口
+    if (cached && (now - cached.timestamp < CACHE_TTL)) {
+      // 缓存有效，使用缓存
+      if (cached.count >= 100) {
+        console.log(`[Rate Limit] 使用缓存拒绝: ${clientIP}`);
+        return jsonResponse({ code: 429, message: '请求过于频繁，请稍后再试' }, 429, headers);
+      }
       
-      // 检查是否在窗口内
-      if (now - windowStart < 300000) {
-        if (count >= 100) {
-          // 窗口内已超限
-          console.log(`[Rate Limit] 窗口内超限: ${clientIP}, count: ${count}`);
-          return jsonResponse({ code: 429, message: '请求过于频繁，请稍后再试' }, 429, headers);
-        }
+      // 更新缓存计数
+      global.rateLimitCache.set(clientIP, {
+        count: cached.count + 1,
+        timestamp: now
+      });
+      
+      console.log(`[Rate Limit] 缓存命中: ${clientIP}, count: ${cached.count + 1}`);
+    } else if (env.CAPTCHA_KV) {
+      // 缓存失效或不存在，从KV读取（仅在KV绑定时）
+      const rateLimitData = await env.CAPTCHA_KV.get(rateLimitKey);
+      
+      if (rateLimitData) {
+        const { count, timestamp } = JSON.parse(rateLimitData);
+        const windowStart = now - 300000; // 5分钟窗口
         
-        // 增加计数
-        const newCount = count + 1;
-        await env.CAPTCHA_KV.put(rateLimitKey, JSON.stringify({ 
-          count: newCount, 
-          timestamp 
-        }), { expirationTtl: 300 }); // 5分钟过期
-      } else {
-        // 新窗口，重置计数
-        console.log(`[Rate Limit] 新窗口: ${clientIP}, 重置计数`);
-        await env.CAPTCHA_KV.put(rateLimitKey, JSON.stringify({ 
-          count: 1, 
-          timestamp: now 
-        }), { expirationTtl: 300 }); // 5分钟过期
+        // 检查是否在窗口内
+        if (now - windowStart < 300000) {
+          if (count >= 100) {
+            // 窗口内已超限
+            console.log(`[Rate Limit] 窗口内超限: ${clientIP}, count: ${count}`);
+            return jsonResponse({ code: 429, message: '请求过于频繁，请稍后再试' }, 429, headers);
+          }
+          
+          // 增加计数
+          const newCount = count + 1;
+          await env.CAPTCHA_KV.put(rateLimitKey, JSON.stringify({ 
+            count: newCount, 
+            timestamp 
+          }), { expirationTtl: 300 }); // 5分钟过期
+        } else {
+          // 新窗口，重置计数
+          console.log(`[Rate Limit] 新窗口: ${clientIP}, 重置计数`);
+          await env.CAPTCHA_KV.put(rateLimitKey, JSON.stringify({ 
+            count: 1, 
+            timestamp: now 
+          }), { expirationTtl: 300 }); // 5分钟过期
+        }
       }
     }
+  } catch (rateLimitError) {
+    // 速率限制出错不应阻止请求，仅记录日志
+    console.error('[Rate Limit] 错误:', rateLimitError.message);
   }
   
   try {
@@ -415,6 +420,12 @@ async function handleDbFix(request, env, headers) {
 async function handleAdminLogin(request, env, headers) {
   if (request.method !== 'POST') {
     return jsonResponse({ code: 405, message: '方法不允许' }, 405, headers);
+  }
+  
+  // 检查数据库连接
+  if (!env.DB) {
+    console.error('[handleAdminLogin] 数据库未配置');
+    return jsonResponse({ code: 500, message: '数据库服务不可用' }, 500, headers);
   }
   
   try {
@@ -845,6 +856,12 @@ async function handleRankings(request, env, headers, path) {
 // 攻略相关
 async function handleGuides(request, env, headers, path) {
   console.log(`[handleGuides] 开始处理请求: ${request.method} ${path}`);
+  
+  // 检查数据库连接
+  if (!env.DB) {
+    console.error('[handleGuides] 数据库未配置');
+    return jsonResponse({ code: 500, message: '数据库服务不可用' }, 500, headers);
+  }
   
   // 获取攻略列表
   if (path === '/api/guides' || path === '/api/guides/' || path === '/api/guides/list') {
@@ -1297,6 +1314,12 @@ async function handleUsers(request, env, headers, path) {
 
 // 认证相关
 async function handleAuth(request, env, headers, path) {
+  // 检查数据库连接
+  if (!env.DB) {
+    console.error('[handleAuth] 数据库未配置');
+    return jsonResponse({ code: 500, message: '数据库服务不可用' }, 500, headers);
+  }
+  
   if (path === '/api/auth/login' || path === '/api/auth') {
     if (request.method !== 'POST') {
       return jsonResponse({ code: 405, message: '方法不允许' }, 405, headers);
