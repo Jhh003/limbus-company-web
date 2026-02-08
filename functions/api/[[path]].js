@@ -174,17 +174,6 @@ export async function onRequest(context) {
         }), { expirationTtl: 300 }); // 5分钟过期
       }
     }
-  } else {
-    // 初始化缓存
-    global.rateLimitCache = global.rateLimitCache || new Map();
-    
-    // 从KV读取初始数据
-    const rateLimitData = await env.CAPTCHA_KV.get(rateLimitKey);
-    if (rateLimitData) {
-      const { count, timestamp } = JSON.parse(rateLimitData);
-      global.rateLimitCache.set(clientIP, { count, timestamp });
-      console.log(`[Rate Limit] 初始化缓存: ${clientIP}, count: ${count}`);
-    }
   }
   
   try {
