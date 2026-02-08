@@ -1,6 +1,11 @@
 // Pages Functions - API 路由主入口
 // 捕获所有 /api/* 请求
 
+// Worker内存缓存配置
+let adminConfigCache = null;
+let configCacheTime = 0;
+const CONFIG_CACHE_TTL = 300000; // 5分钟缓存时间
+
 // Base64 编码（兼容 Worker 环境）
 function base64Encode(str) {
   try {
@@ -91,28 +96,71 @@ export async function onRequest(context) {
     return new Response(null, { headers });
   }
   
-  // 简单的速率限制（基于 IP）
+  // 优化的速率限制（使用Worker内存缓存）
   const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
   const rateLimitKey = `ratelimit:${clientIP}`;
-  const rateLimitData = await env.CAPTCHA_KV.get(rateLimitKey);
+  const CACHE_TTL = 300000; // 5分钟缓存时间
   
-  if (rateLimitData) {
-    const { count, timestamp } = JSON.parse(rateLimitData);
-    const now = Date.now();
-    
-    // 如果在1分钟内超过100次请求，拒绝
-    if (now - timestamp < 60000 && count > 100) {
+  // 尝试从Worker内存缓存获取
+  const cached = global.rateLimitCache && global.rateLimitCache.get(clientIP);
+  const now = Date.now();
+  
+  if (cached && (now - cached.timestamp < CACHE_TTL)) {
+    // 缓存有效，使用缓存
+    if (cached.count >= 100) {
+      console.log(`[Rate Limit] 使用缓存拒绝: ${clientIP}`);
       return jsonResponse({ code: 429, message: '请求过于频繁，请稍后再试' }, 429, headers);
     }
     
-    // 重置计数器（如果超过1分钟）
-    if (now - timestamp >= 60000) {
-      await env.CAPTCHA_KV.put(rateLimitKey, JSON.stringify({ count: 1, timestamp: now }), { expirationTtl: 120 });
-    } else {
-      await env.CAPTCHA_KV.put(rateLimitKey, JSON.stringify({ count: count + 1, timestamp }), { expirationTtl: 120 });
+    // 更新缓存计数
+    global.rateLimitCache.set(clientIP, {
+      count: cached.count + 1,
+      timestamp: now
+    });
+    
+    console.log(`[Rate Limit] 缓存命中: ${clientIP}, count: ${cached.count + 1}`);
+  } else {
+    // 缓存失效或不存在，从KV读取
+    const rateLimitData = await env.CAPTCHA_KV.get(rateLimitKey);
+    
+    if (rateLimitData) {
+      const { count, timestamp } = JSON.parse(rateLimitData);
+      const windowStart = now - 300000; // 5分钟窗口
+      
+      // 检查是否在窗口内
+      if (now - windowStart < 300000) {
+        if (count >= 100) {
+          // 窗口内已超限
+          console.log(`[Rate Limit] 窗口内超限: ${clientIP}, count: ${count}`);
+          return jsonResponse({ code: 429, message: '请求过于频繁，请稍后再试' }, 429, headers);
+        }
+        
+        // 增加计数
+        const newCount = count + 1;
+        await env.CAPTCHA_KV.put(rateLimitKey, JSON.stringify({ 
+          count: newCount, 
+          timestamp 
+        }), { expirationTtl: 300 }); // 5分钟过期
+      } else {
+        // 新窗口，重置计数
+        console.log(`[Rate Limit] 新窗口: ${clientIP}, 重置计数`);
+        await env.CAPTCHA_KV.put(rateLimitKey, JSON.stringify({ 
+          count: 1, 
+          timestamp: now 
+        }), { expirationTtl: 300 }); // 5分钟过期
+      }
     }
   } else {
-    await env.CAPTCHA_KV.put(rateLimitKey, JSON.stringify({ count: 1, timestamp: Date.now() }), { expirationTtl: 120 });
+    // 初始化缓存
+    global.rateLimitCache = global.rateLimitCache || new Map();
+    
+    // 从KV读取初始数据
+    const rateLimitData = await env.CAPTCHA_KV.get(rateLimitKey);
+    if (rateLimitData) {
+      const { count, timestamp } = JSON.parse(rateLimitData);
+      global.rateLimitCache.set(clientIP, { count, timestamp });
+      console.log(`[Rate Limit] 初始化缓存: ${clientIP}, count: ${count}`);
+    }
   }
   
   try {
@@ -686,11 +734,11 @@ async function handleRankings(request, env, headers, path) {
           'SELECT * FROM rankings WHERE status = ? ORDER BY created_at DESC LIMIT 100'
         ).bind('approved').all();
         
-        // 写入缓存（5分钟过期）
+        // 写入缓存（30分钟过期）
         if (env.CAPTCHA_KV) {
           try {
-            await env.CAPTCHA_KV.put(cacheKey, JSON.stringify(results || []), { expirationTtl: 300 });
-            console.log('[Rankings Cache] 缓存已更新');
+            await env.CAPTCHA_KV.put(cacheKey, JSON.stringify(results || []), { expirationTtl: 1800 });
+            console.log('[Rankings Cache] 缓存已更新（30分钟）');
           } catch (cacheError) {
             console.log('[Rankings Cache] 缓存写入失败:', cacheError.message);
           }
@@ -2375,7 +2423,18 @@ async function handleAdminConfig(request, env, headers, path) {
         }
       };
       
-      // 尝试从KV读取配置
+      // 尝试从Worker内存缓存读取配置（5分钟有效）
+      const now = Date.now();
+      if (adminConfigCache && (now - configCacheTime < CONFIG_CACHE_TTL)) {
+        console.log('[Admin Config] 使用缓存');
+        return jsonResponse({
+          code: 200,
+          message: '获取成功（缓存）',
+          data: adminConfigCache
+        }, 200, headers);
+      }
+      
+      // 缓存失效，从KV读取配置
       if (env.CAPTCHA_KV) {
         try {
           const storedConfig = await env.CAPTCHA_KV.get('admin:config');
@@ -2386,6 +2445,11 @@ async function handleAdminConfig(request, env, headers, path) {
           console.error('读取配置失败:', e);
         }
       }
+      
+      // 更新缓存
+      adminConfigCache = config;
+      configCacheTime = now;
+      console.log('[Admin Config] 缓存已更新');
       
       return jsonResponse({
         code: 200,
@@ -2425,6 +2489,11 @@ async function handleAdminConfig(request, env, headers, path) {
       if (env.CAPTCHA_KV) {
         await env.CAPTCHA_KV.put('admin:config', JSON.stringify(config), { expirationTtl: 0 });
       }
+      
+      // 更新Worker内存缓存
+      adminConfigCache = config;
+      configCacheTime = now;
+      console.log('[Admin Config] 配置已保存并更新缓存');
       
       return jsonResponse({
         code: 200,
