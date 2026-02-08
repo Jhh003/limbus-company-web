@@ -1,8 +1,14 @@
+/*.js
+  Content-Type: application/javascript
+
 /js/*.js
   Content-Type: application/javascript
 
 /js/**/*.js
   Content-Type: application/javascript
 
-/*.js
+/data/*.js
+  Content-Type: application/javascript
+
+/data/**/*.js
   Content-Type: application/javascript
