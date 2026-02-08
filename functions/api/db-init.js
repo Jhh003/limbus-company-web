@@ -96,6 +96,45 @@ export async function initDatabase(env) {
       console.error('[DB Init] guides 表创建失败:', e.message);
     }
     
+    // 创建用户表
+    try {
+      await env.DB.prepare(`
+        CREATE TABLE IF NOT EXISTS users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          username TEXT UNIQUE NOT NULL,
+          password TEXT NOT NULL,
+          role TEXT DEFAULT 'user',
+          status TEXT DEFAULT 'active',
+          last_login_at DATETIME,
+          register_ip TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `).run();
+      results.users = true;
+      console.log('[DB Init] users 表创建/检查成功');
+    } catch (e) {
+      console.error('[DB Init] users 表创建失败:', e.message);
+      try {
+        await env.DB.prepare('DROP TABLE IF EXISTS users').run();
+        await env.DB.prepare(`
+          CREATE TABLE users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            role TEXT DEFAULT 'user',
+            status TEXT DEFAULT 'active',
+            last_login_at DATETIME,
+            register_ip TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
+        `).run();
+        results.users = true;
+        console.log('[DB Init] users 表重建成功');
+      } catch (e2) {
+        console.error('[DB Init] users 表重建失败:', e2.message);
+      }
+    }
+    
     // 创建管理员表
     try {
       await env.DB.prepare(`

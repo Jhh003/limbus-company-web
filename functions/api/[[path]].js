@@ -103,6 +103,14 @@ export async function onRequest(context) {
       return handleAdminGuide(request, env, headers, path);
     }
     
+    if (path.startsWith('/api/admin/users')) {
+      return handleAdminUsers(request, env, headers, path);
+    }
+    
+    if (path.startsWith('/api/admin/config')) {
+      return handleAdminConfig(request, env, headers, path);
+    }
+    
     if (path === '/api/guides/submit' || path === '/api/guides/submit/') {
       return handleGuideSubmit(request, env, headers);
     }
@@ -321,7 +329,7 @@ async function handleRankings(request, env, headers, path) {
     }
   }
   
-  // 获取已审核列表（已批准和已拒绝）
+  // 获取已审核列表（支持状态筛选和分页）
   if (path === '/api/rankings/reviewed' || path === '/api/rankings/reviewed/') {
     if (request.method === 'GET') {
       try {
@@ -331,20 +339,77 @@ async function handleRankings(request, env, headers, path) {
           return jsonResponse({ code: 401, message: '未登录' }, 401, headers);
         }
         
-        const { results: approved } = await env.DB.prepare(
-          'SELECT * FROM rankings WHERE status = ? ORDER BY updated_at DESC'
-        ).bind('approved').all();
+        // 获取查询参数
+        const status = url.searchParams.get('status') || 'approved';
+        const page = parseInt(url.searchParams.get('page')) || 1;
+        const pageSize = parseInt(url.searchParams.get('pageSize')) || 12;
+        const offset = (page - 1) * pageSize;
         
-        const { results: rejected } = await env.DB.prepare(
-          'SELECT * FROM rankings WHERE status = ? ORDER BY updated_at DESC'
-        ).bind('rejected').all();
+        // 验证状态参数
+        const validStatuses = ['pending', 'approved', 'rejected'];
+        if (!validStatuses.includes(status)) {
+          return jsonResponse({ code: 400, message: '无效的状态参数' }, 400, headers);
+        }
+        
+        // 获取总数
+        const { results: countResult } = await env.DB.prepare(
+          'SELECT COUNT(*) as total FROM rankings WHERE status = ?'
+        ).bind(status).all();
+        const total = countResult[0]?.total || 0;
+        const totalPages = Math.ceil(total / pageSize);
+        
+        // 获取分页数据
+        const { results: rankings } = await env.DB.prepare(
+          'SELECT * FROM rankings WHERE status = ? ORDER BY updated_at DESC LIMIT ? OFFSET ?'
+        ).bind(status, pageSize, offset).all();
         
         return jsonResponse({
           code: 200,
           message: '获取成功',
           data: {
-            approved: approved || [],
-            rejected: rejected || []
+            rankings: rankings || [],
+            pagination: {
+              page,
+              pageSize,
+              total,
+              totalPages
+            }
+          }
+        }, 200, headers);
+      } catch (error) {
+        return jsonResponse({ code: 500, message: '获取失败', error: error.message }, 500, headers);
+      }
+    }
+  }
+  
+  // 获取排行榜状态计数
+  if (path === '/api/rankings/count' || path === '/api/rankings/count/') {
+    if (request.method === 'GET') {
+      try {
+        // 验证登录
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          return jsonResponse({ code: 401, message: '未登录' }, 401, headers);
+        }
+        
+        const status = url.searchParams.get('status') || 'pending';
+        
+        // 验证状态参数
+        const validStatuses = ['pending', 'approved', 'rejected'];
+        if (!validStatuses.includes(status)) {
+          return jsonResponse({ code: 400, message: '无效的状态参数' }, 400, headers);
+        }
+        
+        const { results } = await env.DB.prepare(
+          'SELECT COUNT(*) as count FROM rankings WHERE status = ?'
+        ).bind(status).all();
+        
+        return jsonResponse({
+          code: 200,
+          message: '获取成功',
+          data: {
+            status,
+            count: results[0]?.count || 0
           }
         }, 200, headers);
       } catch (error) {
@@ -365,9 +430,16 @@ async function handleRankings(request, env, headers, path) {
         
         const id = path.split('/').pop();
         const body = await request.json();
-        const { approved } = body;
         
-        const status = approved ? 'approved' : 'rejected';
+        // 支持两种格式：{ action: 'approve'|'reject' } 或 { approved: boolean }
+        let status;
+        if (body.action) {
+          status = body.action === 'approve' ? 'approved' : 'rejected';
+        } else if (typeof body.approved === 'boolean') {
+          status = body.approved ? 'approved' : 'rejected';
+        } else {
+          return jsonResponse({ code: 400, message: '无效的请求参数' }, 400, headers);
+        }
         
         await env.DB.prepare(
           'UPDATE rankings SET status = ?, updated_at = datetime("now") WHERE id = ?'
@@ -375,7 +447,7 @@ async function handleRankings(request, env, headers, path) {
         
         return jsonResponse({
           code: 200,
-          message: approved ? '审核通过' : '已拒绝',
+          message: status === 'approved' ? '审核通过' : '已拒绝',
           data: { id, status }
         }, 200, headers);
       } catch (error) {
@@ -1039,7 +1111,7 @@ async function handleStats(request, env, headers, path) {
     
     // 检查是否为管理员
     const adminUser = await env.DB.prepare(
-      'SELECT role FROM admin_users WHERE username = ?'
+      'SELECT role FROM admins WHERE username = ?'
     ).bind(user.username).first();
     
     if (!adminUser) {
@@ -1566,4 +1638,339 @@ function generateCaptchaSVG(code) {
   
   // 直接返回 SVG 字符串，不进行 Base64 编码
   return svg;
+}
+
+// 管理员用户管理
+async function handleAdminUsers(request, env, headers, path) {
+  // 验证登录
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return jsonResponse({ code: 401, message: '未登录' }, 401, headers);
+  }
+  
+  try {
+    // 验证管理员权限
+    const token = authHeader.replace('Bearer ', '');
+    const user = JSON.parse(atob(token));
+    
+    const adminUser = await env.DB.prepare(
+      'SELECT role FROM admins WHERE username = ?'
+    ).bind(user.username).first();
+    
+    if (!adminUser) {
+      return jsonResponse({ code: 403, message: '权限不足' }, 403, headers);
+    }
+    
+    const url = new URL(request.url);
+    
+    // GET /api/admin/users/stats - 用户统计
+    if (path === '/api/admin/users/stats' || path === '/api/admin/users/stats/') {
+      if (request.method !== 'GET') {
+        return jsonResponse({ code: 405, message: '方法不允许' }, 405, headers);
+      }
+      
+      // 获取总用户数
+      const { results: totalResult } = await env.DB.prepare(
+        'SELECT COUNT(*) as count FROM users'
+      ).all();
+      const total = totalResult[0]?.count || 0;
+      
+      // 获取正常用户（假设所有用户都是正常的，除非有status字段）
+      const { results: activeResult } = await env.DB.prepare(
+        "SELECT COUNT(*) as count FROM users WHERE status = 'active' OR status IS NULL"
+      ).all();
+      const active = activeResult[0]?.count || 0;
+      
+      // 获取今日新增用户
+      const today = new Date().toISOString().split('T')[0];
+      const { results: newTodayResult } = await env.DB.prepare(
+        "SELECT COUNT(*) as count FROM users WHERE date(created_at) = date('now')"
+      ).all();
+      const newToday = newTodayResult[0]?.count || 0;
+      
+      // 获取已禁用用户
+      const { results: bannedResult } = await env.DB.prepare(
+        "SELECT COUNT(*) as count FROM users WHERE status = 'banned'"
+      ).all();
+      const banned = bannedResult[0]?.count || 0;
+      
+      return jsonResponse({
+        code: 200,
+        message: '获取成功',
+        data: {
+          total,
+          active,
+          newToday,
+          banned
+        }
+      }, 200, headers);
+    }
+    
+    // GET /api/admin/users - 用户列表
+    if (path === '/api/admin/users' || path === '/api/admin/users/') {
+      if (request.method !== 'GET') {
+        return jsonResponse({ code: 405, message: '方法不允许' }, 405, headers);
+      }
+      
+      const page = parseInt(url.searchParams.get('page')) || 1;
+      const pageSize = parseInt(url.searchParams.get('pageSize')) || 10;
+      const query = url.searchParams.get('query') || '';
+      const status = url.searchParams.get('status') || '';
+      const role = url.searchParams.get('role') || '';
+      const offset = (page - 1) * pageSize;
+      
+      // 构建查询条件
+      let whereClause = 'WHERE 1=1';
+      const params = [];
+      
+      if (query) {
+        whereClause += ' AND (username LIKE ? OR id LIKE ?)';
+        params.push(`%${query}%`, `%${query}%`);
+      }
+      
+      if (status) {
+        whereClause += ' AND status = ?';
+        params.push(status);
+      }
+      
+      if (role) {
+        whereClause += ' AND role = ?';
+        params.push(role);
+      }
+      
+      // 获取总数
+      const countSql = `SELECT COUNT(*) as count FROM users ${whereClause}`;
+      const { results: countResult } = await env.DB.prepare(countSql).bind(...params).all();
+      const total = countResult[0]?.count || 0;
+      const totalPages = Math.ceil(total / pageSize);
+      
+      // 获取用户列表
+      const listSql = `
+        SELECT id, username, role, status, created_at as createdAt, last_login as lastLogin, register_ip as registerIp
+        FROM users 
+        ${whereClause}
+        ORDER BY created_at DESC
+        LIMIT ? OFFSET ?
+      `;
+      const { results: users } = await env.DB.prepare(listSql).bind(...params, pageSize, offset).all();
+      
+      return jsonResponse({
+        code: 200,
+        message: '获取成功',
+        data: {
+          users: users || [],
+          total,
+          totalPages,
+          page,
+          pageSize
+        }
+      }, 200, headers);
+    }
+    
+    // GET /api/admin/users/:id - 用户详情
+    const userDetailMatch = path.match(/^\/api\/admin\/users\/([^/]+)$/);
+    if (userDetailMatch && request.method === 'GET') {
+      const userId = userDetailMatch[1];
+      
+      const user = await env.DB.prepare(
+        `SELECT id, username, role, status, created_at as createdAt, last_login as lastLogin, register_ip as registerIp
+         FROM users WHERE id = ?`
+      ).bind(userId).first();
+      
+      if (!user) {
+        return jsonResponse({ code: 404, message: '用户不存在' }, 404, headers);
+      }
+      
+      return jsonResponse({
+        code: 200,
+        message: '获取成功',
+        data: user
+      }, 200, headers);
+    }
+    
+    // POST /api/admin/users/:id/ban - 禁用用户
+    const banMatch = path.match(/^\/api\/admin\/users\/([^/]+)\/ban$/);
+    if (banMatch && request.method === 'POST') {
+      const userId = banMatch[1];
+      
+      await env.DB.prepare(
+        "UPDATE users SET status = 'banned' WHERE id = ?"
+      ).bind(userId).run();
+      
+      return jsonResponse({
+        code: 200,
+        message: '用户已禁用',
+        data: { id: userId, status: 'banned' }
+      }, 200, headers);
+    }
+    
+    // POST /api/admin/users/:id/unban - 解禁用户
+    const unbanMatch = path.match(/^\/api\/admin\/users\/([^/]+)\/unban$/);
+    if (unbanMatch && request.method === 'POST') {
+      const userId = unbanMatch[1];
+      
+      await env.DB.prepare(
+        "UPDATE users SET status = 'active' WHERE id = ?"
+      ).bind(userId).run();
+      
+      return jsonResponse({
+        code: 200,
+        message: '用户已解禁',
+        data: { id: userId, status: 'active' }
+      }, 200, headers);
+    }
+    
+    return jsonResponse({ code: 404, message: '路径不存在' }, 404, headers);
+    
+  } catch (error) {
+    console.error('[管理员用户管理错误]', error);
+    return jsonResponse({ code: 500, message: '服务器错误', error: error.message }, 500, headers);
+  }
+}
+
+// 管理员系统配置
+async function handleAdminConfig(request, env, headers, path) {
+  // 验证登录
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return jsonResponse({ code: 401, message: '未登录' }, 401, headers);
+  }
+  
+  try {
+    // 验证管理员权限
+    const token = authHeader.replace('Bearer ', '');
+    const user = JSON.parse(atob(token));
+    
+    const adminUser = await env.DB.prepare(
+      'SELECT role FROM admins WHERE username = ?'
+    ).bind(user.username).first();
+    
+    if (!adminUser) {
+      return jsonResponse({ code: 403, message: '权限不足' }, 403, headers);
+    }
+    
+    const url = new URL(request.url);
+    
+    // GET /api/admin/config - 获取所有配置
+    if (path === '/api/admin/config' || path === '/api/admin/config/') {
+      if (request.method !== 'GET') {
+        return jsonResponse({ code: 405, message: '方法不允许' }, 405, headers);
+      }
+      
+      // 从KV获取配置（如果有）或使用默认配置
+      let config = {
+        siteName: '今天蛋筒什么',
+        siteDescription: 'Limbus Company 随机选择器',
+        icpNumber: '',
+        features: {
+          register: true,
+          ranking: true,
+          guides: true,
+          captcha: true
+        }
+      };
+      
+      // 尝试从KV读取配置
+      if (env.CAPTCHA_KV) {
+        try {
+          const storedConfig = await env.CAPTCHA_KV.get('admin:config');
+          if (storedConfig) {
+            config = { ...config, ...JSON.parse(storedConfig) };
+          }
+        } catch (e) {
+          console.error('读取配置失败:', e);
+        }
+      }
+      
+      return jsonResponse({
+        code: 200,
+        message: '获取成功',
+        data: config
+      }, 200, headers);
+    }
+    
+    // PUT /api/admin/config/site - 保存网站配置
+    if (path === '/api/admin/config/site' || path === '/api/admin/config/site/') {
+      if (request.method !== 'PUT') {
+        return jsonResponse({ code: 405, message: '方法不允许' }, 405, headers);
+      }
+      
+      const body = await request.json();
+      const { siteName, siteDescription, icpNumber } = body;
+      
+      // 读取现有配置
+      let config = {};
+      if (env.CAPTCHA_KV) {
+        try {
+          const storedConfig = await env.CAPTCHA_KV.get('admin:config');
+          if (storedConfig) {
+            config = JSON.parse(storedConfig);
+          }
+        } catch (e) {
+          console.error('读取配置失败:', e);
+        }
+      }
+      
+      // 更新配置
+      config.siteName = siteName || config.siteName || '今天蛋筒什么';
+      config.siteDescription = siteDescription || config.siteDescription || '';
+      config.icpNumber = icpNumber || config.icpNumber || '';
+      
+      // 保存到KV
+      if (env.CAPTCHA_KV) {
+        await env.CAPTCHA_KV.put('admin:config', JSON.stringify(config), { expirationTtl: 0 });
+      }
+      
+      return jsonResponse({
+        code: 200,
+        message: '配置保存成功',
+        data: { siteName, siteDescription, icpNumber }
+      }, 200, headers);
+    }
+    
+    // POST /api/admin/config/feature/:feature - 切换功能开关
+    const featureMatch = path.match(/^\/api\/admin\/config\/feature\/(.+)$/);
+    if (featureMatch && request.method === 'POST') {
+      const feature = featureMatch[1];
+      const validFeatures = ['register', 'ranking', 'guides', 'captcha'];
+      
+      if (!validFeatures.includes(feature)) {
+        return jsonResponse({ code: 400, message: '无效的功能名称' }, 400, headers);
+      }
+      
+      // 读取现有配置
+      let config = { features: {} };
+      if (env.CAPTCHA_KV) {
+        try {
+          const storedConfig = await env.CAPTCHA_KV.get('admin:config');
+          if (storedConfig) {
+            config = JSON.parse(storedConfig);
+          }
+        } catch (e) {
+          console.error('读取配置失败:', e);
+        }
+      }
+      
+      // 切换功能状态
+      if (!config.features) config.features = {};
+      config.features[feature] = config.features[feature] !== false ? false : true;
+      
+      // 保存到KV
+      if (env.CAPTCHA_KV) {
+        await env.CAPTCHA_KV.put('admin:config', JSON.stringify(config), { expirationTtl: 0 });
+      }
+      
+      return jsonResponse({
+        code: 200,
+        message: '功能状态已更新',
+        data: { feature, enabled: config.features[feature] }
+      }, 200, headers);
+    }
+    
+    return jsonResponse({ code: 404, message: '路径不存在' }, 404, headers);
+    
+  } catch (error) {
+    console.error('[管理员配置错误]', error);
+    return jsonResponse({ code: 500, message: '服务器错误', error: error.message }, 500, headers);
+  }
 }
